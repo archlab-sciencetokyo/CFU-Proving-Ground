@@ -1,0 +1,74 @@
+    .equ TOHOST_ADDR, 0x40008000
+    .equ CMD_PRINT, 0x00010000
+    .equ CMD_FINISH, 0x00020000
+    .equ VMEM_BASE, 0x10000000
+    .align 4
+    .section .text.init
+    .globl _start
+_start:
+    li      x1, 0
+    li      x2, 0
+    li      x3, 0
+    li      x4, 0
+    li      x5, 0
+    li      x6, 0
+    li      x7, 0
+    li      x8, 0
+    li      x9, 0
+    li      x10, 0
+    li      x11, 0
+    li      x12, 0
+    li      x13, 0
+    li      x14, 0
+    li      x15, 0
+    li      x16, 0
+    li      x17, 0
+    li      x18, 0
+    li      x19, 0
+    li      x20, 0
+    li      x21, 0
+    li      x22, 0
+    li      x23, 0
+    li      x24, 0
+    li      x25, 0
+    li      x26, 0
+    li      x27, 0
+    li      x28, 0
+    li      x29, 0
+    li      x30, 0
+    li      x31, 0
+    li      sp, 0x20000 # set the stack pointer 128 KiB
+    jal     main
+    j       finish
+
+    .align 4
+    .text
+    .globl printc
+printc:
+    li      t0, TOHOST_ADDR
+    li      t1, CMD_PRINT
+    andi    t2, a0, 0xff
+    or      t2, t1, t2
+    sw      t2, 0(t0)
+    ret
+
+    .align 4
+    .globl prints
+prints:
+    li      t0, TOHOST_ADDR
+    li      t1, CMD_PRINT
+1:  lbu     t2, 0(a0)
+    beqz    t2, 1f
+    or      t2, t1, t2
+    sw      t2, 0(t0)
+    addi    a0, a0, 1
+    j       1b
+1:  ret
+
+    .align 4
+    .globl finish
+finish:
+    li      t0, TOHOST_ADDR
+    li      t1, CMD_FINISH
+    sw      t1, 0(t0)
+1:  j       1b

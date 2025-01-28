@@ -32,7 +32,9 @@ module cpu (
             minstret  <= 0;
             ExMa_perf_ctrl <= 0;
         end else begin
-            if (dbus_wvalid_o && (dbus_addr_o == 32'h20000000))  mcountinhibit <= dbus_wdata_o[0]; 
+            if (dbus_wvalid_o && (dbus_addr_o == 32'h20000000))  begin
+                mcountinhibit <= dbus_wdata_o[0]; 
+            end
             if (!stall) begin
                 ExMa_perf_ctrl[`PERF_CTRL_IS_CYCLE]    <= (dbus_addr_o == 32'h20000004);
                 ExMa_perf_ctrl[`PERF_CTRL_IS_CYCLEH]   <= (dbus_addr_o == 32'h20000008);
@@ -45,7 +47,7 @@ module cpu (
                 minstret  <= 0;
             end
             else begin
-                perf_rst <= (dbus_addr_o == 32'h20000001);
+                perf_rst <= (dbus_wvalid_o && dbus_addr_o == 32'h20000001 && dbus_wdata_o[0]);
                 if (!rst_i && mcountinhibit)  mcycle <= mcycle + 1;
                 if (!rst_i && mcountinhibit && !stall && ExMa_v) minstret <= minstret + 1;
             end

@@ -3,7 +3,6 @@
 #include "cfu.h"
 
 int main() {
-    int a; int b;
-    cfu1_1(a, b);
+    st7789_printf("Hello, world!\n");
     return 0;
 }

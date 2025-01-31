@@ -180,39 +180,6 @@ void disp_reset() {
     }
 }
 
-inline uint16_t create_rgb565(uint8_t r, uint8_t g, uint8_t b) {
-    uint16_t r5 = (r * 31 / 255) & 0x1F;
-    uint16_t g6 = (g * 63 / 255) & 0x3F;
-    uint16_t b5 = (b * 31 / 255) & 0x1F;
-    
-    return (r5 << 11) | (g6 << 5) | b5;
-}
-inline float _fmod(float x, float y) {
-    while (x >= y) x -= y;
-    while (x < 0) x += y;
-    return x;
-}
-
-inline float _fabs(float x) { return x < 0 ? -x : x; }
-
-inline float triangle_wave(float x) {
-    float mod = _fmod(x, 1.0f);
-    return 2.0f * _fabs(mod - 0.5f);
-}
-
-uint16_t hue_to_color(float h) {
-    float hue = _fmod(h / 360.0f, 1.0f);
-    
-    float r_wave = triangle_wave(hue);
-    float g_wave = triangle_wave(hue + 1.0f/3.0f);
-    float b_wave = triangle_wave(hue + 2.0f/3.0f);
-    
-    float r = (uint8_t)(r_wave * 255.0f);
-    float g = (uint8_t)(g_wave * 255.0f);
-    float b = (uint8_t)(b_wave * 255.0f);
-
-    return create_rgb565(r, g, b);
-}
 
 char st7789_col = 0;
 char st7789_row = 0;
@@ -220,6 +187,7 @@ inline void update_pos () {
     st7789_col = (st7789_col + 1) % 15;
     if (st7789_col == 0)  st7789_row = (st7789_row + 1) % 15;
 }
+
 uint16_t st7789_color = 0xFFFF;
 void st7789_printf(const char *fmt, ...) {
     va_list args;

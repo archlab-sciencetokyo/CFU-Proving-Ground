@@ -1,7 +1,4 @@
 `include "config.vh"
-`define MAX 31
-`define MIN 2
-`define N   10
 
 module cfu (
     input  wire                       clk_i     ,

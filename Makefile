@@ -1,9 +1,8 @@
-.PHONY: all build prog run tar clean
-
 GCC := rv32im-fullcfu/bin/riscv32-unknown-elf-gcc
 OBJCOPY := rv32im-fullcfu/bin/riscv32-unknown-elf-objcopy
 OBJDUMP := rv32im-fullcfu/bin/riscv32-unknown-elf-objdump
 
+.PHONY: build prog run tar clean
 build: prog
 	verilator --binary --top-module top --Wno-WIDTHTRUNC --Wno-WIDTHEXPAND -o top *.v
 	gcc -O2 prog/dispemu.c -o build/dispemu -lcairo -lX11

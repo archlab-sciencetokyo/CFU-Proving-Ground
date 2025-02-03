@@ -34,6 +34,8 @@ module cpu (
         end else begin
             if (!stall && dbus_wvalid_o && (dbus_addr_o == 32'h20000001))  begin
                 mcountinhibit <= dbus_wdata_o[0]; 
+                $display("mcountinhibit <= %b", dbus_wdata_o[0]);
+                $display("cycle = %d", mcycle);
             end
             if (!stall) begin
                 ExMa_perf_ctrl[`PERF_CTRL_IS_CYCLE]    <= (dbus_addr_o == 32'h20000004);
@@ -46,6 +48,8 @@ module cpu (
                 mcycle    <= 0;
                 minstret  <= 0;
                 mcountinhibit <= 0;
+                $display("mcountinhibit <= 0(res)");
+
             end
             else begin
                 if (mcountinhibit)  mcycle <= mcycle + 1;

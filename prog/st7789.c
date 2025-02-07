@@ -208,21 +208,23 @@ void st7789_printf(const char *fmt, ...) {
             if (*fmt == 'd') {
                 int val = va_arg(args, int);
                 char buf[16];
-                int i = 0;
+                char *p = &buf[15];
+
+                *p = '\0';
+
                 if (val < 0) {
                     draw_char(st7789_col << 4, st7789_row << 4, '-', st7789_color, 1);
                     update_pos();
                     val = -val;
                 }
-                while (val) {
-                    buf[i++] = val % 10 + '0';
+
+                do {
+                    *--p = '0' + (val % 10);
                     val /= 10;
-                }
-                if (i == 0) {
-                    buf[i++] = '0';
-                }
-                while (i--) {
-                    draw_char(st7789_col << 4, st7789_row << 4, buf[i], st7789_color, 1);
+                } while (val != 0);
+
+                while (*p) {
+                    draw_char(st7789_col << 4, st7789_row << 4, *p++, st7789_color, 1);
                     update_pos();
                 }
             }

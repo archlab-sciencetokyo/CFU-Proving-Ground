@@ -1,10 +1,10 @@
 #include <stdint.h>
 
-uint64_t get_cycle(void) {
+uint64_t perf_cycle(void) {
     return *(uint64_t *)0x20000008 << 32 | *(uint64_t *)0x20000004;
 }
 
-uint64_t get_instret(void) {
+uint64_t perf_instret(void) {
     return *(uint64_t *)0x20000010 << 32 | *(uint64_t *)0x2000000C;
 }
 

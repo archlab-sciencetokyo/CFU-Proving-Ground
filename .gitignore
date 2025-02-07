@@ -3,3 +3,4 @@ obj_dir/
 .vscode/
 rv32im-fullcfu*
 sample1.txt
+vivado*

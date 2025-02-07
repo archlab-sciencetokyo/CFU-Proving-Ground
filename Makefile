@@ -34,4 +34,4 @@ bitstream:
 	cp vivado/$(proj_name).runs/impl_1/main.bit build/.
 
 clean:
-	rm -rf obj_dir build rvcpu-32im* sample1.txt vivado_* vivado.* .Xil
+	rm -rf obj_dir build rvcpu-32im* sample1.txt vivado* .Xil

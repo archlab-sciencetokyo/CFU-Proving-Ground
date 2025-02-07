@@ -18,7 +18,7 @@ create_ip_run [get_files -of_objects [get_fileset sources_1] $top_dir/vivado/$pr
 launch_runs clk_wiz_0_synth_1 -jobs $nproc
 wait_on_run clk_wiz_0_synth_1
 
-set_property STEPS.SYNTH_DESIGN.ARGS.FLATTEN_HIERARCHY full [get_runs synth_1]
+set_property STEPS.SYNTH_DESIGN.ARGS.FLATTEN_HIERARCHY rebuilt [get_runs synth_1]
 set_property STEPS.OPT_DESIGN.ARGS.DIRECTIVE ExploreWithRemap [get_runs impl_1]
 set_property STEPS.PLACE_DESIGN.ARGS.DIRECTIVE Auto_1 [get_runs impl_1]
 set_property STEPS.PHYS_OPT_DESIGN.ARGS.DIRECTIVE ExploreWithAggressiveHoldFix [get_runs impl_1]

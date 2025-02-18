@@ -131,7 +131,7 @@ module cpu (
     wire Ma_mul_stall                                   ;
     wire Ma_div_stall                                   ;
     wire Ex_cfu_stall                                   ;
-    wire stall = stall_i || Ma_mul_stall || Ma_div_stall || Ex_cfu_stall;
+    wire stall = stall_i || Ma_mul_stall || Ma_div_stall;
 
     wire If_v = (Ma_br_misp                        ) ? 1'b0 : (IfId_load_muldiv_use) ? IfId_v : 1'b1  ;
     wire Id_v = (Ma_br_misp || IfId_load_muldiv_use) ? 1'b0 :                                   IfId_v;
@@ -208,7 +208,7 @@ module cpu (
         end else if (!stall) begin
             IfId_v                      <=   If_v                       ;
             IfId_load_muldiv_use        <=   If_load_muldiv_use         ;
-            if (!IfId_load_muldiv_use || !Ex_cfu_stall) begin
+            if (!IfId_load_muldiv_use) begin
                 IfId_pc                     <=    r_pc                      ;
                 IfId_ir                     <=   If_ir                      ;
                 IfId_br_pred_tkn            <=   If_br_pred_tkn             ;
@@ -289,7 +289,7 @@ module cpu (
             IdEx_v                      <= 1'b0                         ;
             IdEx_pc                     <= 'h0                          ;
             IdEx_ir                     <= `NOP                         ;
-        end else if (!stall || !Ex_cfu_rslt) begin
+        end else if (!stall) begin
             IdEx_v                      <=   Id_v                       ;
             IdEx_pc                     <= IfId_pc                      ;
             IdEx_ir                     <= IfId_ir                      ;

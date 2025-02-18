@@ -130,8 +130,8 @@ module cpu (
 
     wire Ma_mul_stall                                   ;
     wire Ma_div_stall                                   ;
-    wire Ma_cfu_stall                                   ;
-    wire stall = stall_i || Ma_mul_stall || Ma_div_stall || Ma_cfu_stall;
+    wire Ex_cfu_stall                                   ;
+    wire stall = stall_i || Ma_mul_stall || Ma_div_stall || Ex_cfu_stall;
 
     wire If_v = (Ma_br_misp                        ) ? 1'b0 : (IfId_load_muldiv_use) ? IfId_v : 1'b1  ;
     wire Id_v = (Ma_br_misp || IfId_load_muldiv_use) ? 1'b0 :                                   IfId_v;
@@ -208,7 +208,7 @@ module cpu (
         end else if (!stall) begin
             IfId_v                      <=   If_v                       ;
             IfId_load_muldiv_use        <=   If_load_muldiv_use         ;
-            if (!IfId_load_muldiv_use) begin
+            if (!IfId_load_muldiv_use || !Ex_cfu_stall) begin
                 IfId_pc                     <=    r_pc                      ;
                 IfId_ir                     <=   If_ir                      ;
                 IfId_br_pred_tkn            <=   If_br_pred_tkn             ;
@@ -289,7 +289,7 @@ module cpu (
             IdEx_v                      <= 1'b0                         ;
             IdEx_pc                     <= 'h0                          ;
             IdEx_ir                     <= `NOP                         ;
-        end else if (!stall) begin
+        end else if (!stall || !Ex_cfu_rslt) begin
             IdEx_v                      <=   Id_v                       ;
             IdEx_pc                     <= IfId_pc                      ;
             IdEx_ir                     <= IfId_ir                      ;
@@ -316,7 +316,7 @@ module cpu (
 //==============================================================================
 // EX: Execution
 //------------------------------------------------------------------------------
-    wire Ex_valid = IdEx_v && !Ma_br_misp && !Ma_mul_stall && !Ma_div_stall && !Ma_cfu_stall;
+    wire Ex_valid = IdEx_v && !Ma_br_misp && !Ma_mul_stall && !Ma_div_stall;
 
     // data forwarding
     wire [`XLEN-1:0] Ex_src1 = (IdEx_rs1_fwd_from_Ma_to_Ex) ? ExMa_rslt : (IdEx_rs1_fwd_from_Wb_to_Ex) ? MaWb_rslt : IdEx_src1;
@@ -439,12 +439,12 @@ module cpu (
     cfu cfu (
         .clk_i              (clk_i                  ), // input  wire
         .rst_i              (rst                    ), // input  wire
-        .stall_i            (stall_i || Ma_cfu_stall), // input  wire
+        .stall_i            (stall_i                ), // input  wire
         .valid_i            (  Ex_valid             ), // input  wire
         .cfu_ctrl_i         (IdEx_cfu_ctrl          ), // input  wire [`CFU_CTRL_WIDTH-1:0]
         .src1_i             (  Ex_src1              ), // input  wire           [`XLEN-1:0]
         .src2_i             (  Ex_src2              ), // input  wire           [`XLEN-1:0]
-        .stall_o            (  Ma_cfu_stall         ), // output wire
+        .stall_o            (  Ex_cfu_stall         ), // output wire
         .rslt_o             (  Ex_cfu_rslt          )  // output wire           [`XLEN-1:0]
     );
 

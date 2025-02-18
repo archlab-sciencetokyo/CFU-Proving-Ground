@@ -15,15 +15,17 @@ prog:
 	dd if=build/main.bin.tmp of=build/main.bin conv=sync bs=16KiB
 	rm -f build/main.bin.tmp
 	hexdump -v -e '1/4 "%08x\n"' build/main.bin > build/main.32.hex
+	tmp_IFS=$$IFS; IFS= ; \
 	cnt=0; \
 	{ \
 		echo "initial begin"; \
-		while IFS= read -r line; do \
+		while read -r line; do \
 			echo "    ram[$$cnt] = 32'h$$line;"; \
 			cnt=$$((cnt + 1)); \
 		done < build/main.32.hex; \
 		echo "end"; \
-	} > sample1.txt
+	} > sample1.txt; \
+	IFS=$$tmp_IFS;
 
 run:
 	./obj_dir/top | build/dispemu

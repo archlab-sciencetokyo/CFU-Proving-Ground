@@ -9,16 +9,16 @@ uint64_t perf_instret(void) {
 }
 
 void perf_enable(void) {
-    volatile uint8_t *reg_pref_enable = (volatile uint8_t *)0x20000001;
+    volatile uint8_t *reg_pref_enable = (volatile uint8_t *)0x20000000;
     *reg_pref_enable = 1;
 }
 
 void perf_disable(void) {
-    volatile uint8_t *reg_pref_enable = (volatile uint8_t *)0x20000001;
-    *reg_pref_enable = 0;
+    volatile uint8_t *reg_pref_enable = (volatile uint8_t *)0x20000000;
+    *reg_pref_enable = 2;
 }
 
 void perf_reset(void) {
     volatile uint8_t *reg_pref_reset = (volatile uint8_t *)0x20000000;
-    *reg_pref_reset = 1;
+    *reg_pref_reset = 0;
 }

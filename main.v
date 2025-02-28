@@ -47,28 +47,23 @@ module main (
         .dbus_rdata_i       (dbus_rdata         )  // input  wire [`DBUS_DATA_WIDTH-1:0]
     );
 
-    imem #(
-        .RAM_SIZE           (`RAM_SIZE          )
-    ) imem (
-        .clk_i              (clk                ), // input  wire
-        .raddr_i            (imem_raddr         ), // input  wire [ADDR_WIDTH-1:0]
-        .rdata_o            (imem_rdata         )  // output reg  [DATA_WIDTH-1:0]
-    );
-
     wire dmem_we = dbus_we & (!dbus_addr[30]) & (!dbus_addr[29]) & (!dbus_addr[28]);
     wire [31:0] dmem_addr = dbus_addr;
     wire [31:0] dmem_wdata = dbus_wdata;
     wire [3:0] dmem_wstrb = dbus_wstrb;
     wire [31:0] dmem_rdata;
-    dmem #(
+
+    ram #(
         .RAM_SIZE           (`RAM_SIZE          )
-    ) dmem (
+    ) ram (
         .clk_i              (clk                ), // input  wire
-        .addr_i             (dmem_addr          ), // input  wire [ADDR_WIDTH-1:0]
-        .we_i               (dmem_we            ), // input  wire
-        .wdata_i            (dmem_wdata         ), // input  wire [DATA_WIDTH-1:0]
-        .wstrb_i            (dmem_wstrb         ), // input  wire [STRB_WIDTH-1:0]
-        .rdata_o            (dmem_rdata         )  // output reg  [DATA_WIDTH-1:0]
+        .imem_raddr_i       (imem_raddr          ), // input  wire [`IBUS_ADDR_WIDTH-1:0]
+        .imem_rdata_o       (imem_rdata         ), // output wire [`IBUS_DATA_WIDTH-1:0]
+        .dmem_addr_i        (dmem_addr          ), // input  wire [`DBUS_ADDR_WIDTH-1:0]
+        .dmem_we_i          (dmem_we            ), // input  wire
+        .dmem_wdata_i       (dmem_wdata         ), // input  wire [`DBUS_DATA_WIDTH-1:0]
+        .dmem_wstrb_i       (dmem_wstrb         ), // input  wire [`DBUS_STRB_WIDTH-1:0]
+        .dmem_rdata_o       (dmem_rdata         )
     );
 
     wire vmem_we = dbus_we & (dbus_addr[28]);
@@ -97,59 +92,39 @@ module main (
 
 endmodule
 
-module dmem #(
+module ram #(
     parameter RAM_SIZE      = 4*1024        ,
     parameter ADDR_WIDTH    = 32            ,
     parameter DATA_WIDTH    = 32            ,
     parameter STRB_WIDTH    = DATA_WIDTH/8
 ) (
-    input  wire                  clk_i      ,
-    input  wire [ADDR_WIDTH-1:0] addr_i     ,
-    input  wire                  we_i       ,
-    input  wire [DATA_WIDTH-1:0] wdata_i    ,
-    input  wire [STRB_WIDTH-1:0] wstrb_i    ,
-    output reg  [DATA_WIDTH-1:0] rdata_o
+    input wire clk_i,
+    input wire [ADDR_WIDTH-1:0] imem_raddr_i,
+    output reg [DATA_WIDTH-1:0] imem_rdata_o,
+    input wire [ADDR_WIDTH-1:0] dmem_addr_i,
+    input wire dmem_we_i,
+    input wire [DATA_WIDTH-1:0] dmem_wdata_i,
+    input wire [STRB_WIDTH-1:0] dmem_wstrb_i,
+    output reg [DATA_WIDTH-1:0] dmem_rdata_o
 );
-
     localparam OFFSET_WIDTH     = $clog2(DATA_WIDTH/8)          ;
     localparam VALID_ADDR_WIDTH = $clog2(RAM_SIZE)-OFFSET_WIDTH ;
     (* ram_style = "block" *) reg [DATA_WIDTH-1:0] ram [0:(2**VALID_ADDR_WIDTH)-1];
     `include "sample1.txt"
 
-    wire [VALID_ADDR_WIDTH-1:0] valid_addr = addr_i[VALID_ADDR_WIDTH+OFFSET_WIDTH-1:OFFSET_WIDTH];
-
-
+    wire [VALID_ADDR_WIDTH-1:0] imem_valid_addr = imem_raddr_i[VALID_ADDR_WIDTH+OFFSET_WIDTH-1:OFFSET_WIDTH];
+    wire [VALID_ADDR_WIDTH-1:0] dmem_valid_addr = dmem_addr_i[VALID_ADDR_WIDTH+OFFSET_WIDTH-1:OFFSET_WIDTH];
     integer i;
     always @(posedge clk_i) begin
-        if (we_i) begin
+        imem_rdata_o <= ram[imem_valid_addr];
+        if (dmem_we_i) begin
             for (i=0; i<STRB_WIDTH; i=i+1) begin
-                if (wstrb_i[i]) ram[valid_addr][8*i+:8] <= wdata_i[8*i+:8];
+                if (dmem_wstrb_i[i]) ram[dmem_valid_addr][8*i+:8] <= dmem_wdata_i[8*i+:8];
             end
         end else begin
-            rdata_o <= ram[valid_addr]  ;
+            dmem_rdata_o <= ram[dmem_valid_addr];
         end
     end
-
-endmodule
-
-module imem #(
-    parameter RAM_SIZE      = 4*1024        ,
-    parameter ADDR_WIDTH    = 32            ,
-    parameter DATA_WIDTH    = 32
-) (
-    input  wire                  clk_i      ,
-    input  wire [ADDR_WIDTH-1:0] raddr_i    ,
-    output reg  [DATA_WIDTH-1:0] rdata_o
-);
-
-    localparam OFFSET_WIDTH     = $clog2(DATA_WIDTH/8)          ;
-    localparam VALID_ADDR_WIDTH = $clog2(RAM_SIZE)-OFFSET_WIDTH ;
-    (* ram_style = "block" *) reg [DATA_WIDTH-1:0] ram [0:(2**VALID_ADDR_WIDTH)-1];
-    `include "sample1.txt"
-
-    wire [VALID_ADDR_WIDTH-1:0] valid_raddr = raddr_i[VALID_ADDR_WIDTH+OFFSET_WIDTH-1:OFFSET_WIDTH];
-    always @(posedge clk_i) rdata_o <= ram[valid_raddr];
-
 endmodule
 
 module vmem (

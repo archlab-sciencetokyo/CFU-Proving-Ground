@@ -12,7 +12,7 @@ build:
 
 prog:
 	mkdir -p build
-	$(GCC) -O2 -march=rv32im -mabi=ilp32 -nostartfiles -Tprog/link.ld -o build/main.elf prog/crt0.s prog/*.c
+	$(GCC) -O2 -march=rv32im -mabi=ilp32 -nostartfiles -Tprog/link.ld -Iprog -o build/main.elf prog/crt0.s prog/*.c main.c
 	$(OBJDUMP) -D build/main.elf > build/main.dump
 	$(OBJCOPY) -O binary build/main.elf build/main.bin.tmp
 	dd if=build/main.bin.tmp of=build/main.bin conv=sync bs=16KiB

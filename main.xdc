@@ -10,8 +10,7 @@ resize_pblock       [get_pblocks pb0] -add {CLOCKREGION_X0Y0};
 add_cells_to_pblock [get_pblocks pb0] [get_cells -quiet [list {sync_rst}]];
 add_cells_to_pblock [get_pblocks pb0] [get_cells -quiet [list {cpu}]];
 add_cells_to_pblock [get_pblocks pb0] [get_cells -quiet [list {rvcpu_interconnect}]];
-add_cells_to_pblock [get_pblocks pb0] [get_cells -quiet [list {imem}]];
-add_cells_to_pblock [get_pblocks pb0] [get_cells -quiet [list {dmem}]];
+add_cells_to_pblock [get_pblocks pb0] [get_cells -quiet [list {ram}]];
 add_cells_to_pblock [get_pblocks pb0] [get_cells -quiet [list {uart}]];
 
 ## Clock signal

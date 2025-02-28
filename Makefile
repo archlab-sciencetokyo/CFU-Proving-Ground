@@ -2,8 +2,11 @@ GCC := 		riscv32-unknown-elf-gcc
 OBJCOPY := 	riscv32-unknown-elf-objcopy
 OBJDUMP :=	riscv32-unknown-elf-objdump
 
-.PHONY: build prog run tar clean
-build: prog
+.PHONY: prog build run tar clean
+
+all: prog build
+
+build:
 	verilator --binary --top-module top --Wno-WIDTHTRUNC --Wno-WIDTHEXPAND -o top *.v
 	gcc -O2 dispemu/dispemu.c -o build/dispemu -lcairo -lX11
 

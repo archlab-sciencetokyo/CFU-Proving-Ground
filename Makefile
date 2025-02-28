@@ -35,6 +35,10 @@ run:
 
 proj_name = $(shell basename $(shell pwd))
 bitstream:
+	@if [ ! -f sample1.txt ]; then \
+		echo "Please run 'make prog' first."; \
+		exit 1; \
+	fi
 	vivado -mode batch -source scripts/build.tcl
 	cp vivado/$(proj_name).runs/impl_1/main.bit build/.
 

@@ -4,3 +4,4 @@ obj_dir/
 rv32im-fullcfu*
 sample1.txt
 vivado*
+.Xil/

@@ -165,9 +165,9 @@ void draw_char(uint16_t x, uint16_t y, char c, uint16_t color, int scale) {
             if (x + j >= 240) break;
             if ((font8x8_basic[c][i >> scale] >> (j >> scale)) & 1) {
                 draw_point(x + j, y + i, color);
-            }// else {
-             //   draw_point(x + j, y + i, 0xFFFF);
-             //}
+            } else {
+                draw_point(x + j, y + i, 0);//xFFFF);
+             }
         }
     }
 }
@@ -354,4 +354,9 @@ void st7789_reset() {
     st7789_col = 0;
     st7789_row = 0;
     disp_reset();
+}
+
+void st7789_set_pos(int x, int y) {
+    st7789_col = x;
+    st7789_row = y;
 }

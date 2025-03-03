@@ -207,7 +207,12 @@ module m_st7789_disp(
        r_x <= (r_state2<=10 || r_x==239) ? 0 : r_x + 1;
        r_y <= (r_state2<=10) ? 0 : (r_x==239) ? r_y + 1 : r_y;
     end
-    assign w_raddr = {r_y, r_x};
+
+    wire [7:0] w_nx = 239-r_x;     
+    wire [7:0] w_ny = 239-r_y;  
+    assign w_raddr = (`LCD_ROTATE==0) ? {r_y, r_x} :  // default
+                     (`LCD_ROTATE==1) ? {r_x, w_ny} : // 90 degree rotation
+                     (`LCD_ROTATE==2) ? {w_ny, w_nx} : {w_nx, r_y} ; //180 degree, 240 degree rotation
     
     reg  [15:0] r_color = 0;
     always @(posedge w_clk) r_color <= w_rdata;  

@@ -58,9 +58,7 @@ The generated bitstream is saved in `build/main.bit`.
 
 2025-02-20 Ver.0.1: initial version
 
---------------------------------------------------------------------------------
 Target board     : Nexys4-A7
 Target FPGA      : xc7a100tcsg324-1
 Mini display     : ST7789 240x240 pixel
---------------------------------------------------------------------------------
 

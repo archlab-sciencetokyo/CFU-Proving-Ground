@@ -12,7 +12,8 @@ module main (
     output wire st7789_RES 
 );
     wire clk, locked;
-`ifdef SYNTHESIS
+
+`ifdef USE_CLK_WIZ
     clk_wiz_0 clk_wiz_0 (
         .clk_out1           (clk                ), // output clk_out1
         .reset              (!rst_ni                ), // input reset
@@ -138,6 +139,7 @@ module vmem (
 
     reg [15:0] rdata;
     reg [15:0] vmem [0:65535];
+    // reg [0:0] vmem [0:65535];
 
     always @(posedge clk_i) begin
         if (we_i)  vmem[waddr_i] <= wdata_i;

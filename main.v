@@ -132,30 +132,30 @@ module vmem (
     input wire clk_i,
     input wire        we_i,
     input wire [15:0] waddr_i,
-    input wire [15:0] wdata_i,
+    input wire [2:0] wdata_i,
     input wire [15:0] raddr_i,
-    output wire [15:0] rdata_o
+    output reg [15:0] rdata_o
 );
 
-    reg [15:0] rdata;
-    reg [15:0] vmem [0:65535];
-    // reg [0:0] vmem [0:65535];
+    reg [2:0] vmem [0:65535]; // vmem
+
+    wire [2:0] rdata = vmem[raddr_i];
 
     always @(posedge clk_i) begin
         if (we_i)  vmem[waddr_i] <= wdata_i;
-        rdata <= vmem[raddr_i];
+        rdata_o <= {{5{rdata[2]}}, {6{rdata[1]}}, {5{rdata[0]}}};
     end
-
-    assign rdata_o = rdata;
 
 `ifndef SYNTHESIS  
     reg [15:0] r_adr_p = 0;
     reg [15:0] r_dat_p = 0;
+
+    wire [15:0] data = {{5{wdata_i[2]}}, {6{wdata_i[1]}}, {5{wdata_i[0]}}};
     always @(posedge clk_i) if(we_i) begin
-        if(vmem[waddr_i]!=wdata_i) begin
+        if(vmem[waddr_i] != wdata_i) begin
             r_adr_p <= waddr_i;
-            r_dat_p <= wdata_i;
-            $write("@D%0d_%0d\n", waddr_i ^ r_adr_p, wdata_i ^ r_dat_p);
+            r_dat_p <= data;
+            $write("@D%0d_%0d\n", waddr_i ^ r_adr_p, data ^ r_dat_p);
             $fflush();
         end
     end

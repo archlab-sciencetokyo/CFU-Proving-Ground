@@ -5,12 +5,12 @@
 
 module main (
     input  wire clk_i       ,
-    input  wire rst_ni      ,
     output wire st7789_SDA  ,
     output wire st7789_SCL  ,
     output wire st7789_DC   , 
     output wire st7789_RES 
 );
+    wire rst_ni = 1;
     wire clk, locked;
 
 `ifdef USE_CLK_WIZ

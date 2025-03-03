@@ -5,3 +5,5 @@ rv32im-fullcfu*
 sample1.txt
 vivado*
 .Xil/
+main.xdc
+build.tcl

@@ -8,7 +8,7 @@ create_project -force $proj_name $top_dir/vivado -part $part_name
 set_property strategy Flow_PerfOptimized_high [get_runs synth_1]
 set_property strategy Performance_ExplorePostRoutePhysOpt [get_runs impl_1]
 add_files -norecurse $src_files
-add_files -fileset constrs_1 -norecurse $top_dir/nexys_a7.xdc
+add_files -fileset constrs_1 -norecurse $top_dir/main.xdc
 update_compile_order -fileset sources_1
 
 launch_runs impl_1 -to_step write_bitstream -jobs $nproc

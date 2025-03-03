@@ -8,7 +8,7 @@ create_project -force $proj_name $top_dir/vivado -part $part_name
 set_property strategy Flow_PerfOptimized_high [get_runs synth_1]
 set_property strategy Performance_ExplorePostRoutePhysOpt [get_runs impl_1]
 add_files -norecurse $src_files
-add_files -fileset constrs_1 -norecurse $top_dir/main.xdc
+add_files -fileset constrs_1 -norecurse $top_dir/nexys_a7.xdc
 update_compile_order -fileset sources_1
 
 create_ip -name clk_wiz -vendor xilinx.com -library ip -version 6.0 -module_name clk_wiz_0

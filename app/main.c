@@ -333,15 +333,15 @@ int main() {
         st7789_set_pos(0, 0);
 
         char buf[32];
-        sprintf(buf, "roll  :%6.2f\n", roll);    st7789_printf(buf);
-        sprintf(buf, "power :%6d\n", power);     st7789_printf(buf);
-        sprintf(buf, "pwm   :%6d\n", pwm);       st7789_printf(buf);
-        st7789_printf("\n");
-        sprintf(buf, "Pterm :%6d\n", Pterm);     st7789_printf(buf);
-        sprintf(buf, "Iterm :%6d\n", Iterm);     st7789_printf(buf);
-        sprintf(buf, "Dterm :%6d\n", Dterm);     st7789_printf(buf);
-        st7789_printf("\n");        
-        sprintf(buf, "loops :%6d\n", loops);     st7789_printf(buf);
+        sprintf(buf, "roll  :%6.2f\n", roll);    LCD_prints(buf);
+        sprintf(buf, "power :%6d\n", power);     LCD_prints(buf);
+        sprintf(buf, "pwm   :%6d\n", pwm);       LCD_prints(buf);
+        LCD_prints("\n");
+        sprintf(buf, "Pterm :%6d\n", Pterm);     LCD_prints(buf);
+        sprintf(buf, "Iterm :%6d\n", Iterm);     LCD_prints(buf);
+        sprintf(buf, "Dterm :%6d\n", Dterm);     LCD_prints(buf);
+        LCD_prints("\n");        
+        sprintf(buf, "loops :%6d\n", loops);     LCD_prints(buf);
         
 //        st7789_printf("roll  :%d  \n", (int)(roll * 100.0));
 //        st7789_printf("power :%d  \n", power);
@@ -361,10 +361,10 @@ int main() {
 //        st7789_printf("gx  :%d   \n", gx);
 //        st7789_printf("gy  :%d   \n", gy);
 //        st7789_printf("gz  :%d   \n", gz);
-        st7789_printf("          \n");
-        if (motor_ctrl==0) st7789_printf("*STOP*\n");
-        if (motor_ctrl==1) st7789_printf("*FWD* \n");
-        if (motor_ctrl==2) st7789_printf("*REV* \n");
+        LCD_prints("          \n");
+        if (motor_ctrl==0) LCD_prints("*STOP*\n");
+        if (motor_ctrl==1) LCD_prints("*FWD* \n");
+        if (motor_ctrl==2) LCD_prints("*REV* \n");
 
             
 //        *(VIO_ADDR_roll) = roll; // control here

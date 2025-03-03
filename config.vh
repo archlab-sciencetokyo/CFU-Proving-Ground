@@ -5,7 +5,7 @@
 `define CONFIG_VH_
 
 // LCD Display
-`define LCD_ROTATE 1 // 0: 0 degree, 1: 90 degree, 2: 180 degree, 3: 270 degree (Left Rotate)
+`define LCD_ROTATE 0 // 0: 0 degree, 1: 90 degree, 2: 180 degree, 3: 270 degree (Left Rotate)
 
 // cpu
 `define RESET_VECTOR    'h00000000

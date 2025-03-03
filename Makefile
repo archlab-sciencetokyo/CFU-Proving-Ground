@@ -5,6 +5,8 @@ OBJDUMP := /home/share/cad/rv32ima/bin/riscv32-unknown-elf-objdump
 VIVADO  := /tools/Xilinx/Vivado/2024.1/bin/vivado
 RTLSIM  := /usr/local/bin/verilator
 
+TARGET ?= nexys_a7
+
 .PHONY: build prog run tar clean
 build: prog
 	$(RTLSIM) --binary --top-module top --Wno-WIDTHTRUNC --Wno-WIDTHEXPAND -o top *.v
@@ -12,7 +14,7 @@ build: prog
 
 prog:
 	mkdir -p build
-	$(GPP) -O2 -march=rv32im -mabi=ilp32 -nostartfiles -Tprog/link.ld -o build/main.elf prog/crt0.s prog/*.c
+	$(GPP) -O2 -march=rv32im -mabi=ilp32 -nostartfiles -Tapp/link.ld -o build/main.elf app/crt0.s app/*.c
 	$(OBJDUMP) -D build/main.elf > build/main.dump
 	$(OBJCOPY) -O binary build/main.elf build/main.bin.tmp
 	dd if=build/main.bin.tmp of=build/main.bin conv=sync bs=16KiB
@@ -31,12 +33,18 @@ prog:
 	IFS=$$tmp_IFS;
 
 run:
+	./obj_dir/top
+
+drun:
 	./obj_dir/top | build/dispemu 1
 
 proj_name = $(shell basename $(shell pwd))
 bit:
-	make prog
-	$(VIVADO) -mode batch -source build.tcl
+	@if [ ! -f sample1.txt ]; then \
+		echo "Please run 'make prog' first."; \
+		exit 1; \
+	fi
+	$(VIVADO) -mode batch -source build_$(TARGET).tcl
 	cp vivado/$(proj_name).runs/impl_1/main.bit build/.
 
 clean:

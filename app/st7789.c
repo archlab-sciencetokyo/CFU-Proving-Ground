@@ -180,7 +180,6 @@ void disp_reset() {
     }
 }
 
-
 char st7789_col = 0;
 char st7789_row = 0;
 inline void update_pos () {
@@ -188,166 +187,18 @@ inline void update_pos () {
     if (st7789_col == 0)  st7789_row = (st7789_row + 1) % 15;
 }
 
-uint16_t st7789_color = 0xFFFF;
-void st7789_printf(const char *fmt, ...) {
-    va_list args;
-    va_start(args, fmt);
-    while (*fmt) {
-        if (*fmt == '\n') {
+void LCD_prints(const char *str) {
+    while (*str) {
+        if (*str == '\n') {
             st7789_col = 0;
             st7789_row = (st7789_row + 1) % 15;
         }
-        else if (*fmt == '\r') {
-            st7789_col = 0;
-        }
-        else if (*fmt == '\t') {
-            st7789_col = (st7789_col + 2) & ~1;
-        }
-        else if (*fmt == '%') {
-            fmt++;
-            if (*fmt == 'd') {
-                int val = va_arg(args, int);
-                char buf[16];
-                char *p = &buf[15];
-
-                *p = '\0';
-
-                if (val < 0) {
-                    draw_char(st7789_col << 4, st7789_row << 4, '-', st7789_color, 1);
-                    update_pos();
-                    val = -val;
-                }
-
-                do {
-                    *--p = '0' + (val % 10);
-                    val /= 10;
-                } while (val != 0);
-
-                while (*p) {
-                    draw_char(st7789_col << 4, st7789_row << 4, *p++, st7789_color, 1);
-                    update_pos();
-                }
-            }
-            else if (*fmt == 'x') {
-                unsigned int val = va_arg(args, unsigned int);
-                char buf[16];
-                int i = 0;
-
-                if (val == 0) {
-                    buf[i++] = '0';
-                } else {
-                    while (val) {
-                        int digit = val & 0xF;
-                        buf[i++] = digit < 10 ? digit + '0' : digit - 10 + 'a';
-                        val >>= 4;
-                    }
-                }
-
-                while (i--) {
-                    draw_char(st7789_col << 4, st7789_row << 4, buf[i], st7789_color, 1);
-                    update_pos();
-                }
-            }
-            else if (*fmt == 's') {
-                char *str = va_arg(args, char *);
-                while (*str) {
-                    draw_char(st7789_col << 4, st7789_row << 4, *str, st7789_color, 1);
-                    update_pos();
-                    str++;
-                }
-            }
-            else if (*fmt == 'f') {
-                double val = va_arg(args, double);
-                char buf[32];
-                int i = 0;
-
-                if (val < 0) {
-                    draw_char(st7789_col << 4, st7789_row << 4, '-', st7789_color, 1);
-                    update_pos();
-                    val = -val;
-                }
-
-                long int_part = (long)val;
-
-                double decimal_part = val - int_part;
-                for (int j = 0; j < 6; j++) {
-                    decimal_part *= 10;
-                }
-                long decimal = (long)(decimal_part + 0.5);
-
-                if (int_part == 0) {
-                    buf[i++] = '0';
-                } else {
-                    while (int_part) {
-                        buf[i++] = (int_part % 10) + '0';
-                        int_part /= 10;
-                    }
-                }
-
-                int temp = i;
-                while (temp--) {
-                    draw_char(st7789_col << 4, st7789_row << 4, buf[temp], st7789_color, 1);
-                    update_pos();
-                }
-
-                draw_char(st7789_col << 4, st7789_row << 4, '.', st7789_color, 1);
-                update_pos();
-
-                i = 0;
-                int decimal_digits = 0;
-                long temp_decimal = decimal;
-
-                while (temp_decimal) {
-                    decimal_digits++;
-                    temp_decimal /= 10;
-                }
-
-                for (int j = 0; j < 6 - decimal_digits; j++) {
-                    draw_char(st7789_col << 4, st7789_row << 4, '0', st7789_color, 1);
-                    update_pos();
-                }
-
-                if (decimal == 0) {
-                    for (int j = 0; j < 6; j++) {
-                        draw_char(st7789_col << 4, st7789_row << 4, '0', st7789_color, 1);
-                        update_pos();
-                    }
-                } else {
-                    while (decimal) {
-                        buf[i++] = (decimal % 10) + '0';
-                        decimal /= 10;
-                    }
-                    while (i--) {
-                        draw_char(st7789_col << 4, st7789_row << 4, buf[i], st7789_color, 1);
-                        update_pos();
-                    }
-                }
-            }
-            else if (*fmt == 'l' && *(fmt + 1) == 'l' && *(fmt + 2) == 'u') {
-               uint64_t val = va_arg(args, uint64_t);
-               char buf[21]; 
-               char *p = &buf[20];
-
-               *p = '\0';
-
-               do {
-                   *--p = '0' + (val % 10);
-                   val /= 10;
-               } while (val != 0);
-
-               while (*p != '\0') {
-                   draw_char(st7789_col << 4, st7789_row << 4, *p++, st7789_color, 1);
-                   update_pos();
-               }
-               fmt += 2; 
-            }
-        } else {
-            draw_char(st7789_col << 4, st7789_row << 4, *fmt, st7789_color, 1);
+        else {
+            draw_char(st7789_col << 4, st7789_row << 4, *str, 0xFFFF, 1);
             update_pos();
         }
-        fmt++;
+        str++;
     }
-    va_end(args);
 }
 
 void st7789_reset() {

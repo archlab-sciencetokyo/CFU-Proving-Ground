@@ -134,19 +134,19 @@ module vmem (
     input wire [15:0] waddr_i,
     input wire [2:0] wdata_i,
     input wire [15:0] raddr_i,
-    output reg [15:0] rdata_o
+    output wire [15:0] rdata_o
 );
 
     reg [2:0] vmem [0:65535]; // vmem
 
-    wire [2:0] rdata = vmem[raddr_i];
-
+    reg [2:0] rdata;
     always @(posedge clk_i) begin
         if (we_i)  vmem[waddr_i] <= wdata_i;
-        rdata_o <= {{5{rdata[2]}}, {6{rdata[1]}}, {5{rdata[0]}}};
+        rdata <= vmem[raddr_i];
     end
+    assign rdata_o = {{5{rdata[2]}}, {6{rdata[1]}}, {5{rdata[0]}}};
 
-`ifndef SYNTHESIS  
+`ifndef SYNTHESIS
     reg [15:0] r_adr_p = 0;
     reg [15:0] r_dat_p = 0;
 

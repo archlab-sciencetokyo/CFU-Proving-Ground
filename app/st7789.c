@@ -193,6 +193,9 @@ void LCD_prints(const char *str) {
             st7789_col = 0;
             st7789_row = (st7789_row + 1) % 15;
         }
+        else if (*str == '\r') {
+            st7789_col = 0;
+        }
         else {
             draw_char(st7789_col << 4, st7789_row << 4, *str, 0xFFFF, 1);
             update_pos();

@@ -5,7 +5,7 @@ OBJDUMP := /home/share/cad/rv32ima/bin/riscv32-unknown-elf-objdump
 VIVADO  := /tools/Xilinx/Vivado/2024.1/bin/vivado
 RTLSIM  := /usr/local/bin/verilator
 
-TARGET ?= nexys_a7
+TARGET ?= arty_a7
 
 .PHONY: build prog run tar clean
 build: prog
@@ -14,7 +14,7 @@ build: prog
 
 prog:
 	mkdir -p build
-	$(GPP) -O2 -march=rv32im -mabi=ilp32 -nostartfiles -Tapp/link.ld -o build/main.elf app/crt0.s app/*.c
+	$(GPP) -O2 -march=rv32im -mabi=ilp32 -nostartfiles -Iapp -Tapp/link.ld -o build/main.elf app/crt0.s app/*.c main.c
 	$(OBJDUMP) -D build/main.elf > build/main.dump
 	$(OBJCOPY) -O binary build/main.elf build/main.bin.tmp
 	dd if=build/main.bin.tmp of=build/main.bin conv=sync bs=16KiB

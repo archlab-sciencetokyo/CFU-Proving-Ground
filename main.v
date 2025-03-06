@@ -69,18 +69,19 @@ module main (
 
     wire vmem_we = dbus_we & (dbus_addr[28]);
     wire [15:0] vmem_addr =  dbus_addr[15:0];
-    wire [15:0] vmem_wdata = dbus_wdata[15:0];
+    wire [ 2:0] vmem_wdata = dbus_wdata[2:0];
     wire [15:0] vmem_raddr;
-    wire [15:0] vmem_rdata;
+    wire [ 2:0] vmem_rdata_t;
     vmem vmem (
         .clk_i              (clk                ), // input wire
         .we_i               (vmem_we            ), // input wire
         .waddr_i            (vmem_addr          ), // input wire [15:0]
         .wdata_i            (vmem_wdata         ), // input wire [15:0]
         .raddr_i            (vmem_raddr         ), // input wire [15:0]
-        .rdata_o            (vmem_rdata         )  // output wire [15:0]
+        .rdata_o            (vmem_rdata_t       )  // output wire [15:0]
     );
 
+    wire [15:0] vmem_rdata = {{5{vmem_rdata_t[2]}}, {6{vmem_rdata_t[1]}}, {5{vmem_rdata_t[0]}}};
     m_st7789_disp st7789_disp (
         .w_clk              (clk                ), // input  wire
         .st7789_SDA         (st7789_SDA         ), // output wire
@@ -134,17 +135,28 @@ module vmem (
     input wire [15:0] waddr_i,
     input wire [2:0] wdata_i,
     input wire [15:0] raddr_i,
-    output wire [15:0] rdata_o
+    output wire [2:0] rdata_o
 );
 
-    reg [2:0] vmem [0:65535]; // vmem
+    reg [2:0] vmem_lo [0:32767]; // vmem
+    reg [2:0] vmem_hi [0:32767]; // vmem
 
-    reg [2:0] rdata;
+    reg [2:0] rdata_lo;
+    reg [2:0] rdata_hi;
+    reg       sel;
+
     always @(posedge clk_i) begin
-        if (we_i)  vmem[waddr_i] <= wdata_i;
-        rdata <= vmem[raddr_i];
+        if (we_i) begin
+            if (waddr_i[15]) vmem_hi[waddr_i[14:0]] <= wdata_i;
+            else             vmem_lo[waddr_i[14:0]] <= wdata_i;
+        end
+        sel <= raddr_i[15];
+        rdata_lo <= vmem_lo[raddr_i[14:0]];
+        rdata_hi <= vmem_hi[raddr_i[14:0]];
     end
-    assign rdata_o = {{5{rdata[2]}}, {6{rdata[1]}}, {5{rdata[0]}}};
+
+    assign rdata_o = (sel) ? rdata_hi : rdata_lo;
+
 
 `ifndef SYNTHESIS
     reg [15:0] r_adr_p = 0;
@@ -152,12 +164,20 @@ module vmem (
 
     wire [15:0] data = {{5{wdata_i[2]}}, {6{wdata_i[1]}}, {5{wdata_i[0]}}};
     always @(posedge clk_i) if(we_i) begin
-        if(vmem[waddr_i] != wdata_i) begin
-            r_adr_p <= waddr_i;
-            r_dat_p <= data;
-            $write("@D%0d_%0d\n", waddr_i ^ r_adr_p, data ^ r_dat_p);
-            $fflush();
-        end
+        case (waddr_i[15])
+            0: if(vmem_lo[waddr_i] != wdata_i) begin
+                r_adr_p <= waddr_i;
+                r_dat_p <= data;
+                $write("@D%0d_%0d\n", waddr_i ^ r_adr_p, data ^ r_dat_p);
+                $fflush();
+            end
+            1: if(vmem_hi[waddr_i] != wdata_i) begin
+                r_adr_p <= waddr_i;
+                r_dat_p <= data;
+                $write("@D%0d_%0d\n", waddr_i ^ r_adr_p, data ^ r_dat_p);
+                $fflush();
+            end
+        endcase
     end
 `endif
 

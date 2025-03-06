@@ -44,10 +44,16 @@ bit:
 		echo "Please run 'make prog' first."; \
 		exit 1; \
 	fi
-	cp constr/$(TARGET).xdc main.xdc
-	cp constr/build_$(TARGET).tcl build.tcl
 	$(VIVADO) -mode batch -source build.tcl
 	cp vivado/$(proj_name).runs/impl_1/main.bit build/.
+	cp -f vivado/$(proj_name).runs/impl_1/main.ltx build/.
+
+init:
+	cp constr/$(TARGET).xdc main.xdc
+	cp constr/build_$(TARGET).tcl build.tcl
 
 clean:
+	rm -rf obj_dir rvcpu-32im* vivado* .Xil
+
+reset-hard:
 	rm -rf obj_dir build rvcpu-32im* sample1.txt vivado* .Xil build.tcl main.xdc

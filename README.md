@@ -35,11 +35,15 @@ Generate bitstream with the following command:
 ```
 $ make bit
 ```
-The default board is Nexys. 
-If you want to use arty, then use `TARGET=arty_a7`.
+The default board is Arty. 
+If you want to use Nexys, then use `TARGET=nexys_a7`.
 The generated bitstream is saved in `build/main.bit`.
 
 # History
+
+2025-03-4 Ver 0.3:
+- デフォルトのアプリケーションを変更しました。
+- vmemを3bit RGBへ変更しました。
 
 2025-03-03 Ver 0.2:
 - `config.vh`からdisplayの方向を変更できるようしました。

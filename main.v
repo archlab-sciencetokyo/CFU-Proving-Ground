@@ -10,7 +10,8 @@ module main (
     output wire st7789_DC   , 
     output wire st7789_RES 
 );
-    wire rst_ni = 1;
+//    wire rst_ni = 1;
+    reg rst_ni = 0; initial #15 rst_ni = 1;
     wire clk, locked;
 
 `ifdef USE_CLK_WIZ

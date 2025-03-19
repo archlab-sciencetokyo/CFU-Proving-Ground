@@ -35,7 +35,8 @@ module main (
     wire [`DBUS_STRB_WIDTH-1:0] dbus_wstrb  ;
     wire [`DBUS_DATA_WIDTH-1:0] dbus_rdata  ;
 
-    assign dbus_rdata = dmem_rdata;
+    reg rdata_sel = 0; always @(posedge clk) rdata_sel <= dbus_addr[29];
+    assign dbus_rdata = (rdata_sel) ? perf_rdata : dmem_rdata;
 
     cpu cpu (
         .clk_i              (clk                ), // input  wire
@@ -59,13 +60,25 @@ module main (
         .RAM_SIZE           (`RAM_SIZE          )
     ) ram (
         .clk_i              (clk                ), // input  wire
-        .imem_raddr_i       (imem_raddr          ), // input  wire [`IBUS_ADDR_WIDTH-1:0]
+        .imem_raddr_i       (imem_raddr         ), // input  wire [`IBUS_ADDR_WIDTH-1:0]
         .imem_rdata_o       (imem_rdata         ), // output wire [`IBUS_DATA_WIDTH-1:0]
         .dmem_addr_i        (dmem_addr          ), // input  wire [`DBUS_ADDR_WIDTH-1:0]
         .dmem_we_i          (dmem_we            ), // input  wire
         .dmem_wdata_i       (dmem_wdata         ), // input  wire [`DBUS_DATA_WIDTH-1:0]
         .dmem_wstrb_i       (dmem_wstrb         ), // input  wire [`DBUS_STRB_WIDTH-1:0]
         .dmem_rdata_o       (dmem_rdata         )
+    );
+
+    wire perf_we = dbus_we & (dbus_addr[29]);
+    wire [3:0] perf_addr = dbus_addr[3:0];
+    wire [2:0] perf_wdata = dbus_wdata[2:0];
+    wire [31:0] perf_rdata;
+    perf_cntr perf(
+        .clk_i              (clk                ), // input  wire
+        .addr_i             (perf_addr          ), // input  wire [3:0]
+        .wdata_i            (perf_wdata         ), // input  wire [2:0]
+        .w_en_i             (perf_we            ), // input  wire
+        .rdata_o            (perf_rdata         )  // output wire [31:0]
     );
 
     wire vmem_we = dbus_we & (dbus_addr[28]);
@@ -93,6 +106,30 @@ module main (
         .w_rdata            (vmem_rdata         )  // input  wire [15:0]
     );
 
+endmodule
+
+module perf_cntr (
+    input   wire        clk_i,
+    input   wire [3:0]  addr_i,
+    input   wire [2:0]  wdata_i,
+    input   wire        w_en_i,
+    output  wire [31:0] rdata_o
+);
+    reg [63:0]  mcycle      = 0;
+    reg [1:0]   cnt_ctrl    = 0;
+    reg [31:0]  rdata       = 0;
+
+    always @(posedge clk_i) begin
+        rdata <= (addr_i[2]) ? mcycle[31:0] : mcycle[63:32];
+        if (w_en_i && addr_i == 0) cnt_ctrl <= wdata_i[1:0];
+        case (cnt_ctrl)
+            0: mcycle <= 0;
+            1: mcycle <= mcycle + 1;
+            default: ;
+        endcase
+    end
+
+    assign rdata_o = rdata;
 endmodule
 
 module ram #(

@@ -20,6 +20,7 @@ void RandomChar() {
 
 int main () {
     st7789_reset();
-    RandomChar();
+    // RandomChar();
+    LCD_prints("Hello World!\n");
     return 0;
 }

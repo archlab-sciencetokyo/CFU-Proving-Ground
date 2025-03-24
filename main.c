@@ -21,6 +21,5 @@ void RandomChar() {
 int main () {
     st7789_reset();
     RandomChar();
-    while (1);
     return 0;
 }

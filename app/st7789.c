@@ -154,8 +154,7 @@ char font8x8_basic[128][8] = {
 };
 
 void draw_point(uint16_t x, uint16_t y, uint16_t color) {
-    volatile uint16_t *p = (volatile uint16_t *)(0x10000000 + y * 256 + x);
-    *p = color;
+    *(volatile uint16_t *)(0x20000000 + y * 256 + x) = color;
 }
 
 void draw_char(uint16_t x, uint16_t y, char c, uint16_t color, int scale) {
@@ -190,8 +189,8 @@ inline void update_pos () {
 void LCD_prints(const char *str) {
     while (*str) {
         if (*str == '\n') {
+            if (st7789_col != 0) st7789_row = (st7789_row + 1) % 15;
             st7789_col = 0;
-            st7789_row = (st7789_row + 1) % 15;
         }
         else if (*str == '\r') {
             st7789_col = 0;

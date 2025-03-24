@@ -23,13 +23,32 @@ module top;
     end
 
 //==============================================================================
+// Dump VCD
+//------------------------------------------------------------------------------
+// `define VCD
+`ifdef VCD
+    initial begin
+        $dumpfile("dump.vcd");
+        $dumpvars(0, top);
+    end
+`endif
+
+//==============================================================================
 // Condition for simulation to end
 //------------------------------------------------------------------------------
     reg cpu_sim_fini = 0;
     always @(posedge clk) begin
-        if (m0.cpu.dbus_addr_o == 32'h40008000
-            && m0.cpu.dbus_wdata_o[17:16] == 2'b10)
-                cpu_sim_fini <= 1;
+        if (m0.cpu.dbus_waddr_o[31] && m0.cpu.dbus_wvalid_o) begin
+            cpu_sim_fini <= 1;
+            if (cpu_sim_fini != 1) begin
+                $write("Simulation finish ");
+                if (m0.cpu.dbus_wdata_o == 777) begin
+                    $write("\033[32mCode :%d\033[0m\n", m0.cpu.dbus_wdata_o);
+                end else begin
+                    $write("\033[31mCode :%d\033[0m\n", m0.cpu.dbus_wdata_o);
+                end
+            end
+        end
         if (cpu_sim_fini) begin
             $finish(1);
         end

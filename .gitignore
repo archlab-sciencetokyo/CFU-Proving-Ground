@@ -1,9 +1,9 @@
+.vscode/
+.Xil/
 build/
 obj_dir/
-.vscode/
-rv32im-fullcfu*
-sample1.txt
 vivado*
-.Xil/
 main.xdc
 build.tcl
+memd.txt
+memi.txt

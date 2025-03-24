@@ -1,5 +1,3 @@
-    .equ TOHOST_ADDR, 0x40008000
-    .equ CMD_PRINT, 0x00010000
     .equ CMD_FINISH, 0x00020000
     .equ VMEM_BASE, 0x10000000
     .align 4
@@ -37,38 +35,15 @@ _start:
     li      x29, 0
     li      x30, 0
     li      x31, 0
-    li      sp, 0x20000 # set the stack pointer 128 KiB
+    la      sp, _fstack
     jal     main
     j       finish
 
     .align 4
     .text
-    .globl printc
-printc:
-    li      t0, TOHOST_ADDR
-    li      t1, CMD_PRINT
-    andi    t2, a0, 0xff
-    or      t2, t1, t2
-    sw      t2, 0(t0)
-    ret
-
-    .align 4
-    .globl prints
-prints:
-    li      t0, TOHOST_ADDR
-    li      t1, CMD_PRINT
-1:  lbu     t2, 0(a0)
-    beqz    t2, 1f
-    or      t2, t1, t2
-    sw      t2, 0(t0)
-    addi    a0, a0, 1
-    j       1b
-1:  ret
-
-    .align 4
     .globl finish
 finish:
-    li      t0, TOHOST_ADDR
+    la      t0, _tohost
     li      t1, CMD_FINISH
     sw      t1, 0(t0)
 1:  j       1b

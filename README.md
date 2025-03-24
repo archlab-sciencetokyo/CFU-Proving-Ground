@@ -39,9 +39,25 @@ The default board is Arty.
 If you want to use Nexys, then use `TARGET=nexys_a7`.
 The generated bitstream is saved in `build/main.bit`.
 
-# History
+# Memory Map
+| addr   |  description                     |
+| -----------| -----------------------------|
+| 0x00000000 - 0x000200000 | Instruction Memory     |
+| 0x10000000 - 0x100200000 | Data Memory            |
+| 0x20000000 - 0x200200000 | 128KiB Video Memory    |
+| 0x40000000 | performance counter control (0: reset, 1: start, 2: stop)|
+| 0x40000004 | mcycle                  |
+| 0x40000008 | mcycleh                 |
+| 0x80000000 | tohost (for simulation) |
 
-2025-03-4 Ver 0.3:
+# History
+2025-03-24 Ver 0.4:
+- メモリマップを変更しました．
+- アーキテクチャをノイマン型からハーバード型へ変更しました．
+- データメモリへの書き込みタイミングをEXステージからMAステージへ変更しました．
+- `perf_instret()`を廃止しました．
+
+2025-03-04 Ver 0.3:
 - デフォルトのアプリケーションを変更しました。
 - vmemを3bit RGBへ変更しました。
 

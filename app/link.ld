@@ -1,5 +1,5 @@
 OUTPUT_ARCH("riscv")
-ENTRY("_start")
+ENTRY(_start)
 
 MEMORY {
     imem : ORIGIN = 0x00000000, LENGTH = 0x00020000
@@ -9,32 +9,33 @@ MEMORY {
 SECTIONS
 {
     .text : {
-        . = ALIGN(4);
+        *(.text.init)
         *(.text.*)
         *(.text)
-        . = ALIGN(4);
     } > imem
 
     .data : {
         *(.data.*)
+        *(.sdata*)
         *(.data)
     } > dmem
     
     .rodata : {
         *(.rodata.*)
+        *(.srodata.*)
         *(.rodata)
     } > dmem
 
     .bss : {
         *(.bss.*)
         *(.bss)
-    } > dmem
-
-    .misc : {
         *(COMMON)
-        *(.*)
         _end = .;
     } > dmem
+
+    /DISCARD/ : {
+        *(.debug*)
+    }
 }
 
 PROVIDE(_tohost = 0x80000000);

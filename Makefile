@@ -9,18 +9,17 @@ TARGET ?= arty_a7
 
 .PHONY: build prog run clean
 build: prog
-	$(RTLSIM) --binary --trace --top-module top --Wno-WIDTHTRUNC --Wno-WIDTHEXPAND -o top *.v
+	$(RTLSIM) --binary --top-module top --Wno-WIDTHTRUNC --Wno-WIDTHEXPAND -o top *.v
 	gcc -O2 dispemu/dispemu.c -o build/dispemu -lcairo -lX11
 
 prog:
 	mkdir -p build
-	$(GPP) -O2 -march=rv32im -mabi=ilp32 -nostartfiles -Iapp -Tapp/link.ld -o build/main.elf app/crt0.s app/*.c main.c 
+	$(GCC) -Os -march=rv32im -mabi=ilp32 -nostartfiles -Iapp -Tapp/link.ld -o build/main.elf app/crt0.s app/*.c main.c 
 	$(OBJDUMP) -D build/main.elf > build/main.dump
 	$(OBJCOPY) -O binary --only-section=.text build/main.elf build/memi.bin.tmp; \
 	$(OBJCOPY) -O binary --only-section=.data \
 						 --only-section=.rodata \
 						 --only-section=.bss \
-						 --only-section=.misc \
 						 build/main.elf build/memd.bin.tmp; \
 	for suf in i d; do \
 		dd if=build/mem$$suf.bin.tmp of=build/mem$$suf.bin conv=sync bs=4KiB; \

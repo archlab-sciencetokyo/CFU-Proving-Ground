@@ -54,7 +54,7 @@ module top;
 //------------------------------------------------------------------------------
     reg cpu_sim_fini = 0;
     always @(posedge clk) begin
-        if (m0.cpu.dbus_waddr_o[31] && m0.cpu.dbus_wvalid_o) begin
+        if (m0.cpu.dbus_addr_o[31] && m0.cpu.dbus_wvalid_o) begin
             cpu_sim_fini <= 1;
         end
         if (cpu_sim_fini) begin

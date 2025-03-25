@@ -6,3 +6,4 @@ void draw_char(uint16_t x, uint16_t y, char c, uint16_t color, int scale);
 void LCD_prints(const char *str);
 void st7789_reset();
 void st7789_set_pos(int x, int y);
+void update_pos();

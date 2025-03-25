@@ -14,8 +14,8 @@
 `define BTB_ENTRY       512
 
 // ram
-`define IMEM_SIZE       (128*1024)
-`define DMEM_SIZE       (128*1024)
+`define IMEM_SIZE       (64*1024)
+`define DMEM_SIZE       (16*1024)
 
 // uart
 `ifndef CLK_FREQ_MHZ

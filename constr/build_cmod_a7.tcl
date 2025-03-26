@@ -1,5 +1,5 @@
 set top_dir [pwd]
-set proj_name [file tail $top_dir]
+set proj_name main
 set part_name xc7a35ticpg236-1L
 set src_files [list $top_dir/config.vh $top_dir/proc.v $top_dir/cfu.v $top_dir/main.v]
 set nproc [exec nproc]

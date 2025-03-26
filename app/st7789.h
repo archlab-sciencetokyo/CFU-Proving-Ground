@@ -1,9 +1,17 @@
-#include <stdint.h>
-#include <stdarg.h>
+#define PG_BLACK    0
+#define PG_RED      1
+#define PG_GREEN    2
+#define PG_BLUE     3
+#define PG_YELLOW   4
+#define PG_PURPLE   5
+#define PG_CYAN     6
+#define PG_WHITE    7
 
-void draw_point(uint16_t x, uint16_t y, uint16_t color);
-void draw_char(uint16_t x, uint16_t y, char c, uint16_t color, int scale);
-void LCD_prints(const char *str);
-void st7789_reset();
-void st7789_set_pos(int x, int y);
-void update_pos();
+void pg_lcd_draw_point(int x, int y, char color);
+void pg_lcd_draw_char(int x,  int y, char c, char color, int scale);
+void pg_lcd_fill(char color);
+void pg_lcd_reset();
+void pg_lcd_printd(int x);
+void pg_lcd_printh(int x);
+void pg_lcd_prints(const char *str);
+void pg_lcd_set_pos(int x, int y);

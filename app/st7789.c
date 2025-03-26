@@ -153,40 +153,82 @@ char font8x8_basic[128][8] = {
     { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00}    // U+007F
 };
 
-void draw_point(uint16_t x, uint16_t y, uint16_t color) {
-    *(volatile uint16_t *)(0x20000000 + y * 256 + x) = color;
+void pg_lcd_draw_point(int x, int y, char color) {
+    *(volatile char *)(0x20000000 + y * 256 + x) = color;
 }
 
-void draw_char(uint16_t x, uint16_t y, char c, uint16_t color, int scale) {
+void pg_lcd_draw_char(int x, int y, char c, char color, int scale) {
     for (int i = 0; i < (8 << scale); i++) {
         if (y + i >= 240) break;
         for (int j = 0; j < (8 << scale); j++) {
             if (x + j >= 240) break;
             if ((font8x8_basic[c][i >> scale] >> (j >> scale)) & 1) {
-                draw_point(x + j, y + i, color);
+                pg_lcd_draw_point(x + j, y + i, color);
             } else {
-                draw_point(x + j, y + i, 0);//xFFFF);
-             }
+                pg_lcd_draw_point(x + j, y + i, 0);
+            }
         }
     }
 }
 
-void disp_reset() {
+void pg_lcd_fill(char color) {
     for (int y = 0; y < 256; y++) {
         for (int x = 0; x < 256; x++) {
-            draw_point(x, y, 0x0000);
+            pg_lcd_draw_point(x, y, color);
         }
     }
 }
 
 char st7789_col = 0;
 char st7789_row = 0;
-inline void update_pos () {
+void _pg_lcd_update_pos () {
     st7789_col = (st7789_col + 1) % 15;
     if (st7789_col == 0)  st7789_row = (st7789_row + 1) % 15;
 }
 
-void LCD_prints(const char *str) {
+void pg_lcd_reset() {
+    st7789_col = 0;
+    st7789_row = 0;
+    pg_lcd_fill(0);
+}
+
+void pg_lcd_printd(int x) {
+    if (x == 0) {
+        pg_lcd_draw_char(st7789_col << 4, st7789_row << 4, '0', PG_WHITE, 1);
+        _pg_lcd_update_pos();
+        return;
+    }
+    if (x < 0) {
+        pg_lcd_draw_char(st7789_col << 4, st7789_row << 4, '-', PG_WHITE, 1);
+        _pg_lcd_update_pos();
+        x = -x;
+    }
+    char buf[16];
+    int i = 0;
+    while (x) {
+        buf[i++] = x % 10 + '0';
+        x /= 10;
+    }
+    while (i--) {
+        pg_lcd_draw_char(st7789_col << 4, st7789_row << 4, buf[i], PG_WHITE, 1);
+        _pg_lcd_update_pos();
+    }
+}
+
+void pg_lcd_printh(int x) {
+    char buf[16];
+    int i = 0;
+    while (x) {
+        buf[i++] = "0123456789ABCDEF"[x & 0xF];
+        x >>= 4;
+    }
+    while (i--) {
+        pg_lcd_draw_char(st7789_col << 4, st7789_row << 4, buf[i], PG_WHITE, 1);
+        _pg_lcd_update_pos();
+    }
+}
+
+void pg_lcd_prints(const char *str) {
     while (*str) {
         if (*str == '\n') {
             if (st7789_col != 0) st7789_row = (st7789_row + 1) % 15;
@@ -196,20 +238,14 @@ void LCD_prints(const char *str) {
             st7789_col = 0;
         }
         else {
-            draw_char(st7789_col << 4, st7789_row << 4, *str, 0xFFFF, 1);
-            update_pos();
+            pg_lcd_draw_char(st7789_col << 4, st7789_row << 4, *str, PG_WHITE, 1);
+            _pg_lcd_update_pos();
         }
         str++;
     }
 }
 
-void st7789_reset() {
-    st7789_col = 0;
-    st7789_row = 0;
-    disp_reset();
-}
-
-void st7789_set_pos(int x, int y) {
+void pg_lcd_set_pos(int x, int y) {
     st7789_col = x;
     st7789_row = y;
 }

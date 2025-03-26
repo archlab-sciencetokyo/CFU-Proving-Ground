@@ -28,6 +28,7 @@ SECTIONS
 
     .bss : {
         *(.bss.*)
+        *(.sbss)
         *(.bss)
         *(COMMON)
         _end = .;

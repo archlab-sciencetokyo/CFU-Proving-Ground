@@ -5,7 +5,9 @@ OBJDUMP := /home/share/cad/rv32ima/bin/riscv32-unknown-elf-objdump
 VIVADO  := /tools/Xilinx/Vivado/2024.1/bin/vivado
 RTLSIM  := /usr/local/bin/verilator
 
-TARGET ?= arty_a7
+TARGET := arty_a7
+#TARGET := cmod_a7
+#TARGET := nexys_a7
 
 .PHONY: build prog run clean
 build: prog
@@ -44,15 +46,20 @@ run:
 drun:
 	./obj_dir/top | build/dispemu 1
 
-proj_name = $(shell basename $(shell pwd))
 bit:
-	@if [ ! -f sample1.txt ]; then \
+	@if [ ! -f memi.txt ] || [ ! -f memd.txt ]; then \
 		echo "Please run 'make prog' first."; \
 		exit 1; \
 	fi
+	@if [ ! -f build.tcl ]; then \
+		echo "Plese run 'make init' first."; \
+		exit 1; \
+	fi
 	$(VIVADO) -mode batch -source build.tcl
-	cp vivado/$(proj_name).runs/impl_1/main.bit build/.
-	cp -f vivado/$(proj_name).runs/impl_1/main.ltx build/.
+	cp vivado/main.runs/impl_1/main.bit build/.
+	@if [ -f vivado/main.runs/impl_i/main.ltx ]; then \
+		cp -f vivado/main.runs/impl_i/main.ltx build/.; \
+	fi
 
 init:
 	cp constr/$(TARGET).xdc main.xdc

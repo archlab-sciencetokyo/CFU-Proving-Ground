@@ -1,9 +1,0 @@
-.vscode/
-.Xil/
-build/
-obj_dir/
-vivado*
-main.xdc
-build.tcl
-memd.txt
-memi.txt

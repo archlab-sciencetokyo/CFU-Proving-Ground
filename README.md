@@ -1,10 +1,7 @@
 # CFU Proving Ground
-CFU Proving Groundは柔軟で高度な最適化を実現する開発支援フレームワークであり，RTLベースの設計フローを通じて，アプリケーションに特化したアプリケーション特有のプロセッサの迅速な開発を可能にする．
-このプロジェクトは，コンパクトなライブラリ，明瞭なファイル依存関係，および柔軟なメモリマップを提供し，スケーラブルな設計をサポートする．
-また，リソース効率の高いALUベースのアクセラレータにより，ソフトウェアによるきめ細やかな制御を実現し，ソフトウェアとハードウェアの整合性を向上させる．
-さらに，高速なシミュレータの統合により開発サイクルを短縮し，開発コストを削減する．
+CFU Proving Ground is a flexible and advanced optimization development support framework that enables agile development of application-specific processors through an RTL-based design flow. This project provides compact libraries, clear file dependencies, and flexible memory mapping to support scalable design. It also achieves fine-grained software control through resource-efficient ALU-based accelerators, improving software and hardware coherence. Furthermore, it shortens development cycles and reduces development costs by integrating fast simulators.
 
-また，このプロジェクトはVivado 2024.1を利用して検証されています．
+Additionally, this project has been verified using Vivado 2024.1.
 
 ## Setup
 Open and edit the `Makefile` to specify proper absolute paths.
@@ -19,14 +16,14 @@ Open and edit the `Makefile` to specify proper absolute paths.
 | RTLSIM     | verilator                    |
 
 ## Use without FPGA board (simulation)
-このプロジェクトではシミュレータとしてverilatorと独自のディスプレイシミュレータを用いています．
-プロジェクトのコンパイルには以下のコマンドを使用します．
+This project uses Verilator and a custom display simulator.
+The following command is used to compile the project.
 ```
 $ cd cfu_pg
 $ make
 ```
 
-ディスプレイのシミュレーションは次のコマンドで実行します．
+The display simulation is executed with the following command.
 ```
 $ make drun
 ```
@@ -35,7 +32,7 @@ $ make drun
 
 
 ## Use with FPGA board
-メモリ初期化用のファイル`memi.txt`と`memd.txt`を`main.c`からコンパイルします．
+Memory initialization files memi.txt and memd.txt are compiled from main.c.
 ```
 $ make prog
 ```
@@ -55,15 +52,14 @@ $ make bit
 ```
 The generated bitstream file is copied in `build/main.bit`.
 Configure and run FPGA with this `main.bit`.
-
-FPGAにコンフィギュレーションをすると，シミュレーションと同様にランダムに文字が表示されるアプリケーションが起動します．
+When configured to the FPGA, an application that displays random characters, similar to the simulation, will start up.
 
 ![arty](figures/arty.JPG)
 
 # Memory Map
-デフォルトのメモリマップを以下にしまします．
-命令メモリとデータメモリの大きさはconfig.vhで変更できます．
-データメモリの大きさを変更した場合，`app/link.ld`のdmemの`LENGTH`を適切に変更してください．
+The default memory map is shown below.
+The sizes of instruction memory and data memory can be changed in `config.vh`.
+If you change the size of the data memory, please appropriately modify the LENGTH of dmem in `app/link.ld`.
 
 | addr   |  description                     |
 | -----------| -----------------------------|

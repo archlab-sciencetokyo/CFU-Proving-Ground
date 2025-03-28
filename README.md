@@ -58,7 +58,7 @@ Configure and run FPGA with this `main.bit`.
 
 FPGAにコンフィギュレーションをすると，シミュレーションと同様にランダムに文字が表示されるアプリケーションが起動します．
 
-![arty](figures/arty.png)
+![arty](figures/arty.JPG)
 
 # Memory Map
 デフォルトのメモリマップを以下にしまします．

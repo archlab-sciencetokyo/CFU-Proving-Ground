@@ -420,7 +420,7 @@ module cpu (
         .cfu_ctrl_i       (IdEx_cfu_ctrl          ), // input  wire [`CFU_CTRL_WIDTH-1:0]
         .src1_i           (  Ex_src1              ), // input  wire           [`XLEN-1:0]
         .src2_i           (  Ex_src2              ), // input  wire           [`XLEN-1:0]
-        .stall_o          (  Ex_cfu_stall         ), // output wire
+        .stall_o          (  ), // output wire
         .rslt_o           (  Ex_cfu_rslt          )  // output wire           [`XLEN-1:0]
     );
 
@@ -875,13 +875,12 @@ module decoder (
     output wire  [`CFU_CTRL_WIDTH-1:0] cfu_ctrl_o
 );
 
-    assign cfu_ctrl_o   = 0;
-
     wire [31:0] ir = ir_i;
     wire  [6:0] opcode = ir[ 6: 0];
     wire  [4:0] op     = ir[ 6: 2];
     wire  [2:0] f3 = ir[14:12];
     wire  [6:0] f7 = ir[31:25];
+    assign cfu_ctrl_o = (op==5'b00010) ? {f7, f3} : 0;
 
     wire src2_c0 = (op==5'b00101);                  // AUIPC
     wire src2_c1 = (op==5'b01101) | (op==5'b00100); // LUI, OP-IMM

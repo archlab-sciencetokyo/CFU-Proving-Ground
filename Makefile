@@ -1,9 +1,12 @@
-GCC     := /home/share/cad/rv32ima/bin/riscv32-unknown-elf-gcc
-GPP     := /home/share/cad/rv32ima/bin/riscv32-unknown-elf-g++
-OBJCOPY := /home/share/cad/rv32ima/bin/riscv32-unknown-elf-objcopy
-OBJDUMP := /home/share/cad/rv32ima/bin/riscv32-unknown-elf-objdump
+# CFU Proving Ground since 2025-02    Copyright(c) 2025 Archlab. Science Tokyo
+# Released under the MIT license https://opensource.org/licenses/mit 
+
+GCC     := /tools/cad/riscv/rv32ima/bin/riscv32-unknown-elf-gcc
+GPP     := /tools/cad/riscv/rv32ima/bin/riscv32-unknown-elf-g++
+OBJCOPY := /tools/cad/riscv/rv32ima/bin/riscv32-unknown-elf-objcopy
+OBJDUMP := /tools/cad/riscv/rv32ima/bin/riscv32-unknown-elf-objdump
 VIVADO  := /tools/Xilinx/Vivado/2024.1/bin/vivado
-RTLSIM  := /usr/local/bin/verilator
+RTLSIM  := /tools/cad/bin/verilator
 
 TARGET := arty_a7
 #TARGET := cmod_a7

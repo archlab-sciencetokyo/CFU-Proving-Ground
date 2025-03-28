@@ -1,9 +1,12 @@
+/* CFU Proving Ground since 2025-02    Copyright(c) 2025 Archlab. Science Tokyo /
+/ Released under the MIT license https://opensource.org/licenses/mit           */
+
 OUTPUT_ARCH("riscv")
 ENTRY(_start)
 
 MEMORY {
-    imem : ORIGIN = 0x00000000, LENGTH = 0x00020000
-    dmem : ORIGIN = 0x10000000, LENGTH = 0x00020000
+    imem : ORIGIN = 0x00000000, LENGTH = 0x00010000
+    dmem : ORIGIN = 0x10000000, LENGTH = 0x00004000
 }
 
 SECTIONS

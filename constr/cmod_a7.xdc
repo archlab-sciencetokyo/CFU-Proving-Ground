@@ -1,5 +1,7 @@
 ###############################################################################################
 ## main.xdc for Cmod A7-35T    ArchLab, Institute of Science Tokyo / Tokyo Tech
+## CFU Proving Ground since 2025-02    Copyright(c) 2025 Archlab. Science Tokyo
+## Released under the MIT license https://opensource.org/licenses/mit
 ## FPGA: XC7A35T-1CPG236C
 ###############################################################################################
 

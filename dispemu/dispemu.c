@@ -1,3 +1,6 @@
+/* CFU Proving Ground since 2025-02    Copyright(c) 2025 Archlab. Science Tokyo /
+/ Released under the MIT license https://opensource.org/licenses/mit           */
+
 /******************************************************************************/
 /* simple display_emulator ver. 0.0.7 for ST7789       ArchLab, Science Tokyo */
 /******************************************************************************/

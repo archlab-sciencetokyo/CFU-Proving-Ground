@@ -56,7 +56,7 @@ When configured to the FPGA, an application that displays random characters, sim
 
 ![arty](figures/arty.JPG)
 
-# Memory Map
+## Memory Map
 The default memory map is shown below.
 The sizes of instruction memory and data memory can be changed in `config.vh`.
 If you change the size of the data memory, please appropriately modify the LENGTH of dmem in `app/link.ld`.
@@ -71,7 +71,7 @@ If you change the size of the data memory, please appropriately modify the LENGT
 | 0x40000008 | mcycleh                 |
 | 0x80000000 | tohost (for simulation) |
 
-# History
+## History
 2025-03-26 v009 (Ver 0.5):
 - The function names in the Proving Ground library have been changed.
 - The timing of writing to data memory has been changed from the MA stage to the EX stage.
@@ -102,9 +102,3 @@ If you change the size of the data memory, please appropriately modify the LENGT
 - Changed Nexys A7 and Arty A7 to not use Clock Wizard.
 
 2025-02-20 Ver.0.1: initial version
-
----
-Target board     : Nexys4-A7           
-Target FPGA      : xc7a100tcsg324-1    
-Mini display     : ST7789 240x240 pixel
----

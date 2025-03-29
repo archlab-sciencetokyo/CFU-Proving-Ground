@@ -420,7 +420,6 @@ module cpu (
         .cfu_ctrl_i       (IdEx_cfu_ctrl          ), // input  wire [`CFU_CTRL_WIDTH-1:0]
         .src1_i           (  Ex_src1              ), // input  wire           [`XLEN-1:0]
         .src2_i           (  Ex_src2              ), // input  wire           [`XLEN-1:0]
-        .stall_o          (  ), // output wire
         .rslt_o           (  Ex_cfu_rslt          )  // output wire           [`XLEN-1:0]
     );
 

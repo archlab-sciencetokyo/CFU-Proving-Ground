@@ -1,5 +1,8 @@
 build/
 obj_dir/
+.Xil/
+vivado*
 memd.txt
 memi.txt
-vivado*
+build.tcl
+main.xdc

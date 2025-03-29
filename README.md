@@ -19,7 +19,7 @@ Open and edit the `Makefile` to specify proper absolute paths.
 This project uses Verilator and a custom display simulator.
 The following command is used to compile the project.
 ```
-$ cd cfu_pg
+$ cd CFU-Proving-Ground
 $ make
 ```
 
@@ -32,7 +32,7 @@ $ make drun
 
 
 ## Use with FPGA board
-Memory initialization files memi.txt and memd.txt are compiled from main.c.
+Memory initialization files `memi.txt` and `memd.txt` are compiled from `main.c`.
 ```
 $ make prog
 ```

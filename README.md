@@ -1,7 +1,8 @@
 # CFU Proving Ground
-CFU Proving Ground is a flexible and advanced optimization development support framework that enables agile development of application-specific processors through an RTL-based design flow. This project provides compact libraries, clear file dependencies, and flexible memory mapping to support scalable design. It also achieves fine-grained software control through resource-efficient ALU-based accelerators, improving software and hardware coherence. Furthermore, it shortens development cycles and reduces development costs by integrating fast simulators.
+CFU Proving Ground is a hardware-software co-design environment on FPGA based on the RISC-V architecture.
+This project enables rapid development of ASIPs through a soft processor supporting the RV32IM instruction set, an RTL-based design flow, and resource-efficient ALU-based accelerators.
 
-Additionally, this project has been verified using Vivado 2024.1.
+This project has been verified using Vivado 2024.2.
 
 ## Setup
 Open and edit the `Makefile` to specify proper absolute paths.

@@ -1,6 +1,6 @@
 # CFU Proving Ground
 CFU Proving Ground is a hardware-software co-design environment on FPGA based on the RISC-V architecture.
-This project enables agile development of ASIPs through a soft processor supporting the RV32IM instruction set, an RTL-based design flow, and resource-efficient ALU-based accelerators.
+This project enables agile development of ASIPs through a soft processor supporting the RV32IM instruction set, an RTL-based design flow, and resource-efficient ALU-based accelerators (Custom Function Unit: CFU).
 
 This project has been verified using Vivado 2024.2.
 

@@ -73,7 +73,11 @@ If you change the size of the data memory, please appropriately modify the LENGT
 | 0x80000000 | tohost (for simulation) |
 
 ## History
-2025-03-26 v009 (Ver 0.5):
+
+2025-03-31 Ver 1.0:
+- CFU Proving Ground has been published.
+
+2025-03-26 Ver 0.5:
 - The function names in the Proving Ground library have been changed.
 - The timing of writing to data memory has been changed from the MA stage to the EX stage.
 

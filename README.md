@@ -43,7 +43,7 @@ Open and edit the `Makefile` on the CFU-Proving-Ground directory to specify prop
 | RTLSIM     | verilator                    |
 
 ## Step (3) : RTL simulation of main.c on a RISC-V processor with display emulator
-This project uses Verilator and a custom display simulator.
+This project uses Verilator and a custom display emulator.
 The following command is used to compile the project.
 ```
 $ cd CFU-Proving-Ground
@@ -57,9 +57,11 @@ $ make drun
 
 ![sim](figures/sim.png)
 
+The simulation will not finish. Please press Ctrl + C in the terminal to end the simulation.
 
 ## Step (4) : Run the RISC-V processor on an FPGA board
-Memory initialization files `memi.txt` and `memd.txt` are compiled from `main.c`.
+
+Memory initialization files `memi.txt` and `memd.txt` are compiled from `main.c` with the following command.
 ```
 $ make prog
 ```
@@ -67,19 +69,21 @@ $ make prog
 The default FPGA board is Arty A7. 
 If you want to use Nexys A7, modify `Makefile` to use `TARGET=nexys_a7`.
 If you want to use Cmod A7, modify `Makefile` to use `TARGET=cmod_a7`.
+
 Copy the proper `main.xdc` and `build.tcl` using the following command.
 This initialization is necessary once.
 ```
 $ make init
 ```
 
-Generate bitstream with the following command:
+Generate a bitstream file with the following command:
 ```
 $ make bit
 ```
 The generated bitstream file is copied in `build/main.bit`.
 Configure and run FPGA with this `main.bit`.
-When configured to the FPGA, an application that displays random characters, similar to the simulation, will start up.
+When the FPGA is configured, an application displays many random characters, similar to the simulation.
+Note that a mini display (ST7789 TFT LCD) should be appropriately connected to the Pmod JC of Arty A7 FPGA board.
 
 ![arty](figures/arty.JPG)
 

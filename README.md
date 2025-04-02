@@ -83,6 +83,7 @@ $ make bit
 The generated bitstream file is copied in `build/main.bit`.
 Configure and run FPGA with this `main.bit`.
 When the FPGA is configured, an application displays many random characters, similar to the simulation.
+
 Note that a mini display (ST7789 TFT LCD) should be appropriately connected to the Pmod JC of Arty A7 FPGA board.
 
 ![arty](figures/arty.JPG)

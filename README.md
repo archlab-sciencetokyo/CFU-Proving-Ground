@@ -137,4 +137,5 @@ If you change the size of the data memory, please appropriately modify the LENGT
 - In addition to the Nexys A7, we now support the Arty A7.
 - Changed Nexys A7 and Arty A7 to not use Clock Wizard.
 
-2025-02-20 Ver.0.1: initial version
+2025-02-20 Ver.0.1:
+- initial version

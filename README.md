@@ -5,7 +5,7 @@ This enables agile development of ASIPs (Application-Specific Integrated Product
 The recommended OS is Ubuntu Linux.
 This project has been verified using Vivado 2024.2.
 
-## Setup
+## Step(1) : Install the required software
 Please install Vivado 2024.2 and Verilator version 5.
 
 Our display simulator uses libcairo-deb package, please install it with the following command.
@@ -24,6 +24,7 @@ $ ./configure prefix=/tools/cad/riscv/rv32ima --with-arch=rv32ima --with-abi=ilp
 $ make
 ```
 
+## Step (2) : Clone the repository and edit the environment variables
 
 Please clone this repository with the following command.
 ```
@@ -41,7 +42,7 @@ Open and edit the `Makefile` on the CFU-Proving-Ground directory to specify prop
 | VIVADO     | vivado                       |
 | RTLSIM     | verilator                    |
 
-## Use without FPGA board (simulation)
+## Step (3) : RTL simulation of main.c on a RISC-V processor with display emulator
 This project uses Verilator and a custom display simulator.
 The following command is used to compile the project.
 ```
@@ -57,7 +58,7 @@ $ make drun
 ![sim](figures/sim.png)
 
 
-## Use with FPGA board
+## Step (4) : Run the RISC-V processor on an FPGA board
 Memory initialization files `memi.txt` and `memd.txt` are compiled from `main.c`.
 ```
 $ make prog

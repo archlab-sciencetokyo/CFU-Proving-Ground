@@ -1,11 +1,36 @@
 # CFU Proving Ground
 CFU Proving Ground is a hardware-software co-design environment for FPGAs based on the RISC-V architecture.
-This enables agile development of ASIPs (Application-Specific Integrated Products) through a soft processor supporting the RV32IM instruction set, an RTL-based design flow, and a CFU (Custom Function Unit) which is a resource-efficient ALU-based accelerator.
+This enables agile development of ASIPs (Application-Specific Integrated Products) through a soft processor supporting the RV32IM instruction set, an RTL-based design flow, and a CFU (Custom Function Unit), which is a resource-efficient ALU-based accelerator.
 
+The recommended OS is Ubuntu Linux.
 This project has been verified using Vivado 2024.2.
 
 ## Setup
-Open and edit the `Makefile` to specify proper absolute paths.
+Please install Vivado 2024.2 and Verilator version 5.
+
+Our display simulator uses libcairo-deb package, please install it with the following command.
+```
+$ sudo apt -y install libcairo-dev
+```
+
+Please install the RISC-V compiler with the following commands. Installing the compiler can take a long time, so if you don't need it, just skip this.
+```
+$ sudo apt -y install autoconf automake autotools-dev curl python3 libmpc-dev
+$ sudo apt -y install libmpfr-dev libgmp-dev gawk build-essential bison flex texinfo
+$ sudo apt -y install gperf libtool patchutils bc zlib1g-dev libexpat-dev
+$ git clone https://github.com/riscv-collab/riscv-gnu-toolchain
+$ cd riscv-gnu-toolchain
+$ ./configure prefix=/tools/cad/riscv/rv32ima --with-arch=rv32ima --with-abi=ilp32
+$ make
+```
+
+
+Please clone this repository with the following command.
+```
+$ get clone https://github.com/archlab-sciencetokyo/CFU-Proving-Ground
+```
+
+Open and edit the `Makefile` on the CFU-Proving-Ground directory to specify proper absolute paths.
 
 | variable   |  path to                     |
 | -----------| -----------------------------|
@@ -24,7 +49,7 @@ $ cd CFU-Proving-Ground
 $ make
 ```
 
-The display simulation is executed with the following command.
+The simulation with the display emulator is executed with the following command.
 ```
 $ make drun
 ```
@@ -102,7 +127,7 @@ If you change the size of the data memory, please appropriately modify the LENGT
 - The directory `prog` has been changed to `app`.
 - Added license file.
 - Added a brief explanation to the README.md.
-- Changed to use he display emulation with `make drun`.
+- Changed to use the display emulation with `make drun`.
 - In addition to the Nexys A7, we now support the Arty A7.
 - Changed Nexys A7 and Arty A7 to not use Clock Wizard.
 

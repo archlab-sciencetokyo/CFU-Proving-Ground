@@ -39,6 +39,7 @@ $ get clone https://github.com/archlab-sciencetokyo/CFU-Proving-Ground
 ```
 
 Open and edit the `Makefile` on the CFU-Proving-Ground directory to specify proper absolute paths.
+
 If you are using [ACRi Room](https://gw.acri.c.titech.ac.jp/wp/), these paths are already set correctly and you do not need to change them.
 
 | variable   |  path to                     |

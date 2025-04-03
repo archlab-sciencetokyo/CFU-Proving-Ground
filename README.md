@@ -5,7 +5,7 @@ This enables agile development of ASIPs (Application-Specific Integrated Product
 The recommended OS is Ubuntu Linux.
 This project has been verified using Vivado 2024.2.
 
-## Step(1) : Install the required software
+## Step (1) : Install the required software
 Please install Vivado 2024.2 and Verilator version 5.
 
 Our display simulator uses libcairo-deb package, please install it with the following command.

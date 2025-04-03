@@ -6,7 +6,14 @@ The recommended OS is Ubuntu Linux.
 This project has been verified using Vivado 2024.2.
 
 ## Step (1) : Install the required software
-Please install Vivado 2024.2 and Verilator version 5.
+
+If you are using [ACRi Room](https://gw.acri.c.titech.ac.jp/wp/), these software are already installed and you can skip this step.
+
+For RTL simulation, install Verilator version 5 if it is not installed.
+See the [Verilator website](https://www.veripool.org/verilator/) for more information.
+
+As an FPGA development tool, install Vivado 2024.2 if it is not installed. 
+See the  [Vivado site](https://www.amd.com/ja/products/software/adaptive-socs-and-fpgas/vivado.html) for more information.
 
 Our display simulator uses libcairo-deb package, please install it with the following command.
 ```
@@ -32,6 +39,7 @@ $ get clone https://github.com/archlab-sciencetokyo/CFU-Proving-Ground
 ```
 
 Open and edit the `Makefile` on the CFU-Proving-Ground directory to specify proper absolute paths.
+If you are using [ACRi Room](https://gw.acri.c.titech.ac.jp/wp/), these paths are already set correctly and you do not need to change them.
 
 | variable   |  path to                     |
 | -----------| -----------------------------|

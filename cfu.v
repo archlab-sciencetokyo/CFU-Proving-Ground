@@ -24,7 +24,7 @@ module cfu (
 
     reg [2:0] cnt = 0;
     always @(posedge clk_i) begin
-        if (funct3 == 0 && valid_i) state <= 1;
+        if (funct3 == 0 && cmd_valid) state <= 1;
         else if (state == 1 && cnt == 7) state <= 0;
 
         if (state == 1) cnt <= cnt + 1;

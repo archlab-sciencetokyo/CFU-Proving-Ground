@@ -14,22 +14,8 @@ create_clock -add -name sys_clk -period 83.33 [get_ports { clk_i }]
 
 ##### 240x240 ST7789 mini display #####
 ###############################################################################################
-###### GPIO
-set_property -dict { PACKAGE_PIN U7 IOSTANDARD LVCMOS33 } [get_ports { st7789_DC  }]; # P45
-set_property -dict { PACKAGE_PIN W7 IOSTANDARD LVCMOS33 } [get_ports { st7789_RES }]; # P46
-set_property -dict { PACKAGE_PIN U8 IOSTANDARD LVCMOS33 } [get_ports { st7789_SDA }]; # P47
-set_property -dict { PACKAGE_PIN V8 IOSTANDARD LVCMOS33 } [get_ports { st7789_SCL }]; # P48
-
-###############################################################################################
-###### Pmod Header for MPU-6050
-###### Pin 3 and Pin 4
-set_property -dict { PACKAGE_PIN N18 IOSTANDARD LVCMOS33 PULLUP TRUE } [get_ports { sda }];
-set_property -dict { PACKAGE_PIN L18 IOSTANDARD LVCMOS33 PULLUP TRUE } [get_ports { scl }];
-
-###############################################################################################
-##### GPIO for Motor driver
-set_property -dict { PACKAGE_PIN T1 IOSTANDARD LVCMOS33 } [get_ports { motor_stby }]; # P29
-set_property -dict { PACKAGE_PIN T2 IOSTANDARD LVCMOS33 } [get_ports { motor_ain1 }]; # P30
-set_property -dict { PACKAGE_PIN U1 IOSTANDARD LVCMOS33 } [get_ports { motor_ain2 }]; # P31
-set_property -dict { PACKAGE_PIN W2 IOSTANDARD LVCMOS33 } [get_ports { motor_pwma }]; # P32
-###############################################################################################
+## Pmod Header JA
+set_property -dict { PACKAGE_PIN G17   IOSTANDARD LVCMOS33 } [get_ports { st7789_DC }]; #IO_L5N_T0_D07_14 Sch=ja[1]
+set_property -dict { PACKAGE_PIN G19   IOSTANDARD LVCMOS33 } [get_ports { st7789_RES }]; #IO_L4N_T0_D05_14 Sch=ja[2]
+set_property -dict { PACKAGE_PIN N18   IOSTANDARD LVCMOS33 } [get_ports { st7789_SDA }]; #IO_L9P_T1_DQS_14 Sch=ja[3]
+set_property -dict { PACKAGE_PIN L18   IOSTANDARD LVCMOS33 } [get_ports { st7789_SCL }]; #IO_L8P_T1_D11_14 Sch=ja[4]

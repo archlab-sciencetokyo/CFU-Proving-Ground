@@ -102,8 +102,8 @@ module cpu (
 
     wire Ma_mul_stall                                   ;
     wire Ma_div_stall                                   ;
-    wire Ex_cfu_stall                                   ;
-    wire stall = stall_i || Ma_mul_stall || Ma_div_stall;
+    wire Ma_cfu_stall                                   ;
+    wire stall = stall_i || Ma_mul_stall || Ma_div_stall || Ma_cfu_stall;
 
     wire If_v = (Ma_br_misp) ? 1'b0 : (IfId_load_muldiv_use) ? IfId_v : 1'b1  ;
     wire Id_v = (Ma_br_misp || IfId_load_muldiv_use) ? 1'b0 : IfId_v;
@@ -171,7 +171,8 @@ module cpu (
     wire If_load_muldiv_use = IfId_v && !Ma_br_misp && !IfId_load_muldiv_use
                             && (Id_lsu_ctrl[`LSU_CTRL_IS_LOAD] || 
                                 Id_mul_ctrl[`MUL_CTRL_IS_MUL] || 
-                                Id_div_ctrl[`DIV_CTRL_IS_DIV])
+                                Id_div_ctrl[`DIV_CTRL_IS_DIV] ||
+                                Id_cfu_ctrl[`CFU_CTRL_IS_CFU]  )
                             && IfId_rf_we && ((IfId_rd==If_rs1) || (IfId_rd==If_rs2));
 
     always @(posedge clk_i) begin
@@ -290,7 +291,7 @@ module cpu (
 //-----------------------------------------------------------------------------------------
 // EX: Execution
 //-----------------------------------------------------------------------------------------
-    wire Ex_valid = IdEx_v && !Ma_br_misp && !Ma_mul_stall && !Ma_div_stall;
+    wire Ex_valid = IdEx_v && !Ma_br_misp && !Ma_mul_stall && !Ma_div_stall && !Ma_cfu_stall;
 
     // data forwarding
     wire [`XLEN-1:0] Ex_src1 = (IdEx_rs1_fwd_from_Ma_to_Ex) ? ExMa_rslt : 
@@ -330,7 +331,7 @@ module cpu (
         .rslt_o             (  Ex_bru_rslt        )  // output wire           [`XLEN-1:0]
     );
 
-    wire [`XLEN-1:0] Ex_rslt = Ex_alu_rslt | Ex_bru_rslt | Ex_cfu_rslt;
+    wire [`XLEN-1:0] Ex_rslt = Ex_alu_rslt | Ex_bru_rslt;
 
     // store unit
     wire             [`XLEN-1:0] dbus_addr      ;
@@ -411,16 +412,17 @@ module cpu (
         .rslt_o           (  Ma_div_rslt          )  // output wire           [`XLEN-1:0]
     );
 
-    wire [`XLEN-1:0] Ex_cfu_rslt;
+    wire [`XLEN-1:0] Ma_cfu_rslt;
     cfu cfu (
         .clk_i            (clk_i                  ), // input  wire
         .rst_i            (rst                    ), // input  wire
-        .stall_i          (stall_i                ), // input  wire
+        .stall_i          (stall_i || Ma_cfu_stall), // input  wire
         .valid_i          (  Ex_valid             ), // input  wire
         .cfu_ctrl_i       (IdEx_cfu_ctrl          ), // input  wire [`CFU_CTRL_WIDTH-1:0]
         .src1_i           (  Ex_src1              ), // input  wire           [`XLEN-1:0]
         .src2_i           (  Ex_src2              ), // input  wire           [`XLEN-1:0]
-        .rslt_o           (  Ex_cfu_rslt          )  // output wire           [`XLEN-1:0]
+        .stall_o          (  Ma_cfu_stall         ), // output wire
+        .rslt_o           (  Ma_cfu_rslt          )  // output wire           [`XLEN-1:0]
     );
 
 //-----------------------------------------------------------------------------------------
@@ -435,7 +437,7 @@ module cpu (
         .rslt_o             (  Ma_load_rslt       )  // output wire            [`XLEN-1:0]
     );
 
-    wire [`XLEN-1:0] Ma_rslt = ExMa_rslt | Ma_mul_rslt | Ma_div_rslt | Ma_load_rslt;
+    wire [`XLEN-1:0] Ma_rslt = ExMa_rslt | Ma_mul_rslt | Ma_div_rslt | Ma_cfu_rslt | Ma_load_rslt;
 
     always @(posedge clk_i) begin
         if (rst) begin
@@ -879,7 +881,7 @@ module decoder (
     wire  [4:0] op     = ir[ 6: 2];
     wire  [2:0] f3 = ir[14:12];
     wire  [6:0] f7 = ir[31:25];
-    assign cfu_ctrl_o = (op==5'b00010) ? {f7, f3} : 0;
+    assign cfu_ctrl_o = (op==5'b00010) ? {f7, f3, 1'b1} : 0;
 
     wire src2_c0 = (op==5'b00101);                  // AUIPC
     wire src2_c1 = (op==5'b01101) | (op==5'b00100); // LUI, OP-IMM

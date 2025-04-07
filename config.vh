@@ -118,6 +118,7 @@
 `define DIV_CTRL_WIDTH          3
 
 // cfu control
-`define CFU_CTRL_WIDTH 10
+`define CFU_CTRL_IS_CFU 0
+`define CFU_CTRL_WIDTH 11
 
 `endif // RVCPU_H_

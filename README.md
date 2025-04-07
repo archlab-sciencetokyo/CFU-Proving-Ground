@@ -116,6 +116,8 @@ If you change the size of the data memory, please appropriately modify the LENGT
 | 0x80000000 | tohost (for simulation) |
 
 ## History
+2025-04-07 Ver 1.1:
+- CFU now supports stall_o signals.
 
 2025-03-31 Ver 1.0:
 - CFU Proving Ground has been published.

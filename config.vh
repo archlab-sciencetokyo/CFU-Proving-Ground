@@ -11,6 +11,8 @@
 `define LCD_ROTATE 0 // 0: 0 degree, 1: 90 degree, 2: 180 degree, 3: 270 degree (Left Rotate)
 
 // cpu
+`define CLK_FREQ_MHZ    160
+
 `define RESET_VECTOR    'h00000000
 
 `define PHT_ENTRY       8192
@@ -21,9 +23,6 @@
 `define DMEM_SIZE       (16*1024)
 
 // uart
-`ifndef CLK_FREQ_MHZ
-    `define CLK_FREQ_MHZ    100
-`endif
 `ifndef BAUD_RATE
     `define BAUD_RATE       1000000
 `endif

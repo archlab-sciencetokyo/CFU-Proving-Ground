@@ -17,7 +17,7 @@ module main (
     reg rst_ni = 0; initial #15 rst_ni = 1;
     wire clk, locked;
 
-`ifdef USE_CLK_WIZ
+`ifdef SYNTHESIS
     clk_wiz_0 clk_wiz_0 (
         .clk_out1           (clk                ), // output clk_out1
         .reset              (!rst_ni                ), // input reset

@@ -63,6 +63,10 @@ bit:
 	@if [ -f vivado/main.runs/impl_i/main.ltx ]; then \
 		cp -f vivado/main.runs/impl_i/main.ltx build/.; \
 	fi
+	make conf
+
+conf:
+	$(VIVADO) -mode batch -source scripts/prog_dev.tcl
 
 init:
 	cp constr/$(TARGET).xdc main.xdc

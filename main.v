@@ -20,7 +20,7 @@ module main (
 `ifdef SYNTHESIS
     clk_wiz_0 clk_wiz_0 (
         .clk_out1           (clk                ), // output clk_out1
-        .reset              (!rst_ni                ), // input reset
+        .reset              (!rst_ni            ), // input reset
         .locked             (locked             ), // output locked
         .clk_in1            (clk_i              )  // input clk_in1
     );
@@ -71,7 +71,7 @@ module main (
     ) dmem (
         .clk_i              (clk                ),   // input  wire
         .we_i               (dmem_we            ),   // input  wire                  
-        .addr_i            (dmem_addr         ),   // input  wire [ADDR_WIDTH-1:0] 
+        .addr_i             (dmem_addr          ),   // input  wire [ADDR_WIDTH-1:0] 
         .wdata_i            (dmem_wdata         ),   // input  wire [DATA_WIDTH-1:0] 
         .wstrb_i            (dmem_wstrb         ),   // input  wire [STRB_WIDTH-1:0] 
         .rdata_o            (dmem_rdata         )    // output reg  [DATA_WIDTH-1:0] 
@@ -212,14 +212,23 @@ module vmem (
     reg [2:0] vmem_lo [0:32767]; // vmem
     reg [2:0] vmem_hi [0:32767]; // vmem
 
+    reg we;
+    reg top;
+    reg [2:0]wdata;
+    reg [14:0] waddr;
+
     reg [2:0] rdata_lo;
     reg [2:0] rdata_hi;
     reg       sel;
 
     always @(posedge clk_i) begin
-        if (we_i) begin
-            if (waddr_i[15]) vmem_hi[waddr_i[14:0]] <= wdata_i;
-            else             vmem_lo[waddr_i[14:0]] <= wdata_i;
+        we <= we_i;
+        top <= waddr_i[15];
+        waddr <= waddr_i[14:0];
+        wdata <= wdata_i;
+        if (we) begin
+            if (top) vmem_hi[waddr] <= wdata;
+            else     vmem_lo[waddr] <= wdata;
         end
         sel <= raddr_i[15];
         rdata_lo <= vmem_lo[raddr_i[14:0]];

@@ -115,11 +115,7 @@ If you change the size of the data memory, please appropriately modify the LENGT
 | 0x40000008 | mcycleh                 |
 | 0x80000000 | tohost (for simulation) |
 
-## ビットストリームの書き込み
-Vivado Hardware Serverを利用する場合，`scripts/prog_dev.tcl`を利用することができます．
-`scripts/prog_dev.tcl`でHardware Serverが動作しているホストのIP ADDRESSとPORT番号を指定してください．
-指定が完了すると`make conf`でボードにビットストリームを書き込むことができます．
-
+## Write a bitstream
 When using the Vivado Hardware Server, you can use `scripts/prog_dev.tcl`.
 In `scripts/prog_dev.tcl`, please specify the IP ADDRESS and PORT number of the host where the Vivado Hardware Server is running.
 Once the specification is complete, you can write the bitstream to the board with `make conf`.

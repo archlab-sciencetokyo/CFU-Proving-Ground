@@ -217,22 +217,32 @@ module vmem (
     reg [2:0]wdata;
     reg [14:0] waddr;
 
+    reg rtop;
+    reg [2:0] rdata;
+    reg [14:0] raddr;
+
     reg [2:0] rdata_lo;
     reg [2:0] rdata_hi;
     reg       sel;
-
+    
     always @(posedge clk_i) begin
         we <= we_i;
         top <= waddr_i[15];
         waddr <= waddr_i[14:0];
         wdata <= wdata_i;
+        
+        rtop <= raddr_i[15];
+        raddr <= raddr_i[14:0];
+        rdata <= raddr_i[15];
+
         if (we) begin
             if (top) vmem_hi[waddr] <= wdata;
             else     vmem_lo[waddr] <= wdata;
         end
-        sel <= raddr_i[15];
-        rdata_lo <= vmem_lo[raddr_i[14:0]];
-        rdata_hi <= vmem_hi[raddr_i[14:0]];
+
+        sel <= rtop;
+        rdata_lo <= vmem_lo[raddr];
+        rdata_hi <= vmem_hi[raddr];
     end
 
     assign rdata_o = (sel) ? rdata_hi : rdata_lo;

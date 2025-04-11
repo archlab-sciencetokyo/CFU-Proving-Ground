@@ -275,7 +275,7 @@ module cpu (
             IdEx_lsu_ctrl               <=   Id_lsu_ctrl                ;
             IdEx_mul_ctrl               <=   Id_mul_ctrl                ;
             IdEx_div_ctrl               <=   Id_div_ctrl                ;
-            IdEx_cfu_ctrl               <=   Id_cfu_ctrl                ;
+            IdEx_cfu_ctrl               <=   (IfId_load_muldiv_use) ? {Id_cfu_ctrl[10:1], 1'b0} : Id_cfu_ctrl;                ;
             IdEx_rs1_fwd_from_Ma_to_Ex  <=   Id_rs1_fwd_from_Ma_to_Ex   ;
             IdEx_rs2_fwd_from_Ma_to_Ex  <=   Id_rs2_fwd_from_Ma_to_Ex   ;
             IdEx_rs1_fwd_from_Wb_to_Ex  <=   Id_rs1_fwd_from_Wb_to_Ex   ;

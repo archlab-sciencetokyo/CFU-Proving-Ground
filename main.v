@@ -218,9 +218,7 @@ module vmem (
     reg [14:0] waddr;
 
     reg rtop;
-    reg [2:0] rdata;
     reg [14:0] raddr;
-
     reg [2:0] rdata_lo;
     reg [2:0] rdata_hi;
     reg       sel;
@@ -233,7 +231,6 @@ module vmem (
         
         rtop <= raddr_i[15];
         raddr <= raddr_i[14:0];
-        rdata <= raddr_i[15];
 
         if (we) begin
             if (top) vmem_hi[waddr] <= wdata;

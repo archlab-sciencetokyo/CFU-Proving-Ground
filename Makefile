@@ -64,6 +64,13 @@ bit:
 		cp -f vivado/main.runs/impl_i/main.ltx build/.; \
 	fi
 
+conf:
+	@if [ ! -f build/main.bit ]; then \
+		echo "Please run 'make bit' first."; \
+		exit 1; \
+	fi
+	$(VIVADO) -mode batch -source scripts/prog_dev.tcl
+
 init:
 	cp constr/$(TARGET).xdc main.xdc
 	cp constr/build_$(TARGET).tcl build.tcl

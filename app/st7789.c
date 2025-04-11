@@ -195,7 +195,7 @@ void pg_lcd_reset() {
     pg_lcd_fill(0);
 }
 
-void pg_lcd_printd(int x) {
+void pg_lcd_printd(long long x) {
     if (x == 0) {
         pg_lcd_draw_char(st7789_col << 4, st7789_row << 4, '0', PG_WHITE, 1);
         _pg_lcd_update_pos();

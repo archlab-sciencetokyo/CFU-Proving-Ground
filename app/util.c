@@ -9,7 +9,7 @@ void pg_printc(char c) {
     *(char *)0x80000000 = c;
 }
 
-void pg_printd(int x) {
+void pg_printd(long long x) {
     if (x == 0) {
         pg_printc('0');
         return;

@@ -275,7 +275,7 @@ module cpu (
             IdEx_lsu_ctrl               <=   Id_lsu_ctrl                ;
             IdEx_mul_ctrl               <=   Id_mul_ctrl                ;
             IdEx_div_ctrl               <=   Id_div_ctrl                ;
-            IdEx_cfu_ctrl               <=   Id_cfu_ctrl                ;
+            IdEx_cfu_ctrl               <=   (IfId_load_muldiv_use) ? {Id_cfu_ctrl[10:1], 1'b0} : Id_cfu_ctrl;                ;
             IdEx_rs1_fwd_from_Ma_to_Ex  <=   Id_rs1_fwd_from_Ma_to_Ex   ;
             IdEx_rs2_fwd_from_Ma_to_Ex  <=   Id_rs2_fwd_from_Ma_to_Ex   ;
             IdEx_rs1_fwd_from_Wb_to_Ex  <=   Id_rs1_fwd_from_Wb_to_Ex   ;
@@ -414,15 +414,14 @@ module cpu (
 
     wire [`XLEN-1:0] Ma_cfu_rslt;
     cfu cfu (
-        .clk_i            (clk_i                  ), // input  wire
-        .rst_i            (rst                    ), // input  wire
-        .stall_i          (stall_i || Ma_cfu_stall), // input  wire
-        .valid_i          (  Ex_valid             ), // input  wire
-        .cfu_ctrl_i       (IdEx_cfu_ctrl          ), // input  wire [`CFU_CTRL_WIDTH-1:0]
-        .src1_i           (  Ex_src1              ), // input  wire           [`XLEN-1:0]
-        .src2_i           (  Ex_src2              ), // input  wire           [`XLEN-1:0]
-        .stall_o          (  Ma_cfu_stall         ), // output wire
-        .rslt_o           (  Ma_cfu_rslt          )  // output wire           [`XLEN-1:0]
+        .clk_i             (clk_i                 ),      // input  wire        
+        .en_i              (IdEx_cfu_ctrl[0]      ),       // input  wire        
+        .funct3_i          (IdEx_cfu_ctrl[3:1]    ),   // input  wire [ 2:0] 
+        .funct7_i          (IdEx_cfu_ctrl[10:4]   ),   // input  wire [ 6:0] 
+        .src1_i            (Ex_src1               ),     // input  wire [31:0] 
+        .src2_i            (Ex_src2               ),     // input  wire [31:0] 
+        .stall_o           (Ma_cfu_stall          ),    // output wire        
+        .rslt_o            (Ma_cfu_rslt           )    // output reg  [31:0] 
     );
 
 //-----------------------------------------------------------------------------------------

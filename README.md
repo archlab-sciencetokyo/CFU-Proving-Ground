@@ -127,7 +127,7 @@ Once the specification is complete, you can write the bitstream to the board wit
 ## History
 2025-04-11 Ver 1.2:
 - The tcl script has been modified so that the operating frequency can be set from config.vh.
-- A script that automatically writes the bitstream to the board has been added (`Make conf`).
+- A script that automatically writes the bitstream to the board has been added (`make conf`).
 
 2025-04-07 Ver 1.1:
 - CFU now supports stall_o signals.

@@ -1,8 +1,9 @@
 set ip_addr 192.168.220.50
+set port 3121
 
 open_hw_manager
 
-connect_hw_server -url $ip_addr:3121
+connect_hw_server -url $ip_addr:$port
 current_hw_target
 open_hw_target
 

@@ -35,7 +35,7 @@ $ make
 
 Please clone this repository with the following command.
 ```
-$ get clone https://github.com/archlab-sciencetokyo/CFU-Proving-Ground
+$ git clone https://github.com/archlab-sciencetokyo/CFU-Proving-Ground
 ```
 
 Open and edit the `Makefile` on the CFU-Proving-Ground directory to specify proper absolute paths.

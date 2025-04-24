@@ -122,6 +122,10 @@ In `scripts/prog_dev.tcl`, please specify the IP ADDRESS and PORT number of the 
 Once the specification is complete, you can write the bitstream to the board with `make conf`.
 
 ## History
+2025-04-24 Ver 1.3:
+- Default configuration of `IMEM_SIZE` has been changed 64KiB to 32KiB.
+- We have improved BRAM that was deleted during optimization.
+
 2025-04-11 Ver 1.2:
 - The tcl script has been modified so that the operating frequency can be set from config.vh.
 - A script that automatically writes the bitstream to the board has been added (`Make conf`).

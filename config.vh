@@ -19,7 +19,9 @@
 `define BTB_ENTRY       512
 
 // ram
-`define IMEM_SIZE       (64*1024)
+// Please enclose the parameters in `()`
+// Do not comment out the parameters. It will cause a parse error.
+`define IMEM_SIZE       (32*1024)
 `define DMEM_SIZE       (16*1024)
 
 // uart

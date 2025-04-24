@@ -17,6 +17,8 @@ build: prog
 	$(RTLSIM) --binary --trace --top-module top --Wno-WIDTHTRUNC --Wno-WIDTHEXPAND -o top *.v
 	gcc -O2 dispemu/dispemu.c -o build/dispemu -lcairo -lX11
 
+imem_size =	$(shell grep -oP "\`define\s+IMEM_SIZE\s+\(\K[^)]*" config.vh | bc)
+dmem_size =	$(shell grep -oP "\`define\s+DMEM_SIZE\s+\(\K[^)]*" config.vh | bc)
 prog:
 	mkdir -p build
 	$(GCC) -Os -march=rv32im -mabi=ilp32 -nostartfiles -Iapp -Tapp/link.ld -o build/main.elf app/crt0.s app/*.c main.c 
@@ -27,7 +29,12 @@ prog:
 						 --only-section=.bss \
 						 build/main.elf build/memd.bin.tmp; \
 	for suf in i d; do \
-		dd if=build/mem$$suf.bin.tmp of=build/mem$$suf.bin conv=sync bs=4KiB; \
+		if [ "$$suf" = "i" ]; then \
+			mem_size=$(imem_size); \
+		else \
+			mem_size=$(dmem_size); \
+		fi; \
+		dd if=build/mem$$suf.bin.tmp of=build/mem$$suf.bin conv=sync bs=$$mem_size; \
 		rm -f build/mem$$suf.bin.tmp; \
 		hexdump -v -e '1/4 "%08x\n"' build/mem$$suf.bin > build/mem$$suf.32.hex; \
 		tmp_IFS=$$IFS; IFS= ; \

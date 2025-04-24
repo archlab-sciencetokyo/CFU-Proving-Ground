@@ -31,7 +31,12 @@ if {[regexp {CRITICAL WARNING:} [check_syntax -return_string -fileset sources_1]
 
 create_ip -name clk_wiz -vendor xilinx.com -library ip -version 6.0 -module_name clk_wiz_0
 set_property CONFIG.PRIM_IN_FREQ 12 [get_ips clk_wiz_0]
-set_property CONFIG.CLKOUT1_REQUESTED_OUT_FREQ $freq [get_ips clk_wiz_0]
+set_property -dict [list \
+    CONFIG.PRIM_IN_FREQ 12
+    CONFIG.CLKOUT1_REQUESTED_OUT_FREQ $freq \
+    CONFIG.JITTER_SEL {Min_O_Jitter} \
+    CONFIG.MMCM_BANDWIDTH {HIGH} \
+] [get_ips clk_wiz_0]
 generate_target all [get_files  $top_dir/vivado/$proj_name.srcs/sources_1/ip/clk_wiz_0/clk_wiz_0.xci]
 create_ip_run [get_ips clk_wiz_0]
 

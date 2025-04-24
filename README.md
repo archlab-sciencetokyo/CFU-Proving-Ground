@@ -125,6 +125,7 @@ Once the specification is complete, you can write the bitstream to the board wit
 2025-04-24 Ver 1.3:
 - Default configuration of `IMEM_SIZE` has been changed 64KiB to 32KiB.
 - We have improved BRAM that was deleted during optimization.
+- Jitter Optimization of the clocking wizard has been changed.
 
 2025-04-11 Ver 1.2:
 - The tcl script has been modified so that the operating frequency can be set from config.vh.

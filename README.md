@@ -107,7 +107,7 @@ If you change the size of the data memory, please appropriately modify the LENGT
 
 | addr   |  description                     |
 | -----------| -----------------------------|
-| 0x00000000 - 0x0000FFFF | 64KiB Instruction Memory     |
+| 0x00000000 - 0x00007FFF | 32KiB Instruction Memory     |
 | 0x10000000 - 0x10003FFF | 16KiB Data Memory            |
 | 0x20000000 - 0x2000FFFF | 64KiB Video Memory    |
 | 0x40000000 | performance counter control (0: reset, 1: start, 2: stop)|

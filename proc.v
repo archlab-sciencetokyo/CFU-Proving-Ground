@@ -1,5 +1,5 @@
 /******************************************************************************************/
-/* RVProc RV32IM Baseline Ver.v2025-03-17b       Copyright(c) 2025 Archlab. Science Tokyo */
+/* RVProc RV32IM Baseline Ver.v2025-04-25c       Copyright(c) 2025 Archlab. Science Tokyo */
 /* Released under the MIT license https://opensource.org/licenses/mit                     */
 /******************************************************************************************/
 `default_nettype none
@@ -58,8 +58,6 @@ module cpu (
     reg   [`CFU_CTRL_WIDTH-1:0] IdEx_cfu_ctrl               ;
     reg                         IdEx_rs1_fwd_from_Ma_to_Ex  ;
     reg                         IdEx_rs2_fwd_from_Ma_to_Ex  ;
-    reg                         IdEx_rs1_fwd_from_Wb_to_Ex  ;
-    reg                         IdEx_rs2_fwd_from_Wb_to_Ex  ;
     reg             [`XLEN-1:0] IdEx_src1                   ;
     reg             [`XLEN-1:0] IdEx_src2                   ;
     reg             [`XLEN-1:0] IdEx_imm                    ;
@@ -77,7 +75,7 @@ module cpu (
     reg                         ExMa_br_misp_rslt2          ;
     reg             [`XLEN-1:0] ExMa_br_tkn_pc              ;
     reg   [`LSU_CTRL_WIDTH-1:0] ExMa_lsu_ctrl               ;
-    reg [`DBUS_OFFSET_WIDTH-1:0] ExMa_dbus_offset            ;
+    reg [`DBUS_OFFSET_WIDTH-1:0] ExMa_dbus_offset           ;
     reg                         ExMa_rf_we                  ;
     reg                   [4:0] ExMa_rd                     ;
     reg             [`XLEN-1:0] ExMa_rslt                   ;
@@ -96,9 +94,11 @@ module cpu (
     reg rst; always @(posedge clk_i) rst <= rst_i;
 
     wire             Ma_br_tkn      = (ExMa_v && ExMa_br_tkn);
-    wire             Ma_br_misp     = (ExMa_v && ExMa_is_ctrl_tsfr && ((Ma_br_tkn) ?
-                                       ExMa_br_misp_rslt1 : ExMa_br_misp_rslt2));
-    wire [`XLEN-1:0] Ma_br_true_pc  = (ExMa_br_tkn) ? ExMa_br_tkn_pc : ExMa_pc+'h4;
+    wire             Ma_br_misp     = (rst) ? 1 : 
+                                      (ExMa_v && ExMa_is_ctrl_tsfr && 
+                                       ((Ma_br_tkn) ? ExMa_br_misp_rslt1 : ExMa_br_misp_rslt2)); 
+    wire [`XLEN-1:0] Ma_br_true_pc  = (rst) ?`RESET_VECTOR : 
+                                      (ExMa_br_tkn) ? ExMa_br_tkn_pc : ExMa_pc+'h4;
 
     wire Ma_mul_stall                                   ;
     wire Ma_div_stall                                   ;
@@ -138,15 +138,13 @@ module cpu (
         .br_tkn_pc_i        (ExMa_br_tkn_pc         )  // input  wire [`XLEN-1:0]
     );
 
-    wire [`XLEN-1:0] pc = (rst                 ) ? `RESET_VECTOR:
-                          (stall               ) ? r_pc         :
-                          (Ma_br_misp          ) ? Ma_br_true_pc:
-                          (IfId_load_muldiv_use) ? r_pc         :
-                          (If_br_pred_tkn      ) ? If_br_pred_pc:
-                                                   r_pc+'h4     ;
+    wire [31:0] w_pc_inc = (stall || IfId_load_muldiv_use) ? 0 : 4;
+
+    wire [`XLEN-1:0] pc = (Ma_br_misp                   ) ? Ma_br_true_pc   :
+                          (stall || IfId_load_muldiv_use) ? r_pc + w_pc_inc :
+                          (If_br_pred_tkn               ) ? If_br_pred_pc   : r_pc + w_pc_inc;
 
     always @(posedge clk_i) r_pc <= pc;
-
     assign ibus_araddr_o = pc;
 
 //-----------------------------------------------------------------------------------------
@@ -278,10 +276,8 @@ module cpu (
             IdEx_cfu_ctrl               <=   (IfId_load_muldiv_use) ? {Id_cfu_ctrl[10:1], 1'b0} : Id_cfu_ctrl;
             IdEx_rs1_fwd_from_Ma_to_Ex  <=   Id_rs1_fwd_from_Ma_to_Ex   ;
             IdEx_rs2_fwd_from_Ma_to_Ex  <=   Id_rs2_fwd_from_Ma_to_Ex   ;
-            IdEx_rs1_fwd_from_Wb_to_Ex  <=   Id_rs1_fwd_from_Wb_to_Ex   ;
-            IdEx_rs2_fwd_from_Wb_to_Ex  <=   Id_rs2_fwd_from_Wb_to_Ex   ;
-            IdEx_src1                   <=   Id_src1                    ;
-            IdEx_src2                   <=   Id_src2                    ;
+            IdEx_src1                   <=   (Id_rs1_fwd_from_Wb_to_Ex) ? Ma_rslt : Id_src1;
+            IdEx_src2                   <=   (Id_rs2_fwd_from_Wb_to_Ex) ? Ma_rslt : Id_src2;
             IdEx_imm                    <=   Id_imm                     ;
             IdEx_rf_we                  <= IfId_rf_we                   ;
             IdEx_rd                     <= IfId_rd                      ;
@@ -294,10 +290,8 @@ module cpu (
     wire Ex_valid = IdEx_v && !Ma_br_misp && !Ma_mul_stall && !Ma_div_stall && !Ma_cfu_stall;
 
     // data forwarding
-    wire [`XLEN-1:0] Ex_src1 = (IdEx_rs1_fwd_from_Ma_to_Ex) ? ExMa_rslt : 
-                               (IdEx_rs1_fwd_from_Wb_to_Ex) ? MaWb_rslt : IdEx_src1;
-    wire [`XLEN-1:0] Ex_src2 = (IdEx_rs2_fwd_from_Ma_to_Ex) ? ExMa_rslt : 
-                               (IdEx_rs2_fwd_from_Wb_to_Ex) ? MaWb_rslt : IdEx_src2;
+    wire [`XLEN-1:0] Ex_src1 = (IdEx_rs1_fwd_from_Ma_to_Ex) ? ExMa_rslt : IdEx_src1;
+    wire [`XLEN-1:0] Ex_src2 = (IdEx_rs2_fwd_from_Ma_to_Ex) ? ExMa_rslt :  IdEx_src2;
 
     // arithmetic logic unit
     wire [`XLEN-1:0] Ex_alu_rslt;
@@ -476,45 +470,43 @@ module bimodal (
 
     integer i;
 
-    // pattern history table
+    ///// pattern history table
     reg [1:0] pht [0:`PHT_ENTRY-1]; 
-    initial for (i=0; i<`PHT_ENTRY; i=i+1) pht[i] = 2'b01;
+    initial for (i=0; i<`PHT_ENTRY; i=i+1) pht[i] = 1; // init with the weak untaken
 
     
     wire [`PHT_IDX_WIDTH-1:0] pht_ridx = raddr_i[`PHT_IDX_WIDTH+`B_OFFSET_W-1:`B_OFFSET_W];
     wire [`PHT_IDX_WIDTH-1:0] pht_widx = waddr_i[`PHT_IDX_WIDTH+`B_OFFSET_W-1:`B_OFFSET_W];
 
-    wire [1:0] wr_pat_hist = (br_tkn_i) ? pat_hist_i+(pat_hist_i<2'd3) :
-                                          pat_hist_i-(pat_hist_i>2'd0);
+    wire [1:0] wr_pat_hist = (br_tkn_i) ? pat_hist_i+(pat_hist_i<3) : pat_hist_i-(pat_hist_i>0);
 
     always @(posedge clk_i) begin
         if (!stall_i) begin
-            pat_hist_o  <= pht[pht_ridx];
+            pat_hist_o <= pht[pht_ridx];
             if (br_misp_i) begin
-                pht[pht_widx]   <= wr_pat_hist;
+                pht[pht_widx] <= wr_pat_hist;
             end
         end
     end
 
-    // branch target buffer
-    (* ram_style = "block" *) reg [`XLEN:0] btb [0:`BTB_ENTRY-1];
-    initial for (i=0; i<`BTB_ENTRY; i=i+1) btb[i]='h0;
+    ///// branch target buffer
+    (* ram_style = "block" *) reg [`XLEN-1:0] btb [0:`BTB_ENTRY-1];
+    initial for (i=0; i<`BTB_ENTRY; i=i+1) btb[i]=0;
 
 
     wire [`BTB_IDX_WIDTH-1:0] btb_ridx = raddr_i[`BTB_IDX_WIDTH+`B_OFFSET_W-1:`B_OFFSET_W];
     wire [`BTB_IDX_WIDTH-1:0] btb_widx = waddr_i[`BTB_IDX_WIDTH+`B_OFFSET_W-1:`B_OFFSET_W];
 
-    reg br_tgt_v;
     always @(posedge clk_i) begin
         if (!stall_i) begin
-            {br_tgt_v, br_pred_pc_o} <= btb[btb_ridx];
+            br_pred_pc_o <= btb[btb_ridx];
             if (br_tkn_i) begin
-                btb[btb_widx] <= {1'b1, br_tkn_pc_i};
+                btb[btb_widx] <= br_tkn_pc_i;
             end
         end
     end
 
-    assign br_pred_tkn_o = (br_tgt_v && pat_hist_o[1]); // branch prediction
+    assign br_pred_tkn_o = pat_hist_o[1];
 endmodule
 
 /******************************************************************************************/

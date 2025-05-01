@@ -124,7 +124,7 @@ Once the specification is complete, you can write the bitstream to the board wit
 ## History
 2025-05-01 Ver 1.4:
 - Fixed a bug in the branch predictor.
-- Improved Fmax of RVProc from 160MHz to 180MHz.
+- Improved Fmax of RVProc from 160MHz to 175MHz.
 
 2025-04-24 Ver 1.3:
 - Default configuration of `IMEM_SIZE` has been changed 64KiB to 32KiB.

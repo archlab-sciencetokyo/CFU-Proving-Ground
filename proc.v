@@ -410,11 +410,11 @@ module cpu (
     
     wire [`XLEN-1:0] Ma_cfu_rslt;
     wire Ex_cfu_stall;
+    wire Ex_cfu_en = IdEx_cfu_ctrl[0] & Ex_valid;
     cfu cfu (
         .clk_i             (clk_i                 ),      // input  wire        
-        .en_i              (IdEx_cfu_ctrl[0] & Ex_valid), // input  wire        
-        .funct3_i          (IdEx_cfu_ctrl[3:1]    ),      // input  wire [ 2:0] 
-        .funct7_i          (IdEx_cfu_ctrl[10:4]   ),      // input  wire [ 6:0] 
+        .en_i              (  Ex_cfu_en           ), // input  wire        
+        .cfu_ctrl_i        (IdEx_cfu_ctrl[10:1]   ),      // input  wire [10:0]
         .src1_i            (  Ex_src1             ),      // input  wire [31:0] 
         .src2_i            (  Ex_src2             ),      // input  wire [31:0] 
         .stall_o           (  Ex_cfu_stall        ),      // output wire        

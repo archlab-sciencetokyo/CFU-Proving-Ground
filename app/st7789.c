@@ -218,10 +218,10 @@ void pg_lcd_printd(long long x) {
     }
 }
 
-void pg_lcd_printh(int x) {
-    char buf[16];
+void pg_lcd_printh(unsigned int x) {
+    char buf[10];
     int i = 0;
-    while (x) {
+    for (int j = 0; j < 8; j++) {
         buf[i++] = "0123456789ABCDEF"[x & 0xF];
         x >>= 4;
     }

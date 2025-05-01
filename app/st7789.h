@@ -15,6 +15,6 @@ void pg_lcd_draw_char(int x,  int y, char c, char color, int scale);
 void pg_lcd_fill(char color);
 void pg_lcd_reset();
 void pg_lcd_printd(long long x);
-void pg_lcd_printh(int x);
+void pg_lcd_printh(unsigned int x);
 void pg_lcd_prints(const char *str);
 void pg_lcd_set_pos(int x, int y);

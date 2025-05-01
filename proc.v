@@ -1,5 +1,5 @@
 /******************************************************************************************/
-/* RVProc RV32IM Baseline Ver.v2025-04-25c       Copyright(c) 2025 Archlab. Science Tokyo */
+/* RVProc RV32IM Baseline Ver.v2025-04-27a       Copyright(c) 2025 Archlab. Science Tokyo */
 /* Released under the MIT license https://opensource.org/licenses/mit                     */
 /******************************************************************************************/
 `default_nettype none
@@ -7,7 +7,6 @@
 /******************************************************************************************/
 `define DBUS_OFFSET_WIDTH $clog2(`XBYTES)
 `define B_OFFSET_W        $clog2(`XBYTES)     // branch predictor
-`define PHT_IDX_WIDTH     $clog2(`PHT_ENTRY)  // branch predictor
 `define BTB_IDX_WIDTH     $clog2(`BTB_ENTRY)  // branch predictor
 
 /******************************************************************************************/
@@ -22,7 +21,6 @@ module cpu (
     output wire [`DBUS_STRB_WIDTH-1:0] dbus_wstrb_o     ,
     input  wire [`DBUS_DATA_WIDTH-1:0] dbus_rdata_i
 );
-    wire stall_i = 0;
     wire dbus_arvalid_o;
 
 //-----------------------------------------------------------------------------------------
@@ -75,7 +73,11 @@ module cpu (
     reg                         ExMa_br_misp_rslt2          ;
     reg             [`XLEN-1:0] ExMa_br_tkn_pc              ;
     reg   [`LSU_CTRL_WIDTH-1:0] ExMa_lsu_ctrl               ;
-    reg [`DBUS_OFFSET_WIDTH-1:0] ExMa_dbus_offset           ;
+    reg                         ExMa_mul_stall              ;
+    reg                         ExMa_div_stall              ;
+    reg                         ExMa_cfu_stall              ;
+    reg             [`XLEN-1:0] ExMa_mdc_rslt               ;
+    reg [`DBUS_OFFSET_WIDTH-1:0]ExMa_dbus_offset            ;
     reg                         ExMa_rf_we                  ;
     reg                   [4:0] ExMa_rd                     ;
     reg             [`XLEN-1:0] ExMa_rslt                   ;
@@ -91,65 +93,57 @@ module cpu (
 //-----------------------------------------------------------------------------------------
 // pipeline control
 //-----------------------------------------------------------------------------------------
-    reg rst; always @(posedge clk_i) rst <= rst_i;
+    reg rst;   always @(posedge clk_i) rst   <= rst_i;
+    reg stall; always @(posedge clk_i) stall <= Ex_mul_stall || Ex_div_stall || Ex_cfu_stall;
 
-    wire             Ma_br_tkn      = (ExMa_v && ExMa_br_tkn);
-    wire             Ma_br_misp     = (rst) ? 1 : 
-                                      (ExMa_v && ExMa_is_ctrl_tsfr && 
-                                       ((Ma_br_tkn) ? ExMa_br_misp_rslt1 : ExMa_br_misp_rslt2)); 
-    wire [`XLEN-1:0] Ma_br_true_pc  = (rst) ?`RESET_VECTOR : 
-                                      (ExMa_br_tkn) ? ExMa_br_tkn_pc : ExMa_pc+'h4;
+    wire        Ma_br_tkn      = (ExMa_v && ExMa_br_tkn);
+    wire        Ma_br_misp     = (rst) ? 1 : 
+                                 (ExMa_v && ExMa_is_ctrl_tsfr && 
+                                 ((Ma_br_tkn) ? ExMa_br_misp_rslt1 : ExMa_br_misp_rslt2)); 
+    wire [31:0] Ma_br_true_pc  = (rst) ?`RESET_VECTOR : 
+                                 (ExMa_br_tkn) ? ExMa_br_tkn_pc : ExMa_pc+4;
 
-    wire Ma_mul_stall                                   ;
-    wire Ma_div_stall                                   ;
-    wire Ma_cfu_stall                                   ;
-    wire stall = stall_i || Ma_mul_stall || Ma_div_stall || Ma_cfu_stall;
-
-    wire If_v = (Ma_br_misp) ? 1'b0 : (IfId_load_muldiv_use) ? IfId_v : 1'b1  ;
-    wire Id_v = (Ma_br_misp || IfId_load_muldiv_use) ? 1'b0 : IfId_v;
-    wire Ex_v = (Ma_br_misp) ? 1'b0 : IdEx_v;
-    wire Ma_v =                       ExMa_v;
+    wire If_v = (Ma_br_misp) ? 0 : (IfId_load_muldiv_use) ? IfId_v : 1;
+    wire Id_v = (Ma_br_misp || IfId_load_muldiv_use) ? 0 : IfId_v;
+    wire Ex_v = (Ma_br_misp) ? 0 : IdEx_v;
+    wire Ma_v = ExMa_v;
 
 //-----------------------------------------------------------------------------------------
-// BP: Branch Prediction
+// IF: Instruction Fetch
 //-----------------------------------------------------------------------------------------
-    wire [`XLEN-1:0] bpu_access_pc  ;
-    wire       [1:0] If_pat_hist    ;
-    wire             If_br_pred_tkn ;
-    wire [`XLEN-1:0] If_br_pred_pc  ;
+    wire [31:0] If_bpu_pc      ;  // read address for branch prediction unit 
+    wire  [1:0] If_pat_hist    ;
+    wire        If_br_pred_tkn ;
+    wire [31:0] If_br_pred_pc  ;
 
-    assign bpu_access_pc = (Ma_br_misp          ) ? Ma_br_true_pc:
-                           (IfId_load_muldiv_use) ? r_pc         :
-                           (If_br_pred_tkn      ) ? If_br_pred_pc:
-                                                    r_pc+'h4     ;
+    assign If_bpu_pc = (Ma_br_misp          ) ? Ma_br_true_pc :
+                       (IfId_load_muldiv_use) ? r_pc          :
+                       (If_br_pred_tkn      ) ? If_br_pred_pc : r_pc+4;
 
     bimodal bimodal (
         .clk_i              (clk_i                  ), // input  wire
         .rst_i              (rst                    ), // input  wire
         .stall_i            (stall                  ), // input  wire
-        .raddr_i            (bpu_access_pc          ), // input  wire [`XLEN-1:0]
+        .raddr_i            (  If_bpu_pc            ), // input  wire [`XLEN-1:0]
         .pat_hist_o         (  If_pat_hist          ), // output reg        [1:0]
         .br_pred_tkn_o      (  If_br_pred_tkn       ), // output wire
         .br_pred_pc_o       (  If_br_pred_pc        ), // output reg  [`XLEN-1:0]
         .br_tkn_i           (  Ma_br_tkn            ), // input  wire
-        .br_misp_i          (  Ma_br_misp           ), // input  wire
+        .br_tsfr_i          (ExMa_is_ctrl_tsfr      ), // input  wire
         .waddr_i            (ExMa_pc                ), // input  wire [`XLEN-1:0]
         .pat_hist_i         (ExMa_pat_hist          ), // input  wire       [1:0]
         .br_tkn_pc_i        (ExMa_br_tkn_pc         )  // input  wire [`XLEN-1:0]
     );
 
-    wire [31:0] w_pc_inc = (stall || IfId_load_muldiv_use) ? 0 : 4;
+    wire If_pc_stall = stall || IfId_load_muldiv_use;
+    wire [31:0] If_pc_inc = (If_pc_stall) ? 0 : 4;
 
-    wire [`XLEN-1:0] pc = (Ma_br_misp                   ) ? Ma_br_true_pc   :
-                          (stall || IfId_load_muldiv_use) ? r_pc + w_pc_inc :
-                          (If_br_pred_tkn               ) ? If_br_pred_pc   : r_pc + w_pc_inc;
+    wire [31:0] pc = (Ma_br_misp                     ) ? Ma_br_true_pc :
+                     (!If_pc_stall && If_br_pred_tkn ) ? If_br_pred_pc : r_pc+If_pc_inc;
 
     always @(posedge clk_i) r_pc <= pc;
     assign ibus_araddr_o = pc;
 
-//-----------------------------------------------------------------------------------------
-// IF: Instruction Fetch
-//-----------------------------------------------------------------------------------------
     wire                  [31:0] If_ir          = ibus_rdata_i  ;
     wire [`INSTR_TYPE_WIDTH-1:0] If_instr_type                  ;
     wire                         If_rf_we                       ;
@@ -287,7 +281,7 @@ module cpu (
 //-----------------------------------------------------------------------------------------
 // EX: Execution
 //-----------------------------------------------------------------------------------------
-    wire Ex_valid = IdEx_v && !Ma_br_misp && !Ma_mul_stall && !Ma_div_stall && !Ma_cfu_stall;
+    wire Ex_valid = IdEx_v && !Ma_br_misp && !ExMa_mul_stall && !ExMa_div_stall && !ExMa_cfu_stall;
 
     // data forwarding
     wire [`XLEN-1:0] Ex_src1 = (IdEx_rs1_fwd_from_Ma_to_Ex) ? ExMa_rslt : IdEx_src1;
@@ -376,47 +370,58 @@ module cpu (
             ExMa_rd                     <= IdEx_rd                      ;
             ExMa_rslt                   <=   Ex_rslt                    ;
         end
+            ExMa_mdc_rslt               <=   Ex_mdc_rslt                ;
+            ExMa_mul_stall              <=   Ex_mul_stall               ;
+            ExMa_div_stall              <=   Ex_div_stall               ;
+            ExMa_cfu_stall              <=   Ex_cfu_stall               ;
     end
+    
 
+    
     // multiplier unit
     wire [`XLEN-1:0] Ma_mul_rslt;
+    wire Ex_mul_stall;
     multiplier multiplier (
         .clk_i            (clk_i                  ), // input  wire
         .rst_i            (rst                    ), // input  wire
-        .stall_i          (stall_i || Ma_div_stall), // input  wire
+        .stall_i          (  ExMa_div_stall         ), // input  wire
         .valid_i          (  Ex_valid             ), // input  wire
         .mul_ctrl_i       (IdEx_mul_ctrl          ), // input  wire [`MUL_CTRL_WIDTH-1:0]
         .src1_i           (  Ex_src1              ), // input  wire           [`XLEN-1:0]
         .src2_i           (  Ex_src2              ), // input  wire           [`XLEN-1:0]
-        .stall_o          (  Ma_mul_stall         ), // output wire
+        .stall_o          (  Ex_mul_stall          ), // output wire
         .rslt_o           (  Ma_mul_rslt          )  // output wire           [`XLEN-1:0]
     );
-
+  
     // divider unit
     wire [`XLEN-1:0] Ma_div_rslt;
+    wire Ex_div_stall;
     divider divider (
         .clk_i            (clk_i                  ), // input  wire
         .rst_i            (rst                    ), // input  wire
-        .stall_i          (stall_i || Ma_mul_stall), // input  wire
+        .stall_i          (  ExMa_mul_stall         ), // input  wire
         .valid_i          (  Ex_valid             ), // input  wire
         .div_ctrl_i       (IdEx_div_ctrl          ), // input  wire [`DIV_CTRL_WIDTH-1:0]
         .src1_i           (  Ex_src1              ), // input  wire           [`XLEN-1:0]
         .src2_i           (  Ex_src2              ), // input  wire           [`XLEN-1:0]
-        .stall_o          (  Ma_div_stall         ), // output wire
+        .stall_o          (  Ex_div_stall          ), // output wire
         .rslt_o           (  Ma_div_rslt          )  // output wire           [`XLEN-1:0]
     );
-
+    
     wire [`XLEN-1:0] Ma_cfu_rslt;
+    wire Ex_cfu_stall;
     cfu cfu (
         .clk_i             (clk_i                 ),      // input  wire        
-        .en_i              (IdEx_cfu_ctrl[0] & Ex_valid),       // input  wire        
-        .funct3_i          (IdEx_cfu_ctrl[3:1]    ),   // input  wire [ 2:0] 
-        .funct7_i          (IdEx_cfu_ctrl[10:4]   ),   // input  wire [ 6:0] 
-        .src1_i            (Ex_src1               ),     // input  wire [31:0] 
-        .src2_i            (Ex_src2               ),     // input  wire [31:0] 
-        .stall_o           (Ma_cfu_stall          ),    // output wire        
-        .rslt_o            (Ma_cfu_rslt           )    // output reg  [31:0] 
+        .en_i              (IdEx_cfu_ctrl[0] & Ex_valid), // input  wire        
+        .funct3_i          (IdEx_cfu_ctrl[3:1]    ),      // input  wire [ 2:0] 
+        .funct7_i          (IdEx_cfu_ctrl[10:4]   ),      // input  wire [ 6:0] 
+        .src1_i            (  Ex_src1             ),      // input  wire [31:0] 
+        .src2_i            (  Ex_src2             ),      // input  wire [31:0] 
+        .stall_o           (  Ex_cfu_stall        ),      // output wire        
+        .rslt_o            (  Ma_cfu_rslt         )       // output reg  [31:0] 
     );
+
+    wire [31:0] Ex_mdc_rslt = Ma_mul_rslt | Ma_div_rslt | Ma_cfu_rslt;
 
 //-----------------------------------------------------------------------------------------
 // MA: Memory Access
@@ -430,7 +435,7 @@ module cpu (
         .rslt_o             (  Ma_load_rslt       )  // output wire            [`XLEN-1:0]
     );
 
-    wire [`XLEN-1:0] Ma_rslt = ExMa_rslt | Ma_mul_rslt | Ma_div_rslt | Ma_cfu_rslt | Ma_load_rslt;
+    wire [`XLEN-1:0] Ma_rslt = ExMa_rslt | ExMa_mdc_rslt | Ma_load_rslt;
 
     always @(posedge clk_i) begin
         if (rst) begin
@@ -458,55 +463,35 @@ module bimodal (
     input  wire        rst_i               ,
     input  wire        stall_i             ,
     input  wire [31:0] raddr_i             ,
-    output reg   [1:0] pat_hist_o          ,
+    output wire  [1:0] pat_hist_o          ,
     output wire        br_pred_tkn_o       ,
-    output reg  [31:0] br_pred_pc_o        ,
+    output wire [31:0] br_pred_pc_o        ,
     input  wire        br_tkn_i            ,
-    input  wire        br_misp_i           ,
+    input  wire        br_tsfr_i           ,
     input  wire [31:0] waddr_i             ,
     input  wire  [1:0] pat_hist_i          ,
     input  wire [31:0] br_tkn_pc_i
 );
 
     integer i;
-
-    ///// pattern history table
-    reg [1:0] pht [0:`PHT_ENTRY-1]; 
-    initial for (i=0; i<`PHT_ENTRY; i=i+1) pht[i] = 1; // init with the weak untaken
-
-    
-    wire [`PHT_IDX_WIDTH-1:0] pht_ridx = raddr_i[`PHT_IDX_WIDTH+`B_OFFSET_W-1:`B_OFFSET_W];
-    wire [`PHT_IDX_WIDTH-1:0] pht_widx = waddr_i[`PHT_IDX_WIDTH+`B_OFFSET_W-1:`B_OFFSET_W];
-
-    wire [1:0] wr_pat_hist = (br_tkn_i) ? pat_hist_i+(pat_hist_i<3) : pat_hist_i-(pat_hist_i>0);
-
-    always @(posedge clk_i) begin
-        if (!stall_i) begin
-            pat_hist_o <= pht[pht_ridx];
-            if (br_misp_i) begin
-                pht[pht_widx] <= wr_pat_hist;
-            end
-        end
-    end
-
-    ///// branch target buffer
-    (* ram_style = "block" *) reg [`XLEN-1:0] btb [0:`BTB_ENTRY-1];
+    reg [31:0] btb [0:`BTB_ENTRY-1]; // BTB, branch target buffer                                                            
     initial for (i=0; i<`BTB_ENTRY; i=i+1) btb[i]=0;
 
-
+    wire [1:0] w_cnt = (br_tkn_i) ? pat_hist_i+(pat_hist_i<3) : pat_hist_i-(pat_hist_i>0);
     wire [`BTB_IDX_WIDTH-1:0] btb_ridx = raddr_i[`BTB_IDX_WIDTH+`B_OFFSET_W-1:`B_OFFSET_W];
     wire [`BTB_IDX_WIDTH-1:0] btb_widx = waddr_i[`BTB_IDX_WIDTH+`B_OFFSET_W-1:`B_OFFSET_W];
 
-    always @(posedge clk_i) begin
-        if (!stall_i) begin
-            br_pred_pc_o <= btb[btb_ridx];
-            if (br_tkn_i) begin
-                btb[btb_widx] <= br_tkn_pc_i;
-            end
+    reg [31:0] r_btb_entry;
+    always @(posedge clk_i) if (!stall_i) begin
+        r_btb_entry <= btb[btb_ridx];
+        if (br_tsfr_i) begin
+            btb[btb_widx] <= {br_tkn_pc_i[31:2], w_cnt}; // lower tow bits for counter
         end
     end
 
-    assign br_pred_tkn_o = pat_hist_o[1];
+    assign pat_hist_o    = r_btb_entry[1:0];
+    assign br_pred_tkn_o = r_btb_entry[1];
+    assign br_pred_pc_o  = {r_btb_entry[31:2], 2'b0};
 endmodule
 
 /******************************************************************************************/
@@ -619,10 +604,10 @@ module bru (
     wire signed [32:0] sext_src1 = {bru_ctrl_i[`BRU_CTRL_IS_SIGNED] && src1_i[31], src1_i};
     wire signed [32:0] sext_src2 = {bru_ctrl_i[`BRU_CTRL_IS_SIGNED] && src2_i[31], src2_i};
 
-    wire beq_bne_tkn = (     src1_i==     src2_i) ? bru_ctrl_i[`BRU_CTRL_IS_BEQ] : 
-                                                    bru_ctrl_i[`BRU_CTRL_IS_BNE];
-    wire blt_bge_tkn = (sext_src1  < sext_src2  ) ? bru_ctrl_i[`BRU_CTRL_IS_BLT] : 
-                                                    bru_ctrl_i[`BRU_CTRL_IS_BGE];
+    wire beq_bne_tkn = (src1_i==src2_i       ) ? bru_ctrl_i[`BRU_CTRL_IS_BEQ] : 
+                                                 bru_ctrl_i[`BRU_CTRL_IS_BNE];
+    wire blt_bge_tkn = (sext_src1 < sext_src2) ? bru_ctrl_i[`BRU_CTRL_IS_BLT] : 
+                                                 bru_ctrl_i[`BRU_CTRL_IS_BGE];
     assign br_tkn_o  = beq_bne_tkn | blt_bge_tkn | bru_ctrl_i[`BRU_CTRL_IS_JAL_JALR];
 
     wire [31:0] br_tkn_pc_t;
@@ -656,7 +641,7 @@ module divider (
 );
 
     reg [1:0] state = `DIV_IDLE;
-    assign stall_o = (state!=`DIV_IDLE);
+    assign stall_o = (w_state!=`DIV_IDLE);
 
     reg        is_dividend_neg;
     reg        is_divisor_neg;
@@ -666,7 +651,6 @@ module divider (
     reg        is_div_rslt_neg;
     reg        is_rem_rslt_neg;
     reg        is_rem;
-    reg [31:0] rslt;
     reg  [4:0] cntr;
 
     wire [31:0] uintx_remainder = (is_dividend_neg) ? ~remainder+1 : remainder;
@@ -674,48 +658,40 @@ module divider (
     wire [32:0] difference      = {remainder[30:0], quotient[31]} - divisor;
     wire        q               = !difference[32];
 
-    assign rslt_o = rslt;
+    assign rslt_o = (state!=`DIV_RET) ? 0 : 
+                    (is_rem) ? ((is_rem_rslt_neg) ? ~remainder+1 : remainder) :
+                    ((is_div_rslt_neg) ? ~quotient+1  : quotient ) ;
+    
     wire w_div    = div_ctrl_i[`DIV_CTRL_IS_DIV];
     wire w_signed = div_ctrl_i[`DIV_CTRL_IS_SIGNED];
+    wire [1:0] w_state = (w_init) ? `DIV_CHECK :
+                         (state==`DIV_CHECK && divisor==0) ? `DIV_RET : // Note
+                         (state==`DIV_CHECK && divisor!=0) ? `DIV_EXEC :
+                         (state==`DIV_EXEC  && cntr==0) ? `DIV_RET :
+                         (state==`DIV_EXEC  && cntr!=0) ? `DIV_EXEC : `DIV_IDLE;
     
     wire w_init = (state==`DIV_IDLE && valid_i && w_div);
-    always @(posedge clk_i) begin
-        if (rst_i) begin
-            state <= `DIV_IDLE;
-        end else if (!stall_i) begin
-            is_dividend_neg   <= (w_init) ? w_signed && src1_i[31] : is_dividend_neg;
-            is_divisor_neg    <= (w_init) ? w_signed && src2_i[31] : is_divisor_neg;
-                                   
-            is_div_rslt_neg   <= (w_init) ? w_signed && (src1_i[31] ^ src2_i[31]) :
-                                   (state==`DIV_CHECK && divisor==0) ? 0 : is_div_rslt_neg;
-            
-            is_rem_rslt_neg   <= (w_init) ? w_signed &&  src1_i[31] : 
-                                   (state==`DIV_CHECK && divisor==0) ? 0 : is_rem_rslt_neg;
-            
-            divisor <= (w_init) ? src2_i :
-                         (state==`DIV_CHECK && divisor!=0) ? uintx_divisor : divisor;
+    always @(posedge clk_i) if (!stall_i) begin
+        is_rem            <= (w_init) ? div_ctrl_i[`DIV_CTRL_IS_REM] : is_rem;
+        is_dividend_neg   <= (w_init) ? w_signed && src1_i[31] : is_dividend_neg;
+        is_divisor_neg    <= (w_init) ? w_signed && src2_i[31] : is_divisor_neg;
+        is_div_rslt_neg   <= (w_init) ? w_signed && (src1_i[31] ^ src2_i[31]) :
+                             (state==`DIV_CHECK && divisor==0) ? 0 : is_div_rslt_neg;
+        is_rem_rslt_neg   <= (w_init) ? w_signed &&  src1_i[31] : 
+                             (state==`DIV_CHECK && divisor==0) ? 0 : is_rem_rslt_neg;
+        
+        divisor <= (w_init) ? src2_i :
+                   (state==`DIV_CHECK && divisor!=0) ? uintx_divisor : divisor;
 
-            {remainder, quotient} <= (w_init) ? {src1_i, 32'd0} :
-                    (state==`DIV_CHECK && divisor==0) ? {remainder, {32{1'b1}}} :
-                    (state==`DIV_CHECK && divisor!=0) ? {32'd0, uintx_remainder} :
-                    (state==`DIV_EXEC) ? ((q) ? {difference[31:0], quotient[30:0], 1'b1} :
-                    {remainder[30:0], quotient, 1'b0}) :
-                    {remainder, quotient};
-                                        
-            is_rem <= (w_init) ? div_ctrl_i[`DIV_CTRL_IS_REM] : is_rem;
+        {remainder, quotient} <= (w_init) ? {src1_i, 32'd0} :
+                                 (state==`DIV_CHECK && divisor==0) ? {remainder, {32{1'b1}}} :
+                                 (state==`DIV_CHECK && divisor!=0) ? {32'd0, uintx_remainder} :
+                                 (state==`DIV_EXEC) ? ((q) ? {difference[31:0], quotient[30:0], 1'b1} :
+                                                       {remainder[30:0], quotient, 1'b0}) :
+                                 {remainder, quotient};
 
-            cntr <= (state==`DIV_CHECK) ? 31 : (state==`DIV_EXEC) ?  cntr-1 : cntr;
-
-            rslt <= (state!=`DIV_RET) ? 0 : 
-                      (is_rem) ? ((is_rem_rslt_neg) ? ~remainder+1 : remainder) :
-                      ((is_div_rslt_neg) ? ~quotient+1  : quotient ) ;
-            
-            state <= (w_init) ? `DIV_CHECK :
-                       (state==`DIV_CHECK && divisor==0) ? `DIV_RET : // Note
-                       (state==`DIV_CHECK && divisor!=0) ? `DIV_EXEC :
-                       (state==`DIV_EXEC  && cntr==0) ? `DIV_RET :
-                       (state==`DIV_EXEC  && cntr!=0) ? `DIV_EXEC : `DIV_IDLE;
-        end
+        cntr <= (state==`DIV_CHECK) ? 31 : (state==`DIV_EXEC) ?  cntr-1 : cntr;
+        state <= w_state;
     end
 endmodule
 
@@ -736,22 +712,21 @@ module multiplier (
     output wire [31:0] rslt_o
 );
 
-    reg [1:0] state = `MUL_IDLE;
-    assign stall_o = (state!=`MUL_IDLE);
-
+    reg         [1:0] state = `MUL_IDLE;
     reg signed [32:0] r_multiplicand ; // 33bit
     reg signed [32:0] r_multiplier   ; // 33bit
-    reg        [63:0] product      ;   // 64bit
-    reg               is_high      ; 
-    reg        [31:0] rslt         ;
+    reg        [63:0] product        ; // 64bit
+    reg               is_high        ; // 
 
-    assign rslt_o = rslt;
+    assign rslt_o = (state!=`MUL_RET) ? 0 : (is_high) ? product[63:32] : product[31:0];
 
     wire w_mul         = mul_ctrl_i[`MUL_CTRL_IS_MUL];
     wire w_src1_signed = mul_ctrl_i[`MUL_CTRL_IS_SRC1_SIGNED];
     wire w_src2_signed = mul_ctrl_i[`MUL_CTRL_IS_SRC2_SIGNED];
     wire w_is_high     = mul_ctrl_i[`MUL_CTRL_IS_HIGH];
-    
+    wire [1:0] w_state = (state==`MUL_IDLE && valid_i && w_mul) ? `MUL_EXEC :
+                         (state==`MUL_EXEC) ? `MUL_RET : `MUL_IDLE;
+               
     always @(posedge clk_i) begin
         if (rst_i) begin
             state  <= `MUL_IDLE;
@@ -760,11 +735,10 @@ module multiplier (
             if(state==`MUL_IDLE) r_multiplier   <= {w_src2_signed && src2_i[31], src2_i};
             if(state==`MUL_IDLE) is_high      <= w_is_high;
             if(state==`MUL_EXEC) product      <= r_multiplicand * r_multiplier;
-            rslt  <= (state!=`MUL_RET) ? 0 : (is_high) ? product[63:32] : product[31:0];
-            state <= (state==`MUL_IDLE && valid_i && w_mul) ? `MUL_EXEC :
-                     (state==`MUL_EXEC) ? `MUL_RET : `MUL_IDLE;
+            state <= w_state;
         end
     end
+    assign stall_o = (w_state!=`MUL_IDLE);
 endmodule
 
 /******************************************************************************************/

@@ -44,5 +44,6 @@ launch_runs impl_1 -to_step write_bitstream -jobs $nproc
 wait_on_run impl_1
 
 open_run impl_1
+report_utilization -hierarchical
 report_timing
 close_project

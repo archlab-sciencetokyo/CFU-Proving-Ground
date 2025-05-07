@@ -11,18 +11,15 @@
 `define LCD_ROTATE 0 // 0: 0 degree, 1: 90 degree, 2: 180 degree, 3: 270 degree (Left Rotate)
 
 // cpu
-`define CLK_FREQ_MHZ    175
+`define CLK_FREQ_MHZ    150  // operating clock frequency in MHz
 
 `define RESET_VECTOR    'h00000000
 
-`define PHT_ENTRY       8192
-`define BTB_ENTRY       512
+`define BTB_ENTRY       (2*1024)  // the number of BTB entries for branch prediction
 
 // ram
-// Please enclose the parameters in `()`
-// Do not comment out the parameters. It will cause a parse error.
-`define IMEM_SIZE       (32*1024)
-`define DMEM_SIZE       (16*1024)
+`define IMEM_SIZE       (32*1024) // instruction memory size in byte
+`define DMEM_SIZE       (16*1024) // data memory size in byte
 
 // uart
 `ifndef BAUD_RATE

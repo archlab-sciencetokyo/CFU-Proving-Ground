@@ -13,7 +13,9 @@ TARGET := arty_a7
 #TARGET := nexys_a7
 
 .PHONY: build prog run clean
-build: prog
+all: prog build
+
+build: 
 	$(RTLSIM) --binary --trace --top-module top --Wno-WIDTHTRUNC --Wno-WIDTHEXPAND -o top *.v
 	gcc -O2 dispemu/dispemu.c -o build/dispemu -lcairo -lX11
 

@@ -6,3 +6,4 @@ memd.txt
 memi.txt
 build.tcl
 main.xdc
+*.vcd

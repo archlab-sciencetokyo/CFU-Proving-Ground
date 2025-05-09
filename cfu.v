@@ -11,27 +11,8 @@ module cfu_add (
     output wire        stall_o,
     output wire [31:0] rslt_o
 );
-    // state machine
-    localparam IDLE = 0;
-    localparam EXEC = 1;
-    localparam RET = 2;
-    
-    reg [1:0] state = IDLE;
-    reg [31:0] r_rslt = 0;
-    
-    assign stall_o = en_i || (state == EXEC);
-    assign rslt_o = (state == RET) ? r_rslt : 0;
-    
-    always @(posedge clk_i) begin
-        if (en_i && state == IDLE) begin
-            state <= EXEC;
-            r_rslt <= src1_i + src2_i;
-        end else if (state == EXEC) begin
-            state <= RET;
-        end else if (state == RET) begin
-            state <= IDLE;
-        end
-    end
+    assign stall_o = 0;
+    assign rslt_o = en_i ? (src1_i + src2_i) : 0;
 endmodule
 
 module cfu (

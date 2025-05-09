@@ -42,80 +42,6 @@ Using a CFU in C code involves:
     unsigned int add_result = cfu_add(test1, test2);
     ```
 
-## Creating New CFU Operations in Verilog
-
-To add a new CFU operation, follow these steps:
-
-1. Define a new operation constant in the main `cfu` module:
-    ```verilog
-    localparam OP_ADD = 3'b000;
-    localparam OP_YOUR_NEW_OP = 3'b001; // Choose an unused 3-bit code
-    ```
-
-1. Create a new module for your CFU operation:
-    ```verilog
-    module cfu_your_new_op (
-        input  wire        clk_i,
-        input  wire        en_i,
-        input  wire [31:0] src1_i,
-        input  wire [31:0] src2_i,
-        output wire        stall_o,
-        output wire [31:0] rslt_o
-    );
-        // Your implementation here
-        // ...
-    endmodule
-    ```
-
-1. Instantiate your module in the main `cfu` module:
-    ```verilog
-    reg op_en_your_new_op = 0;
-    wire stall_your_new_op;
-    wire [31:0] rslt_your_new_op;
-
-    cfu_your_new_op your_new_op_unit (
-        .clk_i(clk_i),
-        .en_i(op_en_your_new_op),
-        .src1_i(src1_i),
-        .src2_i(src2_i),
-        .stall_o(stall_your_new_op),
-        .rslt_o(rslt_your_new_op)
-    );
-    ```
-
-1. Update the input selection logic:
-    ```verilog
-    always @(*) begin
-        op_en_add = 0;
-        op_en_your_new_op = 0;
-        
-        if (en_i) begin
-            case (funct3_i)
-                OP_ADD: op_en_add = 1;
-                OP_YOUR_NEW_OP: op_en_your_new_op = 1;
-                default: begin end
-            endcase
-        end
-    end
-    ```
-
-1. Update the output selection logic:
-    ```verilog
-    always @(*) begin
-        case (funct3_i)
-            OP_ADD: result_mux = rslt_add;
-            OP_YOUR_NEW_OP: result_mux = rslt_your_new_op;
-            default: result_mux = 32'h0;
-        endcase
-    end
-    ```
-
-1. Update the stall logic:
-    ```verilog
-    assign stall_o = (funct3_i == OP_ADD) ? stall_add : 
-                    (funct3_i == OP_YOUR_NEW_OP) ? stall_your_new_op : 0;
-    ```
-
 ## Key Implementation Requirements
 
 When implementing a new CFU operation module, follow these rules:
@@ -137,4 +63,3 @@ Other Notices:
 
 - The internal implementation of your CFU is flexible.
 - You can use as many clock cycles as needed for computation.
-- You can implement complex operations with multiple internal steps.

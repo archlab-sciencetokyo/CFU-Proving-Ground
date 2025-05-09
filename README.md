@@ -124,6 +124,11 @@ In `scripts/prog_dev.tcl`, please specify the IP ADDRESS and PORT number of the 
 Once the specification is complete, you can write the bitstream to the board with `make conf`.
 
 ## History
+
+2025-05-09 Ver 1.5:
+- Improved RVProc clock speed to 180 MHz
+- Added CFU.md describing how to use the cfu.v
+
 2025-05-01 Ver 1.4:
 - Fixed a bug in the branch predictor.
 - Improved Fmax of RVProc from 160MHz to 175MHz.

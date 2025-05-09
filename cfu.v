@@ -16,4 +16,3 @@ module cfu (
     assign stall_o = 0;
     assign rslt_o = (en_i) ? src1_i | src2_i : 0;
 endmodule
-

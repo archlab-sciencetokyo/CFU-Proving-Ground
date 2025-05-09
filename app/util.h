@@ -3,6 +3,6 @@
 
 void pg_exit();
 void pg_printc(char c);
-void pg_printd(char c);
-void pg_printh(char c);
-void pg_prints(char c);
+void pg_printd(long long x);
+void pg_printh(int x);
+void pg_prints(const char *str);

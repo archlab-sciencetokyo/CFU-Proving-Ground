@@ -2,6 +2,8 @@
 CFU Proving Ground is a hardware-software co-design environment for FPGAs based on the RISC-V architecture.
 This enables agile development of ASIPs (Application-Specific Integrated Products) through a soft processor supporting the RV32IM instruction set, an RTL-based design flow, and a CFU (Custom Function Unit), which is a resource-efficient ALU-based accelerator.
 
+For information on how to create and use Custom Function Units (CFUs), please see [CFU Implementation Guide](cfu.md).
+
 The recommended OS is Ubuntu Linux.
 This project has been verified using Vivado 2024.2.
 

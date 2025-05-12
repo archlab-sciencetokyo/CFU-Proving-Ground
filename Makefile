@@ -90,5 +90,9 @@ init:
 clean:
 	rm -rf obj_dir rvcpu-32im* vivado* .Xil
 
+vpp:
+	v++ -c --mode hls --config constr/cfu.cfg --work_dir vitis
+	cp cfu/hls/impl/verilog/cfu.v .
+
 reset-hard:
 	rm -rf obj_dir build rvcpu-32im* sample1.txt vivado* .Xil build.tcl main.xdc

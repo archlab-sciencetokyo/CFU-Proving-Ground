@@ -2,6 +2,7 @@ build/
 obj_dir/
 .Xil/
 vivado*
+vitis/
 memd.txt
 memi.txt
 build.tcl

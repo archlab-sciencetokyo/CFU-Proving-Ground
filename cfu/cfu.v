@@ -8,7 +8,7 @@ module cfu (
     input  wire [6:0]  funct7_i,
     input  wire [31:0] src1_i  ,
     input  wire [31:0] src2_i  ,
-    input  wire [31:0] rslt_o
+    output wire [31:0] rslt_o
 );
 
     assign ap_done = ap_start;

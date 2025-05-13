@@ -4,7 +4,7 @@
 set top_dir [pwd]
 set proj_name main
 set part_name xc7a35tcsg324-1
-set src_files [list $top_dir/proc.v $top_dir/cfu.v $top_dir/main.v]
+set src_files [concat [list $top_dir/proc.v $top_dir/main.v] [glob -nocomplain $top_dir/cfu/*.v]]
 set nproc [exec nproc]
 
 set file [open "$top_dir/config.vh"]

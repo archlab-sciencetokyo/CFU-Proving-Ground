@@ -1,11 +1,12 @@
 # CFU Proving Ground since 2025-02    Copyright(c) 2025 Archlab. Science Tokyo
 # Released under the MIT license https://opensource.org/licenses/mit 
 
-GCC     := /tools/cad/riscv/rv32ima/bin/riscv32-unknown-elf-gcc
-GPP     := /tools/cad/riscv/rv32ima/bin/riscv32-unknown-elf-g++
-OBJCOPY := /tools/cad/riscv/rv32ima/bin/riscv32-unknown-elf-objcopy
-OBJDUMP := /tools/cad/riscv/rv32ima/bin/riscv32-unknown-elf-objdump
+GCC     := /home/fujino/.local/rv32im-custom/bin/riscv32-unknown-elf-gcc
+GPP     := /home/fujino/.local/rv32im-custom/bin/riscv32-unknown-elf-g++
+OBJCOPY := /home/fujino/.local/rv32im-custom/bin/riscv32-unknown-elf-objcopy
+OBJDUMP := /home/fujino/.local/rv32im-custom/bin/riscv32-unknown-elf-objdump
 VIVADO  := /tools/Xilinx/Vivado/2024.1/bin/vivado
+VPP     := /tools/Xilinx/Vitis/2024.1/bin/v++
 RTLSIM  := /tools/cad/bin/verilator
 
 TARGET := arty_a7
@@ -16,12 +17,12 @@ TARGET := arty_a7
 all: prog build
 
 build: 
-	$(RTLSIM) --binary --trace --top-module top --Wno-WIDTHTRUNC --Wno-WIDTHEXPAND -o top *.v
+	$(RTLSIM) --binary --trace --top-module top --Wno-TIMESCALEMOD --Wno-WIDTHTRUNC --Wno-WIDTHEXPAND -o top *.v cfu/*.v
 	gcc -O2 dispemu/dispemu.c -o build/dispemu -lcairo -lX11
 
 prog:
 	mkdir -p build
-	$(GCC) -Os -march=rv32im -mabi=ilp32 -nostartfiles -Iapp -Tapp/link.ld -o build/main.elf app/crt0.s app/*.c main.c 
+	$(GCC) -Os -march=rv32im -mabi=ilp32 -nostartfiles -Iapp -Tapp/link.ld -o build/main.elf app/crt0.s app/*.c cfu.c main.c 
 	make initf
 
 imem_size =	$(shell grep -oP "\`define\s+IMEM_SIZE\s+\(\K[^)]*" config.vh | bc)
@@ -91,8 +92,9 @@ clean:
 	rm -rf obj_dir rvcpu-32im* vivado* .Xil
 
 vpp:
-	v++ -c --mode hls --config constr/cfu.cfg --work_dir vitis
-	cp vitis/hls/impl/verilog/cfu.v .
+	$(VPP) -c --mode hls --config constr/cfu.cfg --work_dir vitis
+	mkdir -p cfu
+	cp vitis/hls/impl/verilog/*.v cfu/.
 
 reset-hard:
 	rm -rf obj_dir build rvcpu-32im* sample1.txt vivado* .Xil build.tcl main.xdc

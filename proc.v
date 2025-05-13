@@ -363,9 +363,9 @@ module cpu (
     );
 
     ///// custom function unit    
-    wire             Ex_cfu_en = IdEx_cfu_ctrl[0] & Ex_valid || cfu_en;
+    wire        Ex_cfu_en = IdEx_cfu_ctrl[0] & Ex_valid || cfu_en;
     reg cfu_en = 0; always @(posedge clk_i) cfu_en <= (Ex_cfu_ready) ? 0 : Ex_cfu_en;
-    wire             Ex_cfu_stall;
+    wire        Ex_cfu_stall;
     wire [31:0] Ex_cfu_rslt;
     wire [31:0] cfu_rslt;
     wire Ex_cfu_done;
@@ -378,7 +378,6 @@ module cpu (
         .ap_done         (  Ex_cfu_done         ), // output wire
         .ap_idle         (  Ex_cfu_idle         ), // output wire
         .ap_ready        (  Ex_cfu_ready        ), // output wire
-        .en_i            (  Ex_cfu_en           ), // input  wire        
         .funct3_i        (IdEx_cfu_ctrl[3:1]    ), // input  wire [ 2:0] 
         .funct7_i        (IdEx_cfu_ctrl[10:4]   ), // input  wire [ 6:0] 
         .src1_i          (  Ex_src1             ), // input  wire [31:0] 

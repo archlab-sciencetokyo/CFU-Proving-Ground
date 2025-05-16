@@ -4,7 +4,7 @@ This guide explains how to create and use Custom Function Units (CFUs) in the CF
 
 ## CFU Overview
 
-Custom Function Units extend the processor with application-specific instructions. A CFU connects to the processor pipeline and can be called from C code using special instructions.
+Custom Function Units extend the processor with application-specific instructions. A CFU connects to the processor pipeline and can be called from C code using custom instructions.
 
 ## Using CFUs in C Code
 
@@ -21,7 +21,7 @@ Using a CFU in C code involves:
                                     unsigned int rs1, unsigned int rs2) {
         unsigned int result;
         asm volatile(
-            ".insn r CUSTOM_0, 0x%3, %4, %1, %2, %0"
+            ".insn r CUSTOM_0, %3, %4, %0, %1, %2"
             : "=r"(result)
             : "r"(rs1), "r"(rs2), "i"(funct3), "i"(funct7)
             :
@@ -41,6 +41,50 @@ Using a CFU in C code involves:
     ```c
     unsigned int add_result = cfu_add(test1, test2);
     ```
+> [!NOTE]
+> `.insn r` is a pseudo instruction for specifying an RISC-V instruction in R format.
+> This instruction is used as follows:
+> ```
+> .insn r opcode, funct3, funct7, rd, rs1, rs2
+> ```
+>
+> Let's look at a simple example:
+> ```c
+> #include <stdio.h>
+> 
+> int main(){
+> int rs1 = 1;
+> int rs2 = 2;
+> 
+> int result;
+> asm volatile (
+>              ".insn r 0x33, 0x0, 0x20, %0, %1, %2"
+>              : "=r" (result)
+>              : "r" (rs1) ,  "r" (rs2)
+>              );
+> printf("%d %d -> %d \n", rs1, rs2, result);
+> return 0;
+> ```
+> This code specifies the instruction opcode=0x33, funct3=0x0, funct7=0x20．
+> This is the `sub` instruction．
+>
+> Here's dump of this code, which appears to compile correctly as a `sub` instruction:
+> ```
+> 000100b4 <main>:
+>   100b4:	ff010113          	addi	sp,sp,-16
+>   100b8:	00112623          	sw	ra,12(sp)
+>   100bc:	00100593          	li	a1,1
+>   100c0:	00200793          	li	a5,2
+>   100c4:	40f586b3          	sub	a3,a1,a5
+>   100c8:	00021537          	lui	a0,0x21
+>   100cc:	00078613          	mv	a2,a5
+>   100d0:	ce850513          	addi	a0,a0,-792 # 20ce8 <__clzsi2+0x4c>
+>   100d4:	05c000ef          	jal	10130 <printf>
+>   100d8:	00c12083          	lw	ra,12(sp)
+>   100dc:	00000513          	li	a0,0
+>   100e0:	01010113          	addi	sp,sp,16
+>   100e4:	00008067          	ret
+> ```
 
 ## Key Implementation Requirements
 

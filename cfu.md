@@ -65,8 +65,8 @@ Using a CFU in C code involves:
 > printf("%d %d -> %d \n", rs1, rs2, result);
 > return 0;
 > ```
-> This code specifies the instruction opcode=0x33, funct3=0x0, funct7=0x20．
-> This is the `sub` instruction．
+> This code specifies the instruction opcode=0x33, funct3=0x0, funct7=0x20.
+> This is the `sub` instruction.
 >
 > Here's dump of this code, which appears to compile correctly as a `sub` instruction:
 > ```

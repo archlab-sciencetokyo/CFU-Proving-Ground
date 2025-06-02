@@ -9,3 +9,4 @@ main.xdc
 *.vcd
 vitis/
 cfu/
+vitis-comp.json

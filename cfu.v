@@ -13,6 +13,30 @@ module cfu (
     output wire        stall_o,
     output wire [31:0] rslt_o
 );
+
+`ifdef USE_HLS
+    wire ap_start = en_i || cfu_en;
+    reg cfu_en = 0; always @(posedge clk_i) cfu_en <= (ap_ready) ? 0 : ap_start;
+    wire ap_done;
+    wire ap_idle;
+    wire ap_ready;
+    wire [31:0] rslt;
+    cfu_hls cfu_hls (
+        .ap_clk         (clk_i          ),
+        .ap_start       (ap_start       ),
+        .ap_done        (ap_done        ),
+        .ap_idle        (ap_idle        ),
+        .ap_ready       (ap_ready       ),
+        .funct3_i       (funct3_i       ),
+        .funct7_i       (funct7_i       ),
+        .src1_i         (src1_i         ),
+        .src2_i         (src2_i         ),
+        .rslt_o         (rslt           )
+    );
+    assign stall_o = !ap_idle && !ap_done;
+    assign rslt_o = (ap_start) ? rslt : 0;
+`else
     assign stall_o = 0;
     assign rslt_o = (en_i) ? src1_i | src2_i : 0;
+`endif
 endmodule

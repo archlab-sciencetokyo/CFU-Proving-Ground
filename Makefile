@@ -6,6 +6,7 @@ GPP     := /tools/cad/riscv/rv32ima/bin/riscv32-unknown-elf-g++
 OBJCOPY := /tools/cad/riscv/rv32ima/bin/riscv32-unknown-elf-objcopy
 OBJDUMP := /tools/cad/riscv/rv32ima/bin/riscv32-unknown-elf-objdump
 VIVADO  := /tools/Xilinx/Vivado/2024.1/bin/vivado
+VPP     := /tools/Xilinx/Vitis/2024.1/bin/v++
 RTLSIM  := /tools/cad/bin/verilator
 
 TARGET := arty_a7
@@ -82,6 +83,13 @@ conf:
 		exit 1; \
 	fi
 	$(VIVADO) -mode batch -source scripts/prog_dev.tcl
+
+vpp:
+	$(VPP) -c --mode hls --config constr/cfu_hls.cfg --work_dir vitis
+	if [ -d cfu ]; then rm -rf cfu; fi
+	mkdir -p cfu
+	cp vitis/hls/impl/verilog/*.v cfu/.
+	cp vitis/hls/impl/verilog/*.tcl cfu/.
 
 init:
 	cp constr/$(TARGET).xdc main.xdc

@@ -27,6 +27,8 @@ for {set i 0} {$i < $argc} {incr i} {
         set src_files [concat $src_files [glob -nocomplain $top_dir/cfu/*.v]]
         set tcl_files [glob -nocomplain $top_dir/cfu/*.tcl]
         foreach tcl_file $tcl_files {source $tcl_file}
+        set_property verilog_define {USE_HLS} [get_filesets  sources_1]
+        update_compile_order -fileset sources_1
         break;
     }
 }
@@ -38,8 +40,6 @@ if {[regexp {CRITICAL WARNING:} [check_syntax -return_string -fileset sources_1]
     puts "Syntax check failed. Exiting..."
     exit 1
 }
-set_property verilog_define {USE_HLS} [get_filesets  sources_1]
-update_compile_order -fileset sources_1
 
 create_ip -name clk_wiz -vendor xilinx.com -library ip -version 6.0 -module_name clk_wiz_0
 set_property -dict [list \

@@ -15,8 +15,8 @@ module cfu (
 );
 
 `ifdef USE_HLS
-    wire ap_start = en_i || cfu_en;
     reg cfu_en = 0; always @(posedge clk_i) cfu_en <= (ap_ready) ? 0 : ap_start;
+    wire ap_start = en_i || cfu_en;
     wire ap_done;
     wire ap_idle;
     wire ap_ready;

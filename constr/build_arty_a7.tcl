@@ -5,7 +5,6 @@ set top_dir [pwd]
 set proj_name main
 set part_name xc7a35tcsg324-1
 set src_files [list $top_dir/proc.v $top_dir/cfu.v $top_dir/main.v]
-set tcl_files [glob -nocomplain $top_dir/cfu/*.tcl]
 set nproc [exec nproc]
 
 set file [open "$top_dir/config.vh"]
@@ -26,6 +25,8 @@ for {set i 0} {$i < $argc} {incr i} {
     if {[lindex $argv $i] eq "--hls"} {
         puts "HLS mode enabled. Adding HLS source files."
         set src_files [concat $src_files [glob -nocomplain $top_dir/cfu/*.v]]
+        set tcl_files [glob -nocomplain $top_dir/cfu/*.tcl]
+        foreach tcl_file $tcl_files {source $tcl_file}
         break;
     }
 }
@@ -49,10 +50,6 @@ set_property -dict [list \
 
 generate_target all [get_files  $top_dir/vivado/$proj_name.srcs/sources_1/ip/clk_wiz_0/clk_wiz_0.xci]
 create_ip_run [get_ips clk_wiz_0]
-
-foreach tcl_file $tcl_files {
-    source $tcl_file
-}
 
 update_compile_order -fileset sources_1
 launch_runs impl_1 -to_step write_bitstream -jobs $nproc

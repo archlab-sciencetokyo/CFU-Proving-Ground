@@ -4,7 +4,7 @@
 set top_dir [pwd]
 set proj_name main
 set part_name xc7a35tcsg324-1
-set src_files [concat [list $top_dir/proc.v $top_dir/cfu.v $top_dir/main.v] [glob -nocomplain $top_dir/cfu/*.v]]
+set src_files [list $top_dir/proc.v $top_dir/cfu.v $top_dir/main.v]
 set tcl_files [glob -nocomplain $top_dir/cfu/*.tcl]
 set nproc [exec nproc]
 
@@ -21,6 +21,14 @@ close $file
 create_project -force $proj_name $top_dir/vivado -part $part_name
 set_property strategy Flow_PerfOptimized_high [get_runs synth_1]
 set_property strategy Performance_ExplorePostRoutePhysOpt [get_runs impl_1]
+
+for {set i 0} {$i < $argc} {incr i} {
+    if {[lindex $argv $i] eq "--hls"} {
+        puts "HLS mode enabled. Adding HLS source files."
+        set src_files [concat $src_files [glob -nocomplain $top_dir/cfu/*.v]]
+        break;
+    }
+}
 
 add_files -force -scan_for_includes $src_files
 add_files -fileset constrs_1 $top_dir/main.xdc

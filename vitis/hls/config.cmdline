@@ -1,3 +1,0 @@
-relativeroot=/home/fujino/Projects/GitHub/CFU-Proving-Ground
-original_argv=-c --mode hls --config constr/cfu_hls.cfg --work_dir vitis 
-

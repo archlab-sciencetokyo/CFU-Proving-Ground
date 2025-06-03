@@ -1,4 +1,0 @@
-<pragmas>
-<pragma file="cfu_hls.c" line="18" pragmaType="loop_flatten" parentfunction="cfu_hls" off="0"/>
-<pragma file="cfu_hls.c" line="12" pragmaType="interface" parentfunction="cfu_hls" mode="ap_none" port="rslt_o" name="" register="0"/>
-</pragmas>

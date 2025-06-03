@@ -1,7 +1,4 @@
 /******************************************************************************************/
-/* RVProc RV32IM Baseline Ver.v2025-05-06d       Copyright(c) 2025 Archlab. Science Tokyo */
-/* Released under the MIT license https://opensource.org/licenses/mit                     */
-/******************************************************************************************/
 `default_nettype none
 `include "config.vh"
 /******************************************************************************************/
@@ -416,7 +413,7 @@ module cpu (
         .dbus_rdata_i       (dbus_rdata_i         ), // input  wire           [`XLEN-1:0]
         .rslt_o             (  Ma_load_rslt       )  // output wire           [`XLEN-1:0]
     );
-
+    
     wire [`XLEN-1:0] Ma_rslt = ExMa_rslt | ExMa_mdc_rslt | Ma_load_rslt;
 
     always @(posedge clk_i) begin
@@ -534,7 +531,7 @@ module alu (
     input  wire [`ALU_CTRL_WIDTH-1:0] alu_ctrl_i,
     input  wire                [31:0] src1_i    ,
     input  wire                [31:0] src2_i    ,
-    input  wire                [31:0] j_pc4_i   ,            
+    input  wire                [31:0] j_pc4_i   ,
     output wire                [31:0] rslt_o
 );
 
@@ -542,18 +539,21 @@ module alu (
     wire w_neg    = alu_ctrl_i[`ALU_CTRL_IS_NEG];
     wire w_less   = alu_ctrl_i[`ALU_CTRL_IS_LESS];
 
-    wire [33:0] adder_src1   = {w_signed && src1_i[31], src1_i, 1'b1};
-    wire [33:0] adder_src2   = {w_signed && src2_i[31], src2_i, 1'b0} ^ {34{w_neg}};
-    wire [33:0] adder_rslt_t = adder_src1+adder_src2;
-    wire        less_rslt    = w_less && adder_rslt_t[33];
-    wire [31:0] adder_rslt   = (alu_ctrl_i[`ALU_CTRL_IS_ADD]) ? adder_rslt_t[32:1] : 0;
+    wire signed [31:0] sin1 = src1_i;
+    wire signed [31:0] sin2 = src2_i;
 
-    wire signed  [32:0] right_shifter_src1 = {w_signed && src1_i[31], src1_i};
+    wire        less_rslt = (w_less==0) ? 0 : w_signed ? (sin1 < sin2) : (src1_i < src2_i);
+
+    wire [31:0] adder_rslt = 
+                (alu_ctrl_i[`ALU_CTRL_IS_ADD] && w_neg==0) ? src1_i + src2_i :
+                (alu_ctrl_i[`ALU_CTRL_IS_ADD] && w_neg==1) ? src1_i - src2_i : 0;
+
     wire  [4:0] shamt              = src2_i[4:0];
     wire [31:0] left_shifter_rslt  = (alu_ctrl_i[`ALU_CTRL_IS_SHIFT_LEFT] ) ?  
                                      src1_i <<  shamt : 0;
-    wire [31:0] right_shifter_rslt = (alu_ctrl_i[`ALU_CTRL_IS_SHIFT_RIGHT]) ? 
-                                     right_shifter_src1 >>> shamt : 0;
+    wire [31:0] right_shifter_rslt = 
+                (alu_ctrl_i[`ALU_CTRL_IS_SHIFT_RIGHT] && w_signed==0) ? src1_i >> shamt :
+                (alu_ctrl_i[`ALU_CTRL_IS_SHIFT_RIGHT] && w_signed==1) ? sin1 >>> shamt : 0;
 
     wire [31:0] bitwise_rslt       = ((alu_ctrl_i[`ALU_CTRL_IS_XOR_OR]) ? 
                                      (src1_i ^ src2_i) : 0) | 
@@ -625,22 +625,26 @@ module divider (
 
     reg        is_dividend_neg;
     reg        is_divisor_neg;
-    reg [31:0] remainder;
-    reg [31:0] divisor;
-    reg [31:0] quotient;
+    reg  [31:0] divisor;
+    wire [63:0] remainder;
+    wire [63:0] quotient;
     reg        is_div_rslt_neg;
     reg        is_rem_rslt_neg;
     reg        is_rem;
     reg  [4:0] cntr;
-
-    wire [31:0] uintx_remainder = (is_dividend_neg) ? ~remainder+1 : remainder;
-    wire [31:0] uintx_divisor   = (is_divisor_neg ) ? ~divisor+1   : divisor;
+    reg [63:0] r_rslt;
+    
+    wire [31:0] uintx_remainder = (is_dividend_neg) ? ~(remainder[31:0]+1) : remainder[31:0];
+    wire [31:0] uintx_divisor   = (is_divisor_neg ) ? ~(divisor+1)   : divisor;
     wire [32:0] difference      = {remainder[30:0], quotient[31]} - divisor;
     wire        q               = !difference[32];
 
+    assign remainder = r_rslt[63:32];
+    assign quotient  = r_rslt[31:0];
+    
     assign rslt_o = (state!=`DIV_RET) ? 0 : 
-                    (is_rem) ? ((is_rem_rslt_neg) ? ~remainder+1 : remainder) :
-                    ((is_div_rslt_neg) ? ~quotient+1  : quotient ) ;
+                    (is_rem) ? ((is_rem_rslt_neg) ? ~(remainder[31:0]+1) : remainder[31:0]) :
+                    ((is_div_rslt_neg) ? ~(quotient[31:0]+1)  : quotient[31:0] ) ;
     
     wire w_div    = div_ctrl_i[`DIV_CTRL_IS_DIV];
     wire w_signed = div_ctrl_i[`DIV_CTRL_IS_SIGNED];
@@ -649,9 +653,9 @@ module divider (
                          (state==`DIV_CHECK && divisor!=0) ? `DIV_EXEC :
                          (state==`DIV_EXEC  && cntr==0) ? `DIV_RET :
                          (state==`DIV_EXEC  && cntr!=0) ? `DIV_EXEC : `DIV_IDLE;
-    
+
     wire w_init = (state==`DIV_IDLE && valid_i && w_div);
-    always @(posedge clk_i) if (!stall_i) begin
+    always @(posedge clk_i) if (stall_i==0) begin
         is_rem            <= (w_init) ? div_ctrl_i[`DIV_CTRL_IS_REM] : is_rem;
         is_dividend_neg   <= (w_init) ? w_signed && src1_i[31] : is_dividend_neg;
         is_divisor_neg    <= (w_init) ? w_signed && src2_i[31] : is_divisor_neg;
@@ -663,12 +667,12 @@ module divider (
         divisor <= (w_init) ? src2_i :
                    (state==`DIV_CHECK && divisor!=0) ? uintx_divisor : divisor;
 
-        {remainder, quotient} <= (w_init) ? {src1_i, 32'd0} :
-                   (state==`DIV_CHECK && divisor==0) ? {remainder, {32{1'b1}}} :
+        r_rslt <= (w_init) ? {src1_i, 32'd0} :
+                   (state==`DIV_CHECK && divisor==0) ? {remainder[31:0], {32{1'b1}}} :
                    (state==`DIV_CHECK && divisor!=0) ? {32'd0, uintx_remainder} :
                    (state==`DIV_EXEC) ? ((q) ? {difference[31:0], quotient[30:0], 1'b1} :
-                                               {remainder[30:0], quotient, 1'b0}) :
-                   {remainder, quotient};
+                                               {remainder[30:0], quotient[31:0], 1'b0}) :
+                  r_rslt;
 
         cntr <= (state==`DIV_CHECK) ? 31 : (state==`DIV_EXEC) ?  cntr-1 : cntr;
         state <= w_state;
@@ -773,13 +777,15 @@ module load_unit (
     wire w_lb_sign = w_lb & ((ost==0) ? d[7] : (ost==1) ? d[15] :(ost==2) ? d[23] : d[31]) & w_signed;
     wire w_lh_sign = w_lh & ((ost[1]==0) ? d[15] : d[31]) & w_signed;
 
-    assign rslt_o[7:0]   = (!w_load) ? 0 : (w_lw || (w_lh & ost[1]==0) || (w_lb & ost==0)) ? d[7:0] : 
+    wire [7:0] w1, w2, w3, w4;
+    assign w1   = (w_load==0) ? 0 : (w_lw || (w_lh & ost[1]==0) || (w_lb & ost==0)) ? d[7:0] : 
                            (w_lb && ost==1) ? d[15:8] : ((w_lb && ost==2) || 
                            (w_lh && ost[1]==1)) ? d[23:16] : d[31:24];
-    assign rslt_o[15:8]  = (!w_load) ? 0 : (w_lw || (w_lh && ost[1]==0)) ? d[15:8] : 
+    assign w2  = (w_load==0) ? 0 : (w_lw || (w_lh && ost[1]==0)) ? d[15:8] : 
                            (w_lh && ost[1]==1) ? d[31:24] : (w_lb_sign) ? 8'hff : 0;
-    assign rslt_o[23:16] = (!w_load) ? 0 : (w_lw) ? d[23:16] : ((w_lb_sign) || (w_lh_sign)) ? 8'hff : 0;
-    assign rslt_o[31:24] = (!w_load) ? 0 : (w_lw) ? d[31:24] : ((w_lb_sign) || (w_lh_sign)) ? 8'hff : 0;
+    assign w3 = (w_load==0) ? 0 : (w_lw) ? d[23:16] : ((w_lb_sign) || (w_lh_sign)) ? 8'hff : 0;
+    assign w4 = (w_load==0) ? 0 : (w_lw) ? d[31:24] : ((w_lb_sign) || (w_lh_sign)) ? 8'hff : 0;
+    assign rslt_o = {w4, w3, w2, w1};
 endmodule
 
 /******************************************************************************************/

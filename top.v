@@ -51,16 +51,16 @@ module top;
         end
     end
 
-    final begin
-        $write("\n"                                                                                                       );
-        $write("===> mtime                                  : %10d\n"    , mtime                                          );
-        $write("===> mcycle                                 : %10d\n"    , mcycle                                         );
-        $write("===> minstret                               : %10d\n"    , minstret                                       );
-        $write("===> Total number of branch predictions     : %10d\n"    , br_pred_cntr                                   );
-        $write("===> Total number of branch mispredictions  : %10d\n"    , br_misp_cntr                                   );
-        $write("===> simulation finish!!\n"                                                                               );
-        $write("\n"                                                                                                       );
-    end
+//    final begin
+//        $write("\n"                                                                                                       );
+//        $write("===> mtime                                  : %10d\n"    , mtime                                          );
+//        $write("===> mcycle                                 : %10d\n"    , mcycle                                         );
+//        $write("===> minstret                               : %10d\n"    , minstret                                       );
+//        $write("===> Total number of branch predictions     : %10d\n"    , br_pred_cntr                                   );
+//        $write("===> Total number of branch mispredictions  : %10d\n"    , br_misp_cntr                                   );
+//        $write("===> simulation finish!!\n"                                                                               );
+//        $write("\n"                                                                                                       );
+//    end
 
     wire sda, scl, dc, res;
     main m0 (

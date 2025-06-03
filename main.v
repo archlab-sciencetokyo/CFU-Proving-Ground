@@ -208,6 +208,8 @@ module vmem (
     reg [2:0] rdata_lo;
     reg [2:0] rdata_hi;
     reg       sel;
+
+    localparam ADDR_MASK = 16'h7FFF;
     
     always @(posedge clk_i) begin
         we <= we_i;
@@ -219,13 +221,13 @@ module vmem (
         raddr <= raddr_i[14:0];
 
         if (we) begin
-            if (top) vmem_hi[waddr] <= wdata;
-            else     vmem_lo[waddr] <= wdata;
+            if (top) vmem_hi[waddr & ADDR_MASK] <= wdata;
+            else     vmem_lo[waddr & ADDR_MASK] <= wdata;
         end
 
         sel <= rtop;
-        rdata_lo <= vmem_lo[raddr];
-        rdata_hi <= vmem_hi[raddr];
+        rdata_lo <= vmem_lo[raddr & ADDR_MASK];
+        rdata_hi <= vmem_hi[raddr & ADDR_MASK];
     end
 
     assign rdata_o = (sel) ? rdata_hi : rdata_lo;
@@ -238,13 +240,13 @@ module vmem (
     wire [15:0] data = {{5{wdata_i[2]}}, {6{wdata_i[1]}}, {5{wdata_i[0]}}};
     always @(posedge clk_i) if(we_i) begin
         case (waddr_i[15])
-            0: if(vmem_lo[waddr_i] != wdata_i) begin
+            0: if(vmem_lo[waddr_i & ADDR_MASK] != wdata_i) begin
                 r_adr_p <= waddr_i;
                 r_dat_p <= data;
                 $write("@D%0d_%0d\n", waddr_i ^ r_adr_p, data ^ r_dat_p);
                 $fflush();
             end
-            1: if(vmem_hi[waddr_i] != wdata_i) begin
+            1: if(vmem_hi[waddr_i & ADDR_MASK] != wdata_i) begin
                 r_adr_p <= waddr_i;
                 r_dat_p <= data;
                 $write("@D%0d_%0d\n", waddr_i ^ r_adr_p, data ^ r_dat_p);
@@ -269,7 +271,7 @@ module m_st7789_disp(
     always @(posedge w_clk) r_cnt <= (r_cnt==0) ? 0 : r_cnt + 1;
     reg r_RES = 1;
     always @(posedge w_clk) begin
-        r_RES <= (r_cnt==100_000) ? 0 : (r_cnt==200_000) ? 1 : r_RES;
+        r_RES <= (r_cnt==100000) ? 0 : (r_cnt==200000) ? 1 : r_RES;
     end
     assign st7789_RES = r_RES;    
        

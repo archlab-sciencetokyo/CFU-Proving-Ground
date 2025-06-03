@@ -11,7 +11,7 @@
 `define LCD_ROTATE 0 // 0: 0 degree, 1: 90 degree, 2: 180 degree, 3: 270 degree (Left Rotate)
 
 // cpu
-`define CLK_FREQ_MHZ    150  // operating clock frequency in MHz
+`define CLK_FREQ_MHZ    180  // operating clock frequency in MHz
 
 `define RESET_VECTOR    'h00000000
 
@@ -20,6 +20,9 @@
 // ram
 `define IMEM_SIZE       (32*1024) // instruction memory size in byte
 `define DMEM_SIZE       (16*1024) // data memory size in byte
+
+`define IMEM_ADDRW ($clog2(`IMEM_SIZE))
+`define DMEM_ADDRW ($clog2(`DMEM_SIZE))
 
 // uart
 `ifndef BAUD_RATE

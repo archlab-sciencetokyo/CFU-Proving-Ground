@@ -1,0 +1,122 @@
+
+
+================================================================
+== Synthesis Summary Report of 'cfu_hls'
+================================================================
++ General Information: 
+    * Date:           Mon Jun  2 17:03:17 2025
+    * Version:        2024.1 (Build 5069499 on May 21 2024)
+    * Project:        vitis
+    * Solution:       hls (Vivado IP Flow Target)
+    * Product family: artix7
+    * Target device:  xc7a35t-csg324-1
+    
+
++ Performance & Resource Estimates: 
+    
+    PS: '+' for module; 'o' for loop; '*' for dataflow
+    +-----------+------+------+---------+-----------+----------+---------+------+----------+------+----------+-----------+-----------+-----+
+    |  Modules  | Issue|      | Latency |  Latency  | Iteration|         | Trip |          |      |          |           |           |     |
+    |  & Loops  | Type | Slack| (cycles)|    (ns)   |  Latency | Interval| Count| Pipelined| BRAM |    DSP   |     FF    |    LUT    | URAM|
+    +-----------+------+------+---------+-----------+----------+---------+------+----------+------+----------+-----------+-----------+-----+
+    |+ cfu_hls  |     -|  0.52|     9479|  6.320e+04|         -|     9480|     -|        no|     -|  10 (11%)|  1450 (3%)|  1148 (5%)|    -|
+    | o kernel  |    II|  4.87|     9475|  6.317e+04|        41|       37|   255|       yes|     -|         -|          -|          -|    -|
+    +-----------+------+------+---------+-----------+----------+---------+------+----------+------+----------+-----------+-----------+-----+
+
+
+================================================================
+== HW Interfaces
+================================================================
+* Other Ports
++----------+---------+-----------+----------+
+| Port     | Mode    | Direction | Bitwidth |
++----------+---------+-----------+----------+
+| funct3_i | ap_none | in        | 8        |
+| funct7_i | ap_none | in        | 8        |
+| rslt_o   | ap_none | out       | 32       |
+| src1_i   | ap_none | in        | 32       |
+| src2_i   | ap_none | in        | 32       |
++----------+---------+-----------+----------+
+
+* TOP LEVEL CONTROL
++-----------+------------+-----------------------------------+
+| Interface | Type       | Ports                             |
++-----------+------------+-----------------------------------+
+| ap_clk    | clock      | ap_clk                            |
+| ap_ctrl   | ap_ctrl_hs | ap_done ap_idle ap_ready ap_start |
++-----------+------------+-----------------------------------+
+
+
+================================================================
+== SW I/O Information
+================================================================
+* Top Function Arguments
++----------+-----------+----------+
+| Argument | Direction | Datatype |
++----------+-----------+----------+
+| funct3_i | in        | char     |
+| funct7_i | in        | char     |
+| src1_i   | in        | int      |
+| src2_i   | in        | int      |
+| rslt_o   | out       | int*     |
++----------+-----------+----------+
+
+* SW-to-HW Mapping
++----------+--------------+---------+
+| Argument | HW Interface | HW Type |
++----------+--------------+---------+
+| funct3_i | funct3_i     | port    |
+| funct7_i | funct7_i     | port    |
+| src1_i   | src1_i       | port    |
+| src2_i   | src2_i       | port    |
+| rslt_o   | rslt_o       | port    |
++----------+--------------+---------+
+
+
+================================================================
+== M_AXI Burst Information
+================================================================
+ Note: All burst requests might be further partitioned into multiple requests during RTL generation based on max_read_burst_length or max_write_burst_length settings.
+
+
+================================================================
+== Bind Op Report
+================================================================
++-----------------------------------------+-----+--------+-------------+-------+---------+---------+
+| Name                                    | DSP | Pragma | Variable    | Op    | Impl    | Latency |
++-----------------------------------------+-----+--------+-------------+-------+---------+---------+
+| + cfu_hls                               | 10  |        |             |       |         |         |
+|   fmul_32ns_32ns_32_5_max_dsp_1_U3      | 3   |        | mul1        | fmul  | maxdsp  | 4       |
+|   faddfsub_32ns_32ns_32_9_full_dsp_1_U1 | 2   |        | v           | fsub  | fulldsp | 8       |
+|   faddfsub_32ns_32ns_32_9_full_dsp_1_U1 | 2   |        | sub         | fsub  | fulldsp | 8       |
+|   fadd_32ns_32ns_32_9_full_dsp_1_U2     | 2   |        | u           | fadd  | fulldsp | 8       |
+|   fmul_32ns_32ns_32_5_max_dsp_1_U3      | 3   |        | u2          | fmul  | maxdsp  | 4       |
+|   fmul_32ns_32ns_32_5_max_dsp_1_U4      | 3   |        | v2          | fmul  | maxdsp  | 4       |
+|   faddfsub_32ns_32ns_32_9_full_dsp_1_U1 | 2   |        | add5        | fsub  | fulldsp | 8       |
+|   icmp_ln23_fu_226_p2                   |     |        | icmp_ln23   | setne | auto    | 0       |
+|   icmp_ln23_1_fu_232_p2                 |     |        | icmp_ln23_1 | seteq | auto    | 0       |
+|   or_ln23_fu_238_p2                     |     |        | or_ln23     | or    | auto    | 0       |
+|   fcmp_32ns_32ns_1_3_no_dsp_1_U5        |     |        | tmp_1       | fcmp  | auto    | 2       |
+|   and_ln23_fu_242_p2                    |     |        | and_ln23    | and   | auto    | 0       |
+|   k_fu_261_p2                           |     |        | k           | add   | fabric  | 0       |
+|   fmul_32ns_32ns_32_5_max_dsp_1_U3      | 3   |        | phitmp      | fmul  | maxdsp  | 4       |
++-----------------------------------------+-----+--------+-------------+-------+---------+---------+
+
+
+================================================================
+== Storage Report
+================================================================
+  No bind storage info in design
+
+================================================================
+== Pragma Report
+================================================================
+* Valid Pragma Syntax
++--------------+---------------------+------------------------------------------+
+| Type         | Options             | Location                                 |
++--------------+---------------------+------------------------------------------+
+| loop_flatten |                     | cfu_hls.c:18 in cfu_hls                  |
+| interface    | ap_none port=rslt_o | constr/cfu_hls.cfg:12 in cfu_hls, rslt_o |
++--------------+---------------------+------------------------------------------+
+
+

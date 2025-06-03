@@ -1,0 +1,26 @@
+--- !Missed
+Pass:            reflow-burst-inference
+Name:            CouldNotAnalyzeBoundsPattern
+DebugLoc:        { File: cfu_hls.c, Line: 17, Column: 13 }
+Function:        cfu_hls
+Args:            
+  - String:          Could not analyze the loop bounds
+  - String:          ' _XLX_SEP_ '
+  - LoopName:        kernel
+  - String:          ' '
+  - LoopLoc:         'cfu_hls.c:17:13'
+  - String:          ' '
+  - Function:        cfu_hls
+    DebugLoc:        { File: cfu_hls.c, Line: 8, Column: 0 }
+  - String:          ' '
+...
+--- !HLSReportInfo
+Pass:            auto-loop-pipeline
+Name:            AutoLoopPipeline
+Args:            
+  - String:          'automatically set the pipeline for Loop< '
+  - LoopName:        kernel
+  - String:          '> at '
+  - LoopLoc:         'cfu_hls.c:17:13'
+  - String:          ' '
+...

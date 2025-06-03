@@ -1,0 +1,20 @@
+{
+    "0": {
+        "name": "cfu_hls",
+        "file": "cfu_hls.c",
+        "fileloc": "3",
+        "instructions": "60",
+        "total_instructions": "60",
+        "calls": "",
+        "basicblocks": "4",
+        "loads": {
+            "L": "4"
+        },
+        "stores": {
+            "L": "8"
+        },
+        "loops": {
+            "L": "1"
+        }
+    }
+}

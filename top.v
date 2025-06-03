@@ -29,12 +29,12 @@ module top;
 // Dump 
 //------------------------------------------------------------------------------
 // `define DEBUG
-`ifdef DEBUG
-    initial begin
-        $dumpfile("dump.vcd");
-        $dumpvars(0, top);
-    end
-`endif
+// `ifdef DEBUG
+//     initial begin
+//         $dumpfile("dump.vcd");
+//         $dumpvars(0, top);
+//     end
+// `endif
 
 //==============================================================================
 // Condition for simulation to end
@@ -58,22 +58,17 @@ module top;
         $write("===> minstret                               : %10d\n"    , minstret                                       );
         $write("===> Total number of branch predictions     : %10d\n"    , br_pred_cntr                                   );
         $write("===> Total number of branch mispredictions  : %10d\n"    , br_misp_cntr                                   );
-        $write("===> Branch misprediction rate              :   %f\n"  , $itor(br_misp_cntr) / $itor(br_pred_cntr)        );
-        $write("===> Branch prediction hit rate             :   %f\n"  , 1 - ($itor(br_misp_cntr) / $itor(br_pred_cntr))  );
-        $write("===> IPC (Instructions Per Cycle)           :   %f\n"  , $itor(minstret) / $itor(mcycle)                  );
-        $write("===> simulation finish!!\n"                                                                             );
-        $write("\n"                                                                                                     );
+        $write("===> simulation finish!!\n"                                                                               );
+        $write("\n"                                                                                                       );
     end
 
-//==============================================================================
-// Instantiate the SoC
-//------------------------------------------------------------------------------
+    wire sda, scl, dc, res;
     main m0 (
         .clk_i          (clk        ),
-        .st7789_SDA     (           ),
-        .st7789_SCL     (           ),
-        .st7789_DC      (           ),
-        .st7789_RES     (           )
+        .st7789_SDA     (sda        ),
+        .st7789_SCL     (scl        ),
+        .st7789_DC      (dc         ),
+        .st7789_RES     (res        )
     );
 
 endmodule

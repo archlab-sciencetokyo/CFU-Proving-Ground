@@ -53,9 +53,7 @@ module main (
         .dbus_rdata_i       (dbus_rdata         )  // input  wire [`DBUS_DATA_WIDTH-1:0]
     );
 
-    imem #(
-        .RAM_SIZE           (`IMEM_SIZE         )
-    ) imem (
+    m_imem imem (
         .clk_i              (clk                ), // input  wire
         .raddr_i            (imem_raddr         ), // input  wire [ADDR_WIDTH-1:0]
         .rdata_o            (imem_rdata         )  // output reg  [DATA_WIDTH-1:0]
@@ -66,9 +64,7 @@ module main (
     wire [31:0] dmem_wdata = dbus_wdata;
     wire [3:0] dmem_wstrb = dbus_wstrb;
     wire [31:0] dmem_rdata;
-    dmem #(
-        .RAM_SIZE           (`DMEM_SIZE         )
-    ) dmem (
+    m_dmem dmem (
         .clk_i              (clk                ),   // input  wire
         .we_i               (dmem_we            ),   // input  wire                  
         .addr_i             (dmem_addr          ),   // input  wire [ADDR_WIDTH-1:0] 
@@ -116,51 +112,38 @@ module main (
 
 endmodule
 
-module imem #(
-    parameter RAM_SIZE      = 4*1024        ,
-    parameter ADDR_WIDTH    = 32            ,
-    parameter DATA_WIDTH    = 32
-) (
-    input  wire                  clk_i      ,
-    input  wire [ADDR_WIDTH-1:0] raddr_i    ,
-    output reg  [DATA_WIDTH-1:0] rdata_o
+module m_imem (
+    input  wire        clk_i      ,
+    input  wire [31:0] raddr_i    ,
+    output wire [31:0] rdata_o
 );
 
-    localparam OFFSET_WIDTH     = $clog2(DATA_WIDTH/8)          ;
-    localparam VALID_ADDR_WIDTH = $clog2(RAM_SIZE)-OFFSET_WIDTH ;
-    (* ram_style = "block" *) reg [DATA_WIDTH-1:0] imem [0:(2**VALID_ADDR_WIDTH)-1];
+    (* ram_style = "block" *) reg [31:0] imem [0:`IMEM_SIZE-1];
     `include "memi.txt"
 
-    wire [VALID_ADDR_WIDTH-1:0] valid_raddr = raddr_i[VALID_ADDR_WIDTH+OFFSET_WIDTH-1:OFFSET_WIDTH];
+    wire [`IMEM_ADDRW-1:0] valid_raddr = raddr_i[`IMEM_ADDRW+1:2];
 
+    reg [31:0] rdata;
     always @(posedge clk_i) begin
-        rdata_o <= imem[valid_raddr];
+        rdata <= imem[valid_raddr];
     end
-
+    assign rdata_o = rdata;
 endmodule
 
-module dmem #(
-    parameter RAM_SIZE      = 4*1024        ,
-    parameter ADDR_WIDTH    = 32            ,
-    parameter DATA_WIDTH    = 32            ,
-    parameter STRB_WIDTH    = DATA_WIDTH/8
-) (
-    input  wire                  clk_i      ,
-    input  wire                  we_i       ,
-    input  wire [ADDR_WIDTH-1:0] addr_i    ,
-    input  wire [DATA_WIDTH-1:0] wdata_i    ,
-    input  wire [STRB_WIDTH-1:0] wstrb_i    ,
-    output wire [DATA_WIDTH-1:0] rdata_o
+module m_dmem (
+    input  wire        clk_i     ,
+    input  wire        we_i      ,
+    input  wire [31:0] addr_i    ,
+    input  wire [31:0] wdata_i   ,
+    input  wire [ 3:0] wstrb_i   ,
+    output wire [31:0] rdata_o
 );
 
-    localparam OFFSET_WIDTH     = $clog2(DATA_WIDTH/8)          ;
-    localparam VALID_ADDR_WIDTH = $clog2(RAM_SIZE)-OFFSET_WIDTH ;
-    (* ram_style = "block" *) reg [DATA_WIDTH-1:0] dmem [0:(2**VALID_ADDR_WIDTH)-1];
+    (* ram_style = "block" *) reg [31:0] dmem [0:`DMEM_SIZE-1];
     `include "memd.txt"
 
-    wire [VALID_ADDR_WIDTH-1:0] valid_addr = addr_i[VALID_ADDR_WIDTH+OFFSET_WIDTH-1:OFFSET_WIDTH];
+    wire [`DMEM_ADDRW-1:0] valid_addr = addr_i[`DMEM_ADDRW+1:2];
 
-    integer i;
     reg [31:0] rdata = 0;
     always @(posedge clk_i) begin
         if (we_i) begin  ///// data bus
@@ -171,9 +154,7 @@ module dmem #(
         end
         rdata <= dmem[valid_addr];
     end
-
     assign rdata_o = rdata; 
-
 endmodule
 
 module perf_cntr (
@@ -211,6 +192,11 @@ module vmem (
 
     reg [2:0] vmem_lo [0:32767]; // vmem
     reg [2:0] vmem_hi [0:32767]; // vmem
+    integer i;
+    initial for(i=0; i<32768; i=i+1) begin
+        vmem_lo[i] = 0;
+        vmem_hi[i] = 0;
+    end
 
     reg we;
     reg top;
@@ -299,7 +285,7 @@ module m_st7789_disp(
     always @(posedge w_clk) r_bcnt <= (busy) ? 0 : r_bcnt + 1;
     
     always @(posedge w_clk) if(!init_done) begin
-        r_en <= (r_cnt>1_000_000 && !busy && r_bcnt>1_000_000); 
+        r_en <= (r_cnt>1000000 && !busy && r_bcnt>1000000); 
     end else begin
         r_en <= (!busy);
     end

@@ -7,7 +7,6 @@ OBJCOPY := /tools/cad/riscv/rv32ima/bin/riscv32-unknown-elf-objcopy
 OBJDUMP := /tools/cad/riscv/rv32ima/bin/riscv32-unknown-elf-objdump
 VIVADO  := /tools/Xilinx/Vivado/2024.1/bin/vivado
 RTLSIM  := /tools/cad/bin/verilator
-VCC      = /home/yagi/convert_v2c_rvpc_set/VCC/convert_v2c.py
 
 TARGET := arty_a7
 #TARGET := cmod_a7
@@ -83,17 +82,6 @@ conf:
 		exit 1; \
 	fi
 	$(VIVADO) -mode batch -source scripts/prog_dev.tcl
-
-lint:
-    $(RTLSIM) --lint-only *.v
-vcc:
-    rm -rf convert_mid_dir
-    $(VCC) *.v
-    g++ -O2 main.cpp
-format:
-    clang-format -style="{ColumnLimit: 100}" main.cpp
-vccrun:
-    ./a.out | build/dispemu 1
 
 init:
 	cp constr/$(TARGET).xdc main.xdc

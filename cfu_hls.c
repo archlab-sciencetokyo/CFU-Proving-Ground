@@ -1,5 +1,3 @@
-#define ITER_MAX 256
-
 void cfu_hls(
     char   funct3_i,
     char   funct7_i,

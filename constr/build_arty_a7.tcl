@@ -21,6 +21,18 @@ create_project -force $proj_name $top_dir/vivado -part $part_name
 set_property strategy Flow_PerfOptimized_high [get_runs synth_1]
 set_property strategy Performance_ExplorePostRoutePhysOpt [get_runs impl_1]
 
+for {set i 0} {$i < $argc} {incr i} {
+    if {[lindex $argv $i] eq "--hls"} {
+        puts "HLS mode enabled. Adding HLS source files."
+        set src_files [concat $src_files [glob -nocomplain $top_dir/cfu/*.v]]
+        set tcl_files [glob -nocomplain $top_dir/cfu/*.tcl]
+        foreach tcl_file $tcl_files {source $tcl_file}
+        set_property verilog_define {USE_HLS} [get_filesets  sources_1]
+        update_compile_order -fileset sources_1
+        break;
+    }
+}
+
 add_files -force -scan_for_includes $src_files
 add_files -fileset constrs_1 $top_dir/main.xdc
 

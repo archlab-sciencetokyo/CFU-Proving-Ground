@@ -6,11 +6,14 @@ GPP     := /tools/cad/riscv/rv32ima/bin/riscv32-unknown-elf-g++
 OBJCOPY := /tools/cad/riscv/rv32ima/bin/riscv32-unknown-elf-objcopy
 OBJDUMP := /tools/cad/riscv/rv32ima/bin/riscv32-unknown-elf-objdump
 VIVADO  := /tools/Xilinx/Vivado/2024.1/bin/vivado
+VPP     := /tools/Xilinx/Vitis/2024.1/bin/v++
 RTLSIM  := /tools/cad/bin/verilator
 
 TARGET := arty_a7
 #TARGET := cmod_a7
 #TARGET := nexys_a7
+
+USE_HLS ?= 0
 
 .PHONY: build prog run clean
 all: prog build
@@ -21,7 +24,7 @@ build:
 
 prog:
 	mkdir -p build
-	$(GCC) -Os -march=rv32im -mabi=ilp32 -nostartfiles -Iapp -Tapp/link.ld -o build/main.elf app/crt0.s app/*.c main.c 
+	$(GCC) -Os -march=rv32im -mabi=ilp32 -nostartfiles -Iapp -Tapp/link.ld -o build/main.elf app/crt0.s app/*.c *.c 
 	make initf
 
 imem_size =	$(shell grep -oP "\`define\s+IMEM_SIZE\s+\(\K[^)]*" config.vh | bc)
@@ -61,6 +64,7 @@ run:
 drun:
 	./obj_dir/top | build/dispemu 1
 
+TCL_ARG := $(if $(ifeq ($(USE_HLS),1)),--hls,)
 bit:
 	@if [ ! -f memi.txt ] || [ ! -f memd.txt ]; then \
 		echo "Please run 'make prog' first."; \
@@ -70,7 +74,7 @@ bit:
 		echo "Plese run 'make init' first."; \
 		exit 1; \
 	fi
-	$(VIVADO) -mode batch -source build.tcl
+	$(VIVADO) -mode batch -source build.tcl -tclargs $(TCL_ARG)
 	cp vivado/main.runs/impl_1/main.bit build/.
 	@if [ -f vivado/main.runs/impl_i/main.ltx ]; then \
 		cp -f vivado/main.runs/impl_i/main.ltx build/.; \
@@ -82,6 +86,13 @@ conf:
 		exit 1; \
 	fi
 	$(VIVADO) -mode batch -source scripts/prog_dev.tcl
+
+vpp:
+	$(VPP) -c --mode hls --config constr/cfu_hls.cfg --work_dir vitis
+	if [ -d cfu ]; then rm -rf cfu; fi
+	mkdir -p cfu
+	cp vitis/hls/impl/verilog/*.v cfu/.
+	cp vitis/hls/impl/verilog/*.tcl cfu/.
 
 init:
 	cp constr/$(TARGET).xdc main.xdc

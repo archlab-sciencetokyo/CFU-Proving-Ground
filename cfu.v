@@ -14,5 +14,5 @@ module cfu (
     output wire [31:0] rslt_o
 );
     assign stall_o = 0;
-    assign rslt_o = (en_i) ? src1_i | src2_i : 0;
+    assign rslt_o  = (en_i) ? src1_i | src2_i : 0;
 endmodule

@@ -125,7 +125,7 @@ Once the specification is complete, you can write the bitstream to the board wit
 
 ## History
 2025-06-04 Ver 1.6.1:
-- `main.v`, `proc.v` and `top.v` have been formatted.
+- Verilog files have been formatted.
 
 2025-06-03 Ver 1.6:
 - Revised some descriptions for VCC.

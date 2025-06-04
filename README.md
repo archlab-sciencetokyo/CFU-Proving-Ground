@@ -124,8 +124,9 @@ In `scripts/prog_dev.tcl`, please specify the IP ADDRESS and PORT number of the 
 Once the specification is complete, you can write the bitstream to the board with `make conf`.
 
 ## History
-2025-06-04 Ver 1.6.1:
+2025-06-04 Ver 1.7:
 - Verilog files have been formatted.
+- CFU supported HLS.
 
 2025-06-03 Ver 1.6:
 - Revised some descriptions for VCC.

@@ -530,36 +530,34 @@ endmodule
 /******************************************************************************************/
 module alu (
     input  wire [`ALU_CTRL_WIDTH-1:0] alu_ctrl_i,
-    input  wire [               31:0] src1_i,
-    input  wire [               31:0] src2_i,
-    input  wire [               31:0] j_pc4_i,
-    output wire [               31:0] rslt_o
+    input  wire                [31:0] src1_i    ,
+    input  wire                [31:0] src2_i    ,
+    input  wire                [31:0] j_pc4_i   ,            
+    output wire                [31:0] rslt_o
 );
 
     wire w_signed = alu_ctrl_i[`ALU_CTRL_IS_SIGNED];
-    wire w_neg = alu_ctrl_i[`ALU_CTRL_IS_NEG];
-    wire w_less = alu_ctrl_i[`ALU_CTRL_IS_LESS];
+    wire w_neg    = alu_ctrl_i[`ALU_CTRL_IS_NEG];
+    wire w_less   = alu_ctrl_i[`ALU_CTRL_IS_LESS];
 
-    wire signed [31:0] sin1 = src1_i;
-    wire signed [31:0] sin2 = src2_i;
+    wire [33:0] adder_src1   = {w_signed && src1_i[31], src1_i, 1'b1};
+    wire [33:0] adder_src2   = {w_signed && src2_i[31], src2_i, 1'b0} ^ {34{w_neg}};
+    wire [33:0] adder_rslt_t = adder_src1+adder_src2;
+    wire        less_rslt    = w_less && adder_rslt_t[33];
+    wire [31:0] adder_rslt   = (alu_ctrl_i[`ALU_CTRL_IS_ADD]) ? adder_rslt_t[32:1] : 0;
 
-    wire less_rslt = (w_less == 0) ? 0 : w_signed ? (sin1 < sin2) : (src1_i < src2_i);
-
-    wire [31:0] adder_rslt = 
-                (alu_ctrl_i[`ALU_CTRL_IS_ADD] && w_neg==0) ? src1_i + src2_i :
-                (alu_ctrl_i[`ALU_CTRL_IS_ADD] && w_neg==1) ? src1_i - src2_i : 0;
-
-    wire [4:0] shamt = src2_i[4:0];
-    wire [31:0] left_shifter_rslt = (alu_ctrl_i[`ALU_CTRL_IS_SHIFT_LEFT]) ? src1_i << shamt : 0;
-    wire [31:0] right_shifter_rslt = 
-                (alu_ctrl_i[`ALU_CTRL_IS_SHIFT_RIGHT] && w_signed==0) ? src1_i >> shamt :
-                (alu_ctrl_i[`ALU_CTRL_IS_SHIFT_RIGHT] && w_signed==1) ? sin1 >>> shamt : 0;
+    wire signed  [32:0] right_shifter_src1 = {w_signed && src1_i[31], src1_i};
+    wire  [4:0] shamt              = src2_i[4:0];
+    wire [31:0] left_shifter_rslt  = (alu_ctrl_i[`ALU_CTRL_IS_SHIFT_LEFT] ) ?  
+                                     src1_i <<  shamt : 0;
+    wire [31:0] right_shifter_rslt = (alu_ctrl_i[`ALU_CTRL_IS_SHIFT_RIGHT]) ? 
+                                     right_shifter_src1 >>> shamt : 0;
 
     wire [31:0] bitwise_rslt       = ((alu_ctrl_i[`ALU_CTRL_IS_XOR_OR]) ? 
                                      (src1_i ^ src2_i) : 0) | 
                                      ((alu_ctrl_i[`ALU_CTRL_IS_OR_AND])
                                       ? (src1_i & src2_i) : 0);
-    wire [31:0] lui_auipc_rslt = (alu_ctrl_i[`ALU_CTRL_IS_SRC2]) ? src2_i : 0;
+    wire [31:0] lui_auipc_rslt     = (alu_ctrl_i[`ALU_CTRL_IS_SRC2]) ? src2_i : 0;
 
     assign rslt_o = less_rslt | adder_rslt | left_shifter_rslt | right_shifter_rslt | 
                     bitwise_rslt | lui_auipc_rslt | j_pc4_i;

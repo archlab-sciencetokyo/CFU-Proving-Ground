@@ -124,6 +124,9 @@ In `scripts/prog_dev.tcl`, please specify the IP ADDRESS and PORT number of the 
 Once the specification is complete, you can write the bitstream to the board with `make conf`.
 
 ## History
+2025-07-02 Ver 1.7.2:
+- IMEM/DMEM memory size bug has been fixed.
+
 2025-06-16 Ver 1.7.1:
 - Fixed a bug in the ALU.
 

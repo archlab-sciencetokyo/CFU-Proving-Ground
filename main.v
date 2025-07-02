@@ -119,7 +119,7 @@ module m_imem (
     output wire [31:0] rdata_o
 );
 
-    (* ram_style = "block" *) reg [31:0] imem[0:`IMEM_SIZE-1];
+    (* ram_style = "block" *) reg [31:0] imem[0:`IMEM_ENTRIES-1];
     `include "memi.txt"
 
     wire [`IMEM_ADDRW-1:0] valid_raddr = raddr_i[`IMEM_ADDRW+1:2];
@@ -140,7 +140,7 @@ module m_dmem (
     output wire [31:0] rdata_o
 );
 
-    (* ram_style = "block" *) reg [31:0] dmem[0:`DMEM_SIZE-1];
+    (* ram_style = "block" *) reg [31:0] dmem[0:`DMEM_ENTRIES-1];
     `include "memd.txt"
 
     wire [`DMEM_ADDRW-1:0] valid_addr = addr_i[`DMEM_ADDRW+1:2];

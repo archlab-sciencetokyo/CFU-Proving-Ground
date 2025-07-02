@@ -21,8 +21,11 @@
 `define IMEM_SIZE (32*1024) // instruction memory size in byte
 `define DMEM_SIZE (16*1024) // data memory size in byte
 
-`define IMEM_ADDRW ($clog2(`IMEM_SIZE))
-`define DMEM_ADDRW ($clog2(`DMEM_SIZE))
+`define IMEM_ENTRIES (`IMEM_SIZE/4)
+`define DMEM_ENTRIES (`DMEM_SIZE/4)
+
+`define IMEM_ADDRW ($clog2(`IMEM_ENTRIES))
+`define DMEM_ADDRW ($clog2(`DMEM_ENTRIES))
 
 // uart
 `ifndef BAUD_RATE

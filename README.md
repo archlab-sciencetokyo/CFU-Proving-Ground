@@ -124,6 +124,9 @@ In `scripts/prog_dev.tcl`, please specify the IP ADDRESS and PORT number of the 
 Once the specification is complete, you can write the bitstream to the board with `make conf`.
 
 ## History
+2025-07-25 Ver 1.7.4:
+- Configuration bus has been fixed.
+
 2025-07-09 Ver 1.7.3:
 - Divider bug has been fixed.
 

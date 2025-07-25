@@ -32,7 +32,7 @@ if {[regexp {CRITICAL WARNING:} [check_syntax -return_string -fileset sources_1]
 create_ip -name clk_wiz -vendor xilinx.com -library ip -version 6.0 -module_name clk_wiz_0
 set_property CONFIG.PRIM_IN_FREQ 12 [get_ips clk_wiz_0]
 set_property -dict [list \
-    CONFIG.PRIM_IN_FREQ 12
+    CONFIG.PRIM_IN_FREQ 12 \
     CONFIG.CLKOUT1_REQUESTED_OUT_FREQ $freq \
     CONFIG.JITTER_SEL {Min_O_Jitter} \
     CONFIG.MMCM_BANDWIDTH {HIGH} \

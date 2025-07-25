@@ -125,7 +125,7 @@ Once the specification is complete, you can write the bitstream to the board wit
 
 ## History
 2025-07-25 Ver 1.7.4:
-- Configuration bus has been fixed.
+- Configuration bug has been fixed.
 
 2025-07-09 Ver 1.7.3:
 - Divider bug has been fixed.

@@ -3,6 +3,7 @@ import os
 
 YAML_FILE = 'src/user_config.yml'
 VH_FILE = 'build/user_config.vh'
+TCL_FILE = 'build/user_config.tcl'
 LINKER_FILE = 'build/region.ld'
 
 if not os.path.exists(YAML_FILE):
@@ -21,11 +22,14 @@ verilog_content = []
 linker_content = []
 linker_content.append('MEMORY {\n')
 
+tcl_content = []
+
 if 'lcd_rotate' in config_data:
     verilog_content.append(f'`define LCD_ROTATE {config_data["lcd_rotate"]}\n')
 
 if 'clk_freq_mhz' in config_data:
     verilog_content.append(f'`define CLK_FREQ_MHZ {config_data["clk_freq_mhz"]}\n')
+    tcl_content.append(f'set clk_freq_mhz {config_data["clk_freq_mhz"]}\n')
 
 if 'btb_entries' in config_data:
     verilog_content.append(f'`define BTB_ENTRY {config_data["btb_entries"]}\n')
@@ -54,3 +58,9 @@ try:
 except IOError as e:
     print(f"Error occurred while writing to file: {e}")
 
+try:
+    with open(TCL_FILE, 'w') as f:
+        f.writelines(tcl_content)
+    print(f"'{TCL_FILE}' has been updated successfully.")
+except IOError as e:
+    print(f"Error occurred while writing to file: {e}")

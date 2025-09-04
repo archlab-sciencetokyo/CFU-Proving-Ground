@@ -1,11 +1,6 @@
 /* CFU Proving Ground since 2025-02    Copyright(c) 2025 Archlab. Science Tokyo /
 / Released under the MIT license https://opensource.org/licenses/mit           */
 
-`ifndef RVCPU_H_
-`define RVCPU_H_
-
-`ifndef CONFIG_VH_
-`define CONFIG_VH_
 
 // LCD Display
 `define LCD_ROTATE 0 // 0: 0 degree, 1: 90 degree, 2: 180 degree, 3: 270 degree (Left Rotate)
@@ -27,24 +22,11 @@
 `define IMEM_ADDRW ($clog2(`IMEM_ENTRIES))
 `define DMEM_ADDRW ($clog2(`DMEM_ENTRIES))
 
-// uart
-`ifndef BAUD_RATE
-`define BAUD_RATE 1000000
-`endif
-`define DETECT_COUNT 2
-`define FIFO_DEPTH 2048
-
-`endif  // CONFIG_VH_
-
-// tohost
-`define TOHOST_ADDR 'h40008000 // do not modify, this is hard coded in the interconnect
-
 // cpu
 `define XLEN 32
 `define XBYTES (`XLEN/8)
 
 `define NOP 32'h00000013 // addi  x0, x0, 0
-`define UNIMP 32'hC0001073 // csrrw x0, cycle, x0
 
 // ram
 `define IBUS_ADDR_WIDTH `XLEN
@@ -125,4 +107,3 @@
 `define CFU_CTRL_IS_CFU 0
 `define CFU_CTRL_WIDTH 11
 
-`endif  // RVCPU_H_

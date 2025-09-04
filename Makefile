@@ -65,6 +65,9 @@ remove-junk:
 bit:
 	$(VIVADO) -mode batch -source scripts/build_$(TARGET).tcl
 
+load:
+	$(VIVADO) -mode batch -source scripts/load.tcl
+
 run:
 	./obj_dir/top
 

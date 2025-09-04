@@ -30,8 +30,8 @@ module main (
 `endif
 
     wire                        rst = !rst_ni || !locked;
-    wire [`IBUS_ADDR_WIDTH-1:0] imem_raddr;
-    wire [`IBUS_DATA_WIDTH-1:0] imem_rdata;
+    wire [$clog2(`IMEM_ENTRIES)-1:0] imem_raddr;
+    wire [31:0] imem_rdata;
     wire                        dbus_we;
     wire [`DBUS_ADDR_WIDTH-1:0] dbus_addr;
     wire [`DBUS_DATA_WIDTH-1:0] dbus_wdata;
@@ -115,18 +115,15 @@ endmodule
 
 module m_imem (
     input  wire        clk_i,
-    input  wire [31:0] raddr_i,
+    input  wire [$clog2(`IMEM_ENTRIES)-1:0] raddr_i,
     output wire [31:0] rdata_o
 );
-
-    (* ram_style = "block" *) reg [31:0] imem[0:`IMEM_ENTRIES-1];
+    reg [31:0] imem[0:`IMEM_ENTRIES-1];
+    reg [31:0] rdata = 0;
     `include "imem_init.vh"
 
-    wire [`IMEM_ADDRW-1:0] valid_raddr = raddr_i[`IMEM_ADDRW+1:2];
-
-    reg [31:0] rdata;
     always @(posedge clk_i) begin
-        rdata <= imem[valid_raddr];
+        rdata <= imem[raddr_i];
     end
     assign rdata_o = rdata;
 endmodule

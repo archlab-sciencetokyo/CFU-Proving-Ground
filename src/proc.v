@@ -2,7 +2,7 @@
 `default_nettype none
 `include "config.vh"
 /******************************************************************************************/
-`define DBUS_OFFSET_W $clog2(`XBYTES)
+`define DBUS_OFFSET_W 2
 `define PC_W $clog2(`IMEM_SIZE)  // PC width
 `define ITYPE_W `INSTR_TYPE_WIDTH
 
@@ -10,8 +10,8 @@
 module cpu (
     input  wire                        clk_i,
     input  wire                        rst_i,
-    output wire [`IBUS_ADDR_WIDTH-1:0] ibus_araddr_o,
-    input  wire [`IBUS_DATA_WIDTH-1:0] ibus_rdata_i,
+    output wire [$clog2(`IMEM_ENTRIES)-1:0] ibus_araddr_o,
+    input  wire [31:0] ibus_rdata_i,
     output wire [`DBUS_ADDR_WIDTH-1:0] dbus_addr_o,
     output wire                        dbus_wvalid_o,
     output wire [`DBUS_DATA_WIDTH-1:0] dbus_wdata_o,
@@ -98,7 +98,7 @@ module cpu (
     wire        Ma_br_misp     = (rst) ? 1 : 
                                  (ExMa_v && ExMa_is_ctrl_tsfr && 
                                  ((Ma_br_tkn) ? ExMa_br_misp_rslt1 : ExMa_br_misp_rslt2));
-    wire [31:0] Ma_br_true_pc  = (rst) ?`RESET_VECTOR : 
+    wire [31:0] Ma_br_true_pc  = (rst) ? 0 : 
                                  (ExMa_br_tkn) ? ExMa_br_tkn_pc : ExMa_pc+4;
 
     wire If_v = (Ma_br_misp) ? 0 : (IfId_load_muldiv_use) ? IfId_v : 1;
@@ -123,7 +123,7 @@ module cpu (
     wire [4:0] If_rs2;
     wire [31:0] If_ir;  // instruction from imem
 
-    assign ibus_araddr_o = If_pc;  // read address of imem
+    assign ibus_araddr_o = If_pc[`PC_W-1:2];  // read address of imem
     assign If_ir = ibus_rdata_i;  // instruction from imem
 
     bimodal bimodal (
@@ -438,7 +438,7 @@ module cpu (
 endmodule
 
 `define BTB_IDXW $clog2(`BTB_ENTRY)  // BTB index width
-`define BTB_OSTW $clog2(`XBYTES)     // BTB offset width
+`define BTB_OSTW 2     // BTB offset width
 /******************************************************************************************/
 module bimodal (
     input  wire             clk_i,

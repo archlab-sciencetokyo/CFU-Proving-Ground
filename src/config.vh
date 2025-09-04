@@ -7,9 +7,6 @@
 
 // cpu
 `define CLK_FREQ_MHZ 160  // operating clock frequency in MHz
-
-`define RESET_VECTOR 'h00000000
-
 `define BTB_ENTRY (2*1024)  // the number of BTB entries for branch prediction
 
 // ram
@@ -22,14 +19,11 @@
 `define IMEM_ADDRW ($clog2(`IMEM_ENTRIES))
 `define DMEM_ADDRW ($clog2(`DMEM_ENTRIES))
 
-// cpu
-`define XBYTES 4
-
 `define NOP 32'h00000013 // addi  x0, x0, 0
 
 // ram
-`define IBUS_ADDR_WIDTH 32
-`define IBUS_DATA_WIDTH 32
+//`define IBUS_ADDR_WIDTH 32
+//`define IBUS_DATA_WIDTH 32
 
 `define DBUS_ADDR_WIDTH 32
 `define DBUS_DATA_WIDTH 32

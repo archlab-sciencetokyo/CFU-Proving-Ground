@@ -33,10 +33,10 @@ module main (
     wire [$clog2(`IMEM_ENTRIES)-1:0] imem_raddr;
     wire [31:0] imem_rdata;
     wire                        dbus_we;
-    wire [`DBUS_ADDR_WIDTH-1:0] dbus_addr;
-    wire [`DBUS_DATA_WIDTH-1:0] dbus_wdata;
-    wire [`DBUS_STRB_WIDTH-1:0] dbus_wstrb;
-    wire [`DBUS_DATA_WIDTH-1:0] dbus_rdata;
+    wire [31:0] dbus_addr;
+    wire [31:0] dbus_wdata;
+    wire [ 3:0] dbus_wstrb;
+    wire [31:0] dbus_rdata;
 
     reg                         rdata_sel = 0;
     always @(posedge clk) rdata_sel <= dbus_addr[30];

@@ -12,11 +12,11 @@ module cpu (
     input  wire                        rst_i,
     output wire [$clog2(`IMEM_ENTRIES)-1:0] ibus_araddr_o,
     input  wire [31:0] ibus_rdata_i,
-    output wire [`DBUS_ADDR_WIDTH-1:0] dbus_addr_o,
+    output wire [31:0] dbus_addr_o,
     output wire                        dbus_wvalid_o,
-    output wire [`DBUS_DATA_WIDTH-1:0] dbus_wdata_o,
-    output wire [`DBUS_STRB_WIDTH-1:0] dbus_wstrb_o,
-    input  wire [`DBUS_DATA_WIDTH-1:0] dbus_rdata_i
+    output wire [31:0] dbus_wdata_o,
+    output wire [31:0] dbus_wstrb_o,
+    input  wire [31:0] dbus_rdata_i
 );
 
     //-----------------------------------------------------------------------------------------
@@ -123,7 +123,7 @@ module cpu (
     wire [4:0] If_rs2;
     wire [31:0] If_ir;  // instruction from imem
 
-    assign ibus_araddr_o = If_pc[`PC_W-1:2];  // read address of imem
+    assign ibus_araddr_o = If_pc[$clog2(`IMEM_ENTRIES)+1:2];  // read address of imem
     assign If_ir = ibus_rdata_i;  // instruction from imem
 
     bimodal bimodal (

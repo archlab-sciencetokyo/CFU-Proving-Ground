@@ -21,13 +21,7 @@
 
 `define NOP 32'h00000013 // addi  x0, x0, 0
 
-// ram
-//`define IBUS_ADDR_WIDTH 32
-//`define IBUS_DATA_WIDTH 32
 
-`define DBUS_ADDR_WIDTH 32
-`define DBUS_DATA_WIDTH 32
-`define DBUS_STRB_WIDTH (`DBUS_DATA_WIDTH/8)
 
 // instruction type
 `define NONE_TYPE 0

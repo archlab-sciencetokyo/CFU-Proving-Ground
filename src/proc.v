@@ -3,8 +3,9 @@
 `include "config.vh"
 /******************************************************************************************/
 `define DBUS_OFFSET_W 2
-`define PC_W $clog2(`IMEM_SIZE)  // PC width
+`define PC_W $clog2(`IMEM_ENTRIES)+2  // PC width
 `define ITYPE_W `INSTR_TYPE_WIDTH
+`define NOP 32'h00000013 // addi  x0, x0, 0
 
 /******************************************************************************************/
 module cpu (

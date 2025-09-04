@@ -1,27 +1,7 @@
 /* CFU Proving Ground since 2025-02    Copyright(c) 2025 Archlab. Science Tokyo /
 / Released under the MIT license https://opensource.org/licenses/mit           */
 
-
-// LCD Display
-`define LCD_ROTATE 0 // 0: 0 degree, 1: 90 degree, 2: 180 degree, 3: 270 degree (Left Rotate)
-
-// cpu
-`define CLK_FREQ_MHZ 160  // operating clock frequency in MHz
-`define BTB_ENTRY (2*1024)  // the number of BTB entries for branch prediction
-
-// ram
-`define IMEM_SIZE (32*1024) // instruction memory size in byte
-`define DMEM_SIZE (16*1024) // data memory size in byte
-
-`define IMEM_ENTRIES (`IMEM_SIZE/4)
-`define DMEM_ENTRIES (`DMEM_SIZE/4)
-
-`define IMEM_ADDRW ($clog2(`IMEM_ENTRIES))
-`define DMEM_ADDRW ($clog2(`DMEM_ENTRIES))
-
-`define NOP 32'h00000013 // addi  x0, x0, 0
-
-
+`include "user_config.vh"
 
 // instruction type
 `define NONE_TYPE 0
@@ -93,4 +73,3 @@
 // cfu control
 `define CFU_CTRL_IS_CFU 0
 `define CFU_CTRL_WIDTH 11
-

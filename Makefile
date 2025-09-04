@@ -24,7 +24,7 @@ sim:
 
 prog:
 	mkdir -p build
-	python3 scripts/configure.py
+	python3 scripts/user_config.py
 	$(MAKE) -C prog -f prog.mk
 
 imem_image:

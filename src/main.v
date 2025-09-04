@@ -140,7 +140,7 @@ module m_dmem (
     (* ram_style = "block" *) reg [31:0] dmem[0:`DMEM_ENTRIES-1];
     `include "dmem_init.vh"
 
-    wire [`DMEM_ADDRW-1:0] valid_addr = addr_i[`DMEM_ADDRW+1:2];
+    wire [$clog2(`DMEM_ENTRIES)-1:0] valid_addr = addr_i[$clog2(`DMEM_ENTRIES)+1:2];
 
     reg [31:0] rdata = 0;
     always @(posedge clk_i) begin

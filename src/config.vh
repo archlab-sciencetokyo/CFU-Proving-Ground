@@ -23,17 +23,16 @@
 `define DMEM_ADDRW ($clog2(`DMEM_ENTRIES))
 
 // cpu
-`define XLEN 32
-`define XBYTES (`XLEN/8)
+`define XBYTES 4
 
 `define NOP 32'h00000013 // addi  x0, x0, 0
 
 // ram
-`define IBUS_ADDR_WIDTH `XLEN
+`define IBUS_ADDR_WIDTH 32
 `define IBUS_DATA_WIDTH 32
 
-`define DBUS_ADDR_WIDTH `XLEN
-`define DBUS_DATA_WIDTH `XLEN
+`define DBUS_ADDR_WIDTH 32
+`define DBUS_DATA_WIDTH 32
 `define DBUS_STRB_WIDTH (`DBUS_DATA_WIDTH/8)
 
 // instruction type

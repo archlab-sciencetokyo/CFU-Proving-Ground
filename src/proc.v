@@ -23,11 +23,11 @@ module cpu (
     // pipeline registers
     //-----------------------------------------------------------------------------------------
     // IF: Instruction Fetch
-    reg [          `XLEN-1:0] r_pc;  // program counter
+    reg [          31:0] r_pc;  // program counter
 
     // ID: Instruction Decode
     reg                       IfId_v;
-    reg [          `XLEN-1:0] IfId_pc;
+    reg [          31:0] IfId_pc;
     reg [               31:0] IfId_ir;
     reg                       IfId_br_pred_tkn;
     reg [                1:0] IfId_pat_hist;
@@ -40,7 +40,7 @@ module cpu (
 
     // EX: Execution
     reg                       IdEx_v;
-    reg [          `XLEN-1:0] IdEx_pc;
+    reg [          31:0] IdEx_pc;
     reg [               31:0] IdEx_ir;
     reg                       IdEx_br_pred_tkn;
     reg [                1:0] IdEx_pat_hist;
@@ -52,28 +52,28 @@ module cpu (
     reg [`CFU_CTRL_WIDTH-1:0] IdEx_cfu_ctrl;
     reg                       IdEx_rs1_fwd_Ma_to_Ex;
     reg                       IdEx_rs2_fwd_Ma_to_Ex;
-    reg [          `XLEN-1:0] IdEx_src1;
-    reg [          `XLEN-1:0] IdEx_src2;
-    reg [          `XLEN-1:0] IdEx_imm;
+    reg [          31:0] IdEx_src1;
+    reg [          31:0] IdEx_src2;
+    reg [          31:0] IdEx_imm;
     reg                       IdEx_rf_we;
     reg [                4:0] IdEx_rd;
     reg [               31:0] IdEx_j_pc4;
 
     // MA: Memory Access
     reg                       ExMa_v;
-    reg [          `XLEN-1:0] ExMa_pc;
+    reg [          31:0] ExMa_pc;
     reg [               31:0] ExMa_ir;
     reg [                1:0] ExMa_pat_hist;
     reg                       ExMa_is_ctrl_tsfr;
     reg                       ExMa_br_tkn;
     reg                       ExMa_br_misp_rslt1;
     reg                       ExMa_br_misp_rslt2;
-    reg [          `XLEN-1:0] ExMa_br_tkn_pc;
+    reg [          31:0] ExMa_br_tkn_pc;
     reg [`LSU_CTRL_WIDTH-1:0] ExMa_lsu_ctrl;
     reg [ `DBUS_OFFSET_W-1:0] ExMa_dbus_offset;
     reg                       ExMa_rf_we;
     reg [                4:0] ExMa_rd;
-    reg [          `XLEN-1:0] ExMa_rslt;
+    reg [          31:0] ExMa_rslt;
     reg [               31:0] ExMa_mdc_rslt;  // mul_div_cfu_rslt
     reg                       ExMa_j_b_insn;  // jump or branch insn
     reg                       ExMa_mul_stall;
@@ -82,11 +82,11 @@ module cpu (
 
     // WB: Write Back
     reg                       MaWb_v;
-    reg [          `XLEN-1:0] MaWb_pc;
+    reg [          31:0] MaWb_pc;
     reg [               31:0] MaWb_ir;
     reg                       MaWb_rf_we;
     reg [                4:0] MaWb_rd;
-    reg [          `XLEN-1:0] MaWb_rslt;
+    reg [          31:0] MaWb_rslt;
 
     //-----------------------------------------------------------------------------------------
     // pipeline control
@@ -207,7 +207,7 @@ module cpu (
     );
 
     // immediate value generator
-    wire [`XLEN-1:0] Id_imm;
+    wire [31:0] Id_imm;
     imm_gen imm_gen (
         .ir_i        (IfId_ir),          // input  wire         [31:0]
         .instr_type_i(IfId_instr_type),  // input  wire [`ITYPE_W-1;0]
@@ -215,8 +215,8 @@ module cpu (
     );
 
     // register file
-    wire [`XLEN-1:0] Id_xrs1;
-    wire [`XLEN-1:0] Id_xrs2;
+    wire [31:0] Id_xrs1;
+    wire [31:0] Id_xrs2;
     wire             Wb_xreg_we = MaWb_v && MaWb_rf_we && !ExMa_stall;
     regfile xreg (
         .clk_i  (clk_i),       // input  wire
@@ -239,8 +239,8 @@ module cpu (
     wire Id_use_imm = Id_src2_ctrl[`SRC2_CTRL_USE_AUIPC] | Id_src2_ctrl[`SRC2_CTRL_USE_IMM];
 
     // source select
-    wire [`XLEN-1:0] Id_src1 = (Id_rs1_fwd_Wb_to_Ex) ? Ma_rslt : Id_xrs1;
-    wire [`XLEN-1:0] Id_src2 = (Id_rs2_fwd_Wb_to_Ex) ? Ma_rslt : 
+    wire [31:0] Id_src1 = (Id_rs1_fwd_Wb_to_Ex) ? Ma_rslt : Id_xrs1;
+    wire [31:0] Id_src2 = (Id_rs2_fwd_Wb_to_Ex) ? Ma_rslt : 
                                (Id_use_imm) ? Id_pc_in+Id_imm  : Id_xrs2 ;
 
     wire [31:0] Id_j_pc4 = (Id_bru_ctrl[`BRU_CTRL_IS_JAL_JALR]) ? IfId_pc + 4 : 0;
@@ -279,11 +279,11 @@ module cpu (
     wire Ex_valid = IdEx_v && !Ma_br_misp && !ExMa_stall;
 
     ///// data forwarding
-    wire [`XLEN-1:0] Ex_src1 = (IdEx_rs1_fwd_Ma_to_Ex) ? ExMa_rslt : IdEx_src1;
-    wire [`XLEN-1:0] Ex_src2 = (IdEx_rs2_fwd_Ma_to_Ex) ? ExMa_rslt : IdEx_src2;
+    wire [31:0] Ex_src1 = (IdEx_rs1_fwd_Ma_to_Ex) ? ExMa_rslt : IdEx_src1;
+    wire [31:0] Ex_src2 = (IdEx_rs2_fwd_Ma_to_Ex) ? ExMa_rslt : IdEx_src2;
 
     ///// arithmetic logic unit
-    wire [`XLEN-1:0] Ex_alu_rslt;
+    wire [31:0] Ex_alu_rslt;
     alu alu (
         .alu_ctrl_i(IdEx_alu_ctrl),  // input  wire [`ALU_CTRL_WIDTH-1:0]
         .src1_i    (Ex_src1),        // input  wire           [`XLEN-1:0]
@@ -297,7 +297,7 @@ module cpu (
     wire             Ex_br_tkn;
     wire             Ex_br_misp_rslt1;
     wire             Ex_br_misp_rslt2;
-    wire [`XLEN-1:0] Ex_br_tkn_pc;
+    wire [31:0] Ex_br_tkn_pc;
     bru bru (
         .bru_ctrl_i     (IdEx_bru_ctrl),     // input  wire [`BRU_CTRL_WIDTH-1:0]
         .src1_i         (Ex_src1),           // input  wire           [`XLEN-1:0]
@@ -314,8 +314,8 @@ module cpu (
     );
 
     ///// store unit
-    wire [         `XLEN-1:0] dbus_addr = dbus_addr_o;  // for simulation
-    wire [         `XLEN-1:0] dbus_wdata = dbus_wdata_o;  // for simulation
+    wire [         31:0] dbus_addr = dbus_addr_o;  // for simulation
+    wire [         31:0] dbus_wdata = dbus_wdata_o;  // for simulation
     wire [`DBUS_OFFSET_W-1:0] dbus_offset;  // Note
     store_unit store_unit (
         .valid_i      (Ex_valid),       // input  wire
@@ -332,7 +332,7 @@ module cpu (
 
     ///// multiplier unit
     wire             Ex_mul_stall;
-    wire [`XLEN-1:0] Ex_mul_rslt;
+    wire [31:0] Ex_mul_rslt;
     multiplier multiplier (
         .clk_i     (clk_i),          // input  wire
         .rst_i     (rst),            // input  wire // Note
@@ -347,7 +347,7 @@ module cpu (
 
     ///// divider unit
     wire             Ex_div_stall;
-    wire [`XLEN-1:0] Ex_div_rslt;
+    wire [31:0] Ex_div_rslt;
     divider divider (
         .clk_i     (clk_i),          // input  wire
         .rst_i     (rst),            // input  wire
@@ -363,7 +363,7 @@ module cpu (
     ///// custom function unit    
     wire             Ex_cfu_en = IdEx_cfu_ctrl[0] & Ex_valid;
     wire             Ex_cfu_stall;
-    wire [`XLEN-1:0] Ex_cfu_rslt;
+    wire [31:0] Ex_cfu_rslt;
     cfu cfu (
         .clk_i   (clk_i),                // input  wire        
         .en_i    (Ex_cfu_en),            // input  wire        
@@ -407,7 +407,7 @@ module cpu (
     // MA: Memory Access
     //-----------------------------------------------------------------------------------------
     // load unit
-    wire [`XLEN-1:0] Ma_load_rslt;
+    wire [31:0] Ma_load_rslt;
     load_unit load_unit (
         .lsu_ctrl_i   (ExMa_lsu_ctrl),     // input  wire [`LSU_CTRL_WIDTH-1:0]
         .dbus_offset_i(ExMa_dbus_offset),  // input  wire    [OFFSET_WIDTH-1:0]
@@ -415,7 +415,7 @@ module cpu (
         .rslt_o       (Ma_load_rslt)       // output wire           [`XLEN-1:0]
     );
 
-    wire [`XLEN-1:0] Ma_rslt = ExMa_rslt | ExMa_mdc_rslt | Ma_load_rslt;
+    wire [31:0] Ma_rslt = ExMa_rslt | ExMa_mdc_rslt | Ma_load_rslt;
 
     always @(posedge clk_i) begin
         if (rst) begin

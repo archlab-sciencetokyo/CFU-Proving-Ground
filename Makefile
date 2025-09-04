@@ -19,7 +19,7 @@ USE_HLS ?= 0
 all: prog imem_image dmem_image remove-junk sim
 
 sim:
-	$(RTLSIM) --binary --trace --top-module top -Ibuild --Wno-WIDTHTRUNC --Wno-WIDTHEXPAND -o top *.v
+	$(RTLSIM) --binary --trace --top-module top -Ibuild -Isrc --Wno-WIDTHTRUNC --Wno-WIDTHEXPAND -o top src/*.v
 	gcc -O2 dispemu/dispemu.c -o build/dispemu -lcairo -lX11
 
 prog:

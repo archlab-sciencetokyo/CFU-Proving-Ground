@@ -1,7 +1,7 @@
 import yaml
 import os
 
-YAML_FILE = 'config.yml'
+YAML_FILE = 'src/config.yml'
 VH_FILE = 'build/config.vh'
 LINKER_FILE = 'build/region.ld'
 

@@ -3,7 +3,7 @@ import os
 
 YAML_FILE = 'config.yml'
 VH_FILE = 'build/config.vh'
-LINKER_FILE = 'build/mem_region.ld'
+LINKER_FILE = 'build/region.ld'
 
 if not os.path.exists(YAML_FILE):
     print(f"{YAML_FILE} could not be found.")

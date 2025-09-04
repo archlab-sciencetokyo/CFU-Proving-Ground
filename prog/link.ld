@@ -4,7 +4,7 @@
 OUTPUT_ARCH("riscv")
 ENTRY(_start)
 
-INCLUDE mem_region.ld
+INCLUDE region.ld
 
 SECTIONS
 {

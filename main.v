@@ -120,7 +120,7 @@ module m_imem (
 );
 
     (* ram_style = "block" *) reg [31:0] imem[0:`IMEM_ENTRIES-1];
-    `include "memi.txt"
+    `include "imem_init.vh"
 
     wire [`IMEM_ADDRW-1:0] valid_raddr = raddr_i[`IMEM_ADDRW+1:2];
 
@@ -141,7 +141,7 @@ module m_dmem (
 );
 
     (* ram_style = "block" *) reg [31:0] dmem[0:`DMEM_ENTRIES-1];
-    `include "memd.txt"
+    `include "dmem_init.vh"
 
     wire [`DMEM_ADDRW-1:0] valid_addr = addr_i[`DMEM_ADDRW+1:2];
 

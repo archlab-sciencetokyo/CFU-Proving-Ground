@@ -127,12 +127,12 @@ verilog_content.append("`define DBUS_DATA_WIDTH `XLEN\n")
 verilog_content.append("`define DBUS_STRB_WIDTH (`DBUS_DATA_WIDTH/8)\n")
 
 
-try:
-    with open(VH_FILE, 'w') as f:
-        f.writelines(verilog_content)
-    print(f"'{VH_FILE}' has been generated successfully.")
-except IOError as e:
-    print(f"Error occurred while writing to file: {e}")
+# try:
+#     with open(VH_FILE, 'w') as f:
+#         f.writelines(verilog_content)
+#     print(f"'{VH_FILE}' has been generated successfully.")
+# except IOError as e:
+#     print(f"Error occurred while writing to file: {e}")
 
 try:
     with open(LINKER_FILE, 'w') as f:

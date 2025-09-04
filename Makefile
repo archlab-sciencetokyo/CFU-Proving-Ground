@@ -1,7 +1,7 @@
 # CFU Proving Ground since 2025-02    Copyright(c) 2025 Archlab. Science Tokyo
 # Released under the MIT license https://opensource.org/licenses/mit 
 
-GCC     := /tools/cad/riscv/rv32ima/bin/riscv32-unknown-elf-gcc
+export GCC := /tools/cad/riscv/rv32ima/bin/riscv32-unknown-elf-gcc
 GPP     := /tools/cad/riscv/rv32ima/bin/riscv32-unknown-elf-g++
 OBJCOPY := /tools/cad/riscv/rv32ima/bin/riscv32-unknown-elf-objcopy
 OBJDUMP := /tools/cad/riscv/rv32ima/bin/riscv32-unknown-elf-objdump
@@ -24,7 +24,9 @@ build:
 
 prog:
 	mkdir -p build
-	$(GCC) -Os -march=rv32im -mabi=ilp32 -nostartfiles -Iapp -Tapp/link.ld -o build/main.elf app/crt0.s app/*.c *.c 
+	python3 scripts/configure.py
+	$(MAKE) -C prog -f prog.mk
+#	$(GCC) -Os -march=rv32im -mabi=ilp32 -nostartfiles -Iapp -Tapp/link.ld -o build/main.elf app/crt0.s app/*.c *.c 
 	make initf
 
 imem_size =	$(shell grep -oP "\`define\s+IMEM_SIZE\s+\(\K[^)]*" config.vh | bc)

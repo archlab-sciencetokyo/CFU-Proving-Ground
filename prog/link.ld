@@ -4,10 +4,7 @@
 OUTPUT_ARCH("riscv")
 ENTRY(_start)
 
-MEMORY {
-    imem : ORIGIN = 0x00000000, LENGTH = 0x00008000
-    dmem : ORIGIN = 0x10000000, LENGTH = 0x00004000
-}
+INCLUDE mem_region.ld
 
 SECTIONS
 {

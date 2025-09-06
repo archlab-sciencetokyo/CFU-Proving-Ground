@@ -6,6 +6,8 @@ VH_FILE = 'build/user_config.vh'
 TCL_FILE = 'build/user_config.tcl'
 LINKER_FILE = 'build/region.ld'
 
+DRAM_BASE_ADDR = 0x80000000
+
 if not os.path.exists(YAML_FILE):
     print(f"{YAML_FILE} could not be found.")
     exit(1)
@@ -40,7 +42,7 @@ if 'imem_size_kbyte' in config_data:
 
 if 'dmem_size_kbyte' in config_data:
     verilog_content.append(f'`define DMEM_ENTRIES {config_data["dmem_size_kbyte"] * 1024 // 4}\n')
-    linker_content.append(f"    dmem : ORIGIN = 0x10000000, LENGTH = {config_data['dmem_size_kbyte']}K\n")
+    linker_content.append(f"    dmem : ORIGIN = {DRAM_BASE_ADDR:#x}, LENGTH = {config_data['dmem_size_kbyte']}K\n")
 
 linker_content.append('}\n')
 

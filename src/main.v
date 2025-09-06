@@ -89,7 +89,7 @@ module main (
     wire [$clog2(`IMEM_ENTRIES)-1:0] bootrom_raddr;
     wire                      [31:0] bootrom_rdata;
     bootrom bootrom (
-        .clk_i  (clk),             // input  wire
+        .clk_i  (clk),            // input  wire
         .raddr_i(bootrom_raddr),  // input  wire [ADDR_WIDTH-1:0]
         .rdata_o(bootrom_rdata)   // output reg  [DATA_WIDTH-1:0]
     );
@@ -115,24 +115,24 @@ module main (
 // Memory Management Unit
 //------------------------------------------------------------------------------
     mmu mmu (
-        .clk_i         (clk),         // input  wire
-        .cpu_ibus_raddr(ibus_raddr),  // input  wire [ADDR_WIDTH
-        .cpu_ibus_rdata(ibus_rdata),  // output wire [DATA_WIDTH
-        .cpu_dbus_addr (dbus_addr),   // input  wire [ADDR_WIDTH
-        .cpu_dbus_we   (dbus_we),     // input  wire
-        .cpu_dbus_wdata(dbus_wdata),  // input  wire [DATA_WIDTH
-        .cpu_dbus_wstrb(dbus_wstrb),  // input  wire [
-        .cpu_dbus_rdata(dbus_rdata),  // output wire [DATA_WIDTH
+        .clk_i         (clk),            // input  wire
+        .cpu_ibus_raddr(ibus_raddr),     // input  wire [ADDR_WIDTH
+        .cpu_ibus_rdata(ibus_rdata),     // output wire [DATA_WIDTH
+        .cpu_dbus_addr (dbus_addr),      // input  wire [ADDR_WIDTH
+        .cpu_dbus_we   (dbus_we),        // input  wire
+        .cpu_dbus_wdata(dbus_wdata),     // input  wire [DATA_WIDTH
+        .cpu_dbus_wstrb(dbus_wstrb),     // input  wire [
+        .cpu_dbus_rdata(dbus_rdata),     // output wire [DATA_WIDTH
         .bootrom_raddr (bootrom_raddr),  // output wire [ADDR
         .bootrom_rdata (bootrom_rdata),  // input  wire [DATA_WIDTH
-        .dmem_we       (dmem_we),     // output wire
-        .dmem_addr     (dmem_addr),   // output wire [ADDR_WIDTH
-        .dmem_wdata    (dmem_wdata),  // output wire [DATA
-        .dmem_wstrb    (dmem_wstrb),  // output wire [STRB_WIDTH
-        .dmem_rdata    (dmem_rdata),  // input  wire [
-        .vmem_we       (vmem_we),     // output wire
-        .vmem_addr     (vmem_addr),   // output wire [15:0
-        .vmem_wdata    (vmem_wdata)   // output wire [2:0]
+        .dmem_we       (dmem_we),        // output wire
+        .dmem_addr     (dmem_addr),      // output wire [ADDR_WIDTH
+        .dmem_wdata    (dmem_wdata),     // output wire [DATA
+        .dmem_wstrb    (dmem_wstrb),     // output wire [STRB_WIDTH
+        .dmem_rdata    (dmem_rdata),     // input  wire [
+        .vmem_we       (vmem_we),        // output wire
+        .vmem_addr     (vmem_addr),      // output wire [15:0
+        .vmem_wdata    (vmem_wdata)      // output wire [2:0]
     );
 endmodule  // main
 
@@ -164,17 +164,17 @@ module mmu (
     assign bootrom_raddr      = cpu_ibus_raddr;
     assign cpu_ibus_rdata  = bootrom_rdata;
 
-    // CPU <-> DMEM
-    assign dmem_we    = cpu_dbus_we & (cpu_dbus_addr[28]);
-    assign dmem_addr  = cpu_dbus_addr;
-    assign dmem_wdata = cpu_dbus_wdata;
-    assign dmem_wstrb = cpu_dbus_wstrb;
-    assign cpu_dbus_rdata = dmem_rdata;
-
     // CPU <-> VMEM
     assign vmem_we    = cpu_dbus_we & (cpu_dbus_addr[29]);
     assign vmem_addr  = cpu_dbus_addr[15:0];
     assign vmem_wdata = cpu_dbus_wdata[2:0];
+
+    // CPU <-> DMEM
+    assign dmem_we    = cpu_dbus_we & (cpu_dbus_addr[31]);
+    assign dmem_addr  = cpu_dbus_addr;
+    assign dmem_wdata = cpu_dbus_wdata;
+    assign dmem_wstrb = cpu_dbus_wstrb;
+    assign cpu_dbus_rdata = dmem_rdata;
 endmodule  // mmu
 
 module bootrom (

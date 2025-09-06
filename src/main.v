@@ -160,20 +160,24 @@ module mmu (
     output wire  [3:0] dmem_wstrb,
     input  wire [31:0] dmem_rdata
 );
-    // CPU <-> bootrom
+    // CPU -> bootrom
     assign bootrom_raddr  = cpu_ibus_raddr;
+
+    // CPU <- bootrom
     assign cpu_ibus_rdata = bootrom_rdata;
 
-    // CPU <-> VMEM
+    // CPU -> VMEM
     assign vmem_we    = cpu_dbus_we & (cpu_dbus_addr[29]);
     assign vmem_addr  = cpu_dbus_addr[15:0];
     assign vmem_wdata = cpu_dbus_wdata[2:0];
 
-    // CPU <-> DMEM
+    // CPU -> DMEM
     assign dmem_we    = cpu_dbus_we & (cpu_dbus_addr[31]);
     assign dmem_addr  = cpu_dbus_addr;
     assign dmem_wdata = cpu_dbus_wdata;
     assign dmem_wstrb = cpu_dbus_wstrb;
+
+    // CPU <- DMEM
     assign cpu_dbus_rdata = dmem_rdata;
 endmodule  // mmu
 

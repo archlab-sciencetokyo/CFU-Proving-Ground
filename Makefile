@@ -15,19 +15,22 @@ TARGET := arty_a7
 
 USE_HLS ?= 0
 
-.PHONY: build prog run clean
-all: prog imem_image dmem_image remove-junk sim
+.PHONY: sim prog imem_image dmem_image remove-junk bit load run drun clean regressive-test
+all: user_config prog imem_image dmem_image remove-junk sim
+
+user_config:
+	mkdir -p build
+	python3 scripts/user_config.py
 
 sim:
 	$(RTLSIM) --binary --trace --top-module top -Ibuild -Isrc --Wno-WIDTHTRUNC --Wno-WIDTHEXPAND -o top src/*.v
 	gcc -O2 dispemu/dispemu.c -o build/dispemu -lcairo -lX11
 
 prog:
-	mkdir -p build
-	python3 scripts/user_config.py
 	$(MAKE) -C prog -f prog.mk
 
 imem_image:
+	$(OBJDUMP) -d build/main.elf > build/main.dump
 	$(OBJCOPY) -O binary --only-section=.text build/main.elf build/imem_init.bin
 	dd if=build/imem_init.bin of=build/imem_init.img conv=sync bs=1KiB
 	hexdump -v -e '1/4 "%08x\n"' build/imem_init.img > build/imem_init.32.hex
@@ -77,4 +80,18 @@ drun:
 	./obj_dir/top | build/dispemu 1
 
 clean:
-	rm -rf build/ obj_dir/ 
+	rm -rf build/ obj_dir/ vivado/ 
+
+#================
+# Remove when regression test is done
+#================
+ELF_FILES := $(wildcard tests/*.elf)
+regressive-test:
+	for f in $(ELF_FILES); do \
+		cp $${f} build/main.elf; \
+		make imem_image dmem_image > /dev/null; \
+		make sim > /dev/null; \
+		echo "Running $$f ..."; \
+		./obj_dir/top; \
+	done
+

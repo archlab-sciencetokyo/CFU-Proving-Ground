@@ -1,12 +1,5 @@
 build/
 obj_dir/
-.Xil/
-vivado*
-memd.txt
-memi.txt
-build.tcl
-main.xdc
-*.vcd
-vitis/
-cfu/
-vitis-comp.json
+vivado/
+tests/
+riscv-tests/

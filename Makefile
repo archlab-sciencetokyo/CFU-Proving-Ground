@@ -63,7 +63,9 @@ remove-junk:
 	rm -f build/dmem_init.bin build/dmem_init.img build/dmem_init.32.hex
 
 bit:
-	$(VIVADO) -mode batch -source scripts/build_$(TARGET).tcl
+	mkdir -p vivado
+	cd vivado && \
+	$(VIVADO) -mode batch -source ../scripts/build_$(TARGET).tcl
 
 load:
 	$(VIVADO) -mode batch -source scripts/load.tcl

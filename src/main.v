@@ -1,8 +1,6 @@
 /* CFU Proving Ground since 2025-02    Copyright(c) 2025 Archlab. Science Tokyo /
 / Released under the MIT license https://opensource.org/licenses/mit           */
-
 `resetall `default_nettype none
-
 `include "config.vh"
 
 module main (
@@ -12,11 +10,12 @@ module main (
     output wire st7789_DC,
     output wire st7789_RES
 );
-    //    wire rst_ni = 1;
-    reg rst_ni = 0;
-    initial #15 rst_ni = 1;
+    reg rst_ni = 1;
     wire clk, locked;
 
+//==============================================================================
+// Clock and Reset
+//------------------------------------------------------------------------------
 `ifdef SYNTHESIS
     clk_wiz_0 clk_wiz_0 (
         .clk_out1(clk),      // output clk_out1
@@ -29,24 +28,23 @@ module main (
     assign locked = 1'b1;
 `endif
 
-    wire                        rst = !rst_ni || !locked;
+//==============================================================================
+// CPU
+//------------------------------------------------------------------------------
+    wire                             rst;
     wire [$clog2(`IMEM_ENTRIES)-1:0] imem_raddr;
-    wire [31:0] imem_rdata;
-    wire                        dbus_we;
-    wire [31:0] dbus_addr;
-    wire [31:0] dbus_wdata;
-    wire [ 3:0] dbus_wstrb;
-    wire [31:0] dbus_rdata;
-
-    reg                         rdata_sel = 0;
-    always @(posedge clk) rdata_sel <= dbus_addr[30];
-    assign dbus_rdata = (rdata_sel) ? perf_rdata : dmem_rdata;
-
+    wire                      [31:0] imem_rdata;
+    wire                      [31:0] dbus_addr;
+    wire                             dbus_we;
+    wire                      [31:0] dbus_wdata;
+    wire                      [ 3:0] dbus_wstrb;
+    wire                      [31:0] dbus_rdata;
+    assign rst = !locked || !rst_ni;
     cpu cpu (
         .clk_i        (clk),         // input  wire
         .rst_i        (rst),         // input  wire
-        .ibus_addr_o(imem_raddr),  // output wire [`IBUS_ADDR_WIDTH-1:0]
-        .ibus_data_i (imem_rdata),  // input  wire [`IBUS_DATA_WIDTH-1:0]
+        .ibus_addr_o  (imem_raddr),  // output wire [`IBUS_ADDR_WIDTH-1:0]
+        .ibus_data_i  (imem_rdata),  // input  wire [`IBUS_DATA_WIDTH-1:0]
         .dbus_addr_o  (dbus_addr),   // output wire [`DBUS_ADDR_WIDTH-1:0]
         .dbus_wvalid_o(dbus_we),     // output wire
         .dbus_wdata_o (dbus_wdata),  // output wire [`DBUS_DATA_WIDTH-1:0]
@@ -54,31 +52,19 @@ module main (
         .dbus_rdata_i (dbus_rdata)   // input  wire [`DBUS_DATA_WIDTH-1:0]
     );
 
-    m_imem imem (
-        .clk_i  (clk),         // input  wire
-        .raddr_i(imem_raddr),  // input  wire [ADDR_WIDTH-1:0]
-        .rdata_o(imem_rdata)   // output reg  [DATA_WIDTH-1:0]
-    );
-
-    wire dmem_we = dbus_we & (dbus_addr[28]);
-    wire [31:0] dmem_addr = dbus_addr;
-    wire [31:0] dmem_wdata = dbus_wdata;
-    wire  [3:0] dmem_wstrb = dbus_wstrb;
-    wire [31:0] dmem_rdata;
-    m_dmem dmem (
-        .clk_i  (clk),         // input  wire
-        .we_i   (dmem_we),     // input  wire                  
-        .addr_i (dmem_addr),   // input  wire [ADDR_WIDTH-1:0] 
-        .wdata_i(dmem_wdata),  // input  wire [DATA_WIDTH-1:0] 
-        .wstrb_i(dmem_wstrb),  // input  wire [STRB_WIDTH-1:0] 
-        .rdata_o(dmem_rdata)   // output reg  [DATA_WIDTH-1:0] 
-    );
-
-    wire vmem_we = dbus_we & (dbus_addr[29]);
-    wire [15:0] vmem_addr = dbus_addr[15:0];
-    wire [2:0] vmem_wdata = dbus_wdata[2:0];
+//==============================================================================
+// 0x2000_0000 - 0x2007_0800 : VMEM
+//------------------------------------------------------------------------------
+    wire        vmem_we;
+    wire [15:0] vmem_addr;
+    wire  [2:0] vmem_wdata;
     wire [15:0] vmem_raddr;
-    wire [2:0] vmem_rdata_t;
+    wire  [2:0] vmem_rdata_t;
+    wire [15:0] vmem_rdata;
+    assign vmem_we    = dbus_we & (dbus_addr[29]);
+    assign vmem_addr  = dbus_addr[15:0];
+    assign vmem_wdata = dbus_wdata[2:0];
+    assign vmem_rdata = {{5{vmem_rdata_t[2]}}, {6{vmem_rdata_t[1]}}, {5{vmem_rdata_t[0]}}};
     vmem vmem (
         .clk_i  (clk),          // input wire
         .we_i   (vmem_we),      // input wire
@@ -88,19 +74,6 @@ module main (
         .rdata_o(vmem_rdata_t)  // output wire [15:0]
     );
 
-    wire perf_we = dbus_we & (dbus_addr[30]);
-    wire [3:0] perf_addr = dbus_addr[3:0];
-    wire [2:0] perf_wdata = dbus_wdata[2:0];
-    wire [31:0] perf_rdata;
-    perf_cntr perf (
-        .clk_i  (clk),         // input  wire
-        .addr_i (perf_addr),   // input  wire [3:0]
-        .wdata_i(perf_wdata),  // input  wire [2:0]
-        .w_en_i (perf_we),     // input  wire
-        .rdata_o(perf_rdata)   // output wire [31:0]
-    );
-
-    wire [15:0] vmem_rdata = {{5{vmem_rdata_t[2]}}, {6{vmem_rdata_t[1]}}, {5{vmem_rdata_t[0]}}};
     m_st7789_disp st7789_disp (
         .w_clk     (clk),         // input  wire
         .st7789_SDA(st7789_SDA),  // output wire
@@ -111,7 +84,37 @@ module main (
         .w_rdata   (vmem_rdata)   // input  wire [15:0]
     );
 
-endmodule
+//==============================================================================
+// 0x4000_0000 - 0x5000_0000 : IMEM
+//------------------------------------------------------------------------------ 
+    m_imem imem (
+        .clk_i  (clk),         // input  wire
+        .raddr_i(imem_raddr),  // input  wire [ADDR_WIDTH-1:0]
+        .rdata_o(imem_rdata)   // output reg  [DATA_WIDTH-1:0]
+    );
+
+//==============================================================================
+// 0x8000_0000 - 0x9000_0000 : DMEM
+//------------------------------------------------------------------------------
+    wire        dmem_we;
+    wire [31:0] dmem_addr;
+    wire [31:0] dmem_wdata;
+    wire  [3:0] dmem_wstrb;
+    wire [31:0] dmem_rdata;
+    assign dmem_we    = dbus_we & (dbus_addr[28]);
+    assign dmem_addr  = dbus_addr;
+    assign dmem_wdata = dbus_wdata;
+    assign dmem_wstrb = dbus_wstrb;
+    m_dmem dmem (
+        .clk_i  (clk),         // input  wire
+        .we_i   (dmem_we),     // input  wire                  
+        .addr_i (dmem_addr),   // input  wire [ADDR_WIDTH-1:0] 
+        .wdata_i(dmem_wdata),  // input  wire [DATA_WIDTH-1:0] 
+        .wstrb_i(dmem_wstrb),  // input  wire [STRB_WIDTH-1:0] 
+        .rdata_o(dmem_rdata)   // output reg  [DATA_WIDTH-1:0] 
+    );
+    assign dbus_rdata = dmem_rdata;
+endmodule  // main
 
 module m_imem (
     input  wire        clk_i,

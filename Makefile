@@ -86,7 +86,7 @@ clean:
 # Remove when regression test is done
 #================
 ELF_FILES := $(wildcard tests/*.elf)
-regressive-test:
+regression-test:
 	for f in $(ELF_FILES); do \
 		cp $${f} build/main.elf; \
 		make imem_image dmem_image > /dev/null; \

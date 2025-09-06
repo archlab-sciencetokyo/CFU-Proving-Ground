@@ -1,14 +1,14 @@
-/* CFU Proving Ground since 2025-02    Copyright(c) 2025 Archlab. Science Tokyo /
-/ Released under the MIT license https://opensource.org/licenses/mit           */
+/* CFU Proving Ground since 2025-02   Copyright(c) 2025 Archlab. Science Tokyo /
+/ Released under the MIT license https://opensource.org/licenses/mit          */
 `default_nettype none
 `include "config.vh"
-/******************************************************************************************/
+/******************************************************************************/
 `define DBUS_OFFSET_W 2
 `define PC_W $clog2(`IMEM_ENTRIES)+2  // PC width
 `define ITYPE_W `INSTR_TYPE_WIDTH
 `define NOP 32'h00000013 // addi  x0, x0, 0
 
-/******************************************************************************************/
+/******************************************************************************/
 module cpu (
     input  wire                        clk_i,
     input  wire                        rst_i,
@@ -20,10 +20,9 @@ module cpu (
     output wire                      [31:0] dbus_wstrb_o,
     input  wire                      [31:0] dbus_rdata_i
 );
-
-    //-----------------------------------------------------------------------------------------
-    // pipeline registers
-    //-----------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+// pipeline registers
+//------------------------------------------------------------------------------
     // IF: Instruction Fetch
     reg [          31:0] r_pc;  // program counter
 
@@ -90,9 +89,9 @@ module cpu (
     reg [                4:0] MaWb_rd;
     reg [          31:0] MaWb_rslt;
 
-    //-----------------------------------------------------------------------------------------
-    // pipeline control
-    //-----------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+// pipeline control
+//------------------------------------------------------------------------------
     reg                       rst;
     always @(posedge clk_i) rst <= rst_i;
 
@@ -109,9 +108,9 @@ module cpu (
     wire Ma_v = ExMa_v;
     wire stall = ExMa_stall;
 
-    //-----------------------------------------------------------------------------------------
-    // IF: Instruction Fetch
-    //-----------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+// IF: Instruction Fetch
+//------------------------------------------------------------------------------
     wire [`PC_W-1:0] If_pc;  // the program counter of the next clock cycle
     wire [`PC_W-1:0] If_pc_inc;  //
     wire If_pc_stall;
@@ -186,9 +185,9 @@ module cpu (
         end
     end
 
-    //-----------------------------------------------------------------------------------------
-    // ID: Instruction Decode
-    //-----------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+// ID: Instruction Decode
+//------------------------------------------------------------------------------
     // instruction decoder
     wire [`SRC2_CTRL_WIDTH-1:0] Id_src2_ctrl;
     wire [ `ALU_CTRL_WIDTH-1:0] Id_alu_ctrl;
@@ -275,9 +274,9 @@ module cpu (
         end
     end
 
-    //-----------------------------------------------------------------------------------------
-    // EX: Execution
-    //-----------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+// EX: Execution
+//------------------------------------------------------------------------------
     wire Ex_valid = IdEx_v && !Ma_br_misp && !ExMa_stall;
 
     ///// data forwarding
@@ -405,9 +404,9 @@ module cpu (
         end
     end
 
-    //-----------------------------------------------------------------------------------------
-    // MA: Memory Access
-    //-----------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+// MA: Memory Access
+//------------------------------------------------------------------------------
     // load unit
     wire [31:0] Ma_load_rslt;
     load_unit load_unit (
@@ -434,14 +433,14 @@ module cpu (
         end
     end
 
-    //-----------------------------------------------------------------------------------------
-    // WB: Write Back
-    //-----------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+// WB: Write Back
+//------------------------------------------------------------------------------
 endmodule
 
 `define BTB_IDXW $clog2(`BTB_ENTRY)  // BTB index width
 `define BTB_OSTW 2     // BTB offset width
-/******************************************************************************************/
+/******************************************************************************/
 module bimodal (
     input  wire             clk_i,
     input  wire             rst_i,
@@ -477,7 +476,7 @@ module bimodal (
     assign br_pred_pc_o  = {r_btb_entry[`PC_W-1:2], 2'b0};
 endmodule
 
-/******************************************************************************************/
+/******************************************************************************/
 module pre_decoder (
     input  wire [31:0] ir_i,
     output wire [ 2:0] instr_type_o,
@@ -506,7 +505,7 @@ module pre_decoder (
     assign rf_we_o = (rd_o != 0);
 endmodule
 
-/******************************************************************************************/
+/******************************************************************************/
 module regfile (  ///// register file with bypassing
     input  wire        clk_i,
     input  wire [ 4:0] rs1_i,
@@ -529,7 +528,7 @@ module regfile (  ///// register file with bypassing
     end
 endmodule
 
-/******************************************************************************************/
+/******************************************************************************/
 module alu (
     input  wire [`ALU_CTRL_WIDTH-1:0] alu_ctrl_i,
     input  wire                [31:0] src1_i    ,
@@ -565,7 +564,7 @@ module alu (
                     bitwise_rslt | lui_auipc_rslt | j_pc4_i;
 endmodule
 
-/******************************************************************************************/
+/******************************************************************************/
 module bru (
     input  wire [`BRU_CTRL_WIDTH-1:0] bru_ctrl_i,
     input  wire [               31:0] src1_i,
@@ -607,78 +606,7 @@ endmodule
 `define DIV_CHECK 1
 `define DIV_EXEC 2
 `define DIV_RET 3
-/******************************************************************************************/
-/* module divider (
-    input  wire        clk_i,
-    input  wire        rst_i,
-    input  wire        stall_i,
-    input  wire        valid_i,
-    input  wire [ 2:0] div_ctrl_i,
-    input  wire [31:0] src1_i,
-    input  wire [31:0] src2_i,
-    output wire        stall_o,
-    output wire [31:0] rslt_o
-);
-
-    reg [1:0] state = `DIV_IDLE;
-    assign stall_o = (w_state != `DIV_IDLE);
-
-    reg         is_dividend_neg;
-    reg         is_divisor_neg;
-    reg  [31:0] divisor;
-    wire [63:0] remainder;
-    wire [63:0] quotient;
-    reg         is_div_rslt_neg;
-    reg         is_rem_rslt_neg;
-    reg         is_rem;
-    reg  [ 4:0] cntr;
-    reg  [63:0] r_rslt;
-
-    wire [31:0] uintx_remainder = (is_dividend_neg) ? ~(remainder[31:0] + 1) : remainder[31:0];
-    wire [31:0] uintx_divisor = (is_divisor_neg) ? ~(divisor + 1) : divisor;
-    wire [32:0] difference = {remainder[30:0], quotient[31]} - divisor;
-    wire        q = !difference[32];
-
-    assign remainder = r_rslt[63:32];
-    assign quotient = r_rslt[31:0];
-
-    assign rslt_o = (state!=`DIV_RET) ? 0 : 
-                    (is_rem) ? ((is_rem_rslt_neg) ? ~(remainder[31:0]+1) : remainder[31:0]) :
-                    ((is_div_rslt_neg) ? ~(quotient[31:0]+1)  : quotient[31:0] ) ;
-
-    wire w_div = div_ctrl_i[`DIV_CTRL_IS_DIV];
-    wire w_signed = div_ctrl_i[`DIV_CTRL_IS_SIGNED];
-    wire [1:0] w_state = (w_init) ? `DIV_CHECK :
-                         (state==`DIV_CHECK && divisor==0) ? `DIV_RET : // Note
-    (state==`DIV_CHECK && divisor!=0) ? `DIV_EXEC :
-                         (state==`DIV_EXEC  && cntr==0) ? `DIV_RET :
-                         (state==`DIV_EXEC  && cntr!=0) ? `DIV_EXEC : `DIV_IDLE;
-
-    wire w_init = (state == `DIV_IDLE && valid_i && w_div);
-    always @(posedge clk_i)
-        if (stall_i == 0) begin
-            is_rem <= (w_init) ? div_ctrl_i[`DIV_CTRL_IS_REM] : is_rem;
-            is_dividend_neg <= (w_init) ? w_signed && src1_i[31] : is_dividend_neg;
-            is_divisor_neg <= (w_init) ? w_signed && src2_i[31] : is_divisor_neg;
-            is_div_rslt_neg   <= (w_init) ? w_signed && (src1_i[31] ^ src2_i[31]) :
-                             (state==`DIV_CHECK && divisor==0) ? 0 : is_div_rslt_neg;
-            is_rem_rslt_neg   <= (w_init) ? w_signed &&  src1_i[31] : 
-                             (state==`DIV_CHECK && divisor==0) ? 0 : is_rem_rslt_neg;
-
-            divisor <= (w_init) ? src2_i :
-                   (state==`DIV_CHECK && divisor!=0) ? uintx_divisor : divisor;
-
-            r_rslt <= (w_init) ? {src1_i, 32'd0} :
-                   (state==`DIV_CHECK && divisor==0) ? {remainder[31:0], {32{1'b1}}} :
-                   (state==`DIV_CHECK && divisor!=0) ? {32'd0, uintx_remainder} :
-                   (state==`DIV_EXEC) ? ((q) ? {difference[31:0], quotient[30:0], 1'b1} :
-                                               {remainder[30:0], quotient[31:0], 1'b0}) :
-                  r_rslt;
-
-            cntr <= (state == `DIV_CHECK) ? 31 : (state == `DIV_EXEC) ? cntr - 1 : cntr;
-            state <= w_state;
-        end
-endmodule */
+/******************************************************************************/
 module divider (
     input  wire        clk_i      ,
     input  wire        rst_i      ,
@@ -749,7 +677,7 @@ endmodule
 `define MUL_IDLE 0
 `define MUL_EXEC 1
 `define MUL_RET 2
-/******************************************************************************************/
+/******************************************************************************/
 module multiplier (
     input  wire        clk_i,
     input  wire        rst_i,
@@ -791,7 +719,7 @@ module multiplier (
     assign stall_o = (w_state != `MUL_IDLE);
 endmodule
 
-/******************************************************************************************/
+/******************************************************************************/
 module store_unit (
     input  wire        valid_i,
     input  wire [ 5:0] lsu_ctrl_i,
@@ -825,7 +753,7 @@ module store_unit (
     assign dbus_wstrb_o[3] = (w_sb && dbus_offset_o==3) || (w_sh && dbus_offset_o[1]==1) || w_sw;
 endmodule
 
-/******************************************************************************************/
+/******************************************************************************/
 module load_unit (
     input  wire [ 5:0] lsu_ctrl_i,
     input  wire [ 1:0] dbus_offset_i,
@@ -855,7 +783,7 @@ module load_unit (
     assign rslt_o = {w4, w3, w2, w1};
 endmodule
 
-/******************************************************************************************/
+/******************************************************************************/
 module imm_gen (
     input  wire [        31:0] ir_i,
     input  wire [`ITYPE_W-1:0] instr_type_i,
@@ -878,7 +806,7 @@ module imm_gen (
     assign imm_o = {ir[31], imm30_20, imm19_12, imm11, imm10_5, imm4_1, imm0};
 endmodule
 
-/******************************************************************************************/
+/******************************************************************************/
 module decoder (
     input  wire [                31:0] ir_i,
     output wire [`SRC2_CTRL_WIDTH-1:0] src2_ctrl_o,
@@ -947,4 +875,4 @@ module decoder (
     wire alu_c8 = (op == 5'b01101 || op == 5'b00101);  // IS_SRC2
     assign alu_ctrl_o = {alu_c8, alu_c7, alu_c6, alu_c5, alu_c4, alu_c3, alu_c2, alu_c1, alu_c0};
 endmodule
-/******************************************************************************************/
+/******************************************************************************/

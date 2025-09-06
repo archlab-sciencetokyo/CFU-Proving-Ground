@@ -45,8 +45,8 @@ module main (
     cpu cpu (
         .clk_i        (clk),         // input  wire
         .rst_i        (rst),         // input  wire
-        .ibus_araddr_o(imem_raddr),  // output wire [`IBUS_ADDR_WIDTH-1:0]
-        .ibus_rdata_i (imem_rdata),  // input  wire [`IBUS_DATA_WIDTH-1:0]
+        .ibus_addr_o(imem_raddr),  // output wire [`IBUS_ADDR_WIDTH-1:0]
+        .ibus_data_i (imem_rdata),  // input  wire [`IBUS_DATA_WIDTH-1:0]
         .dbus_addr_o  (dbus_addr),   // output wire [`DBUS_ADDR_WIDTH-1:0]
         .dbus_wvalid_o(dbus_we),     // output wire
         .dbus_wdata_o (dbus_wdata),  // output wire [`DBUS_DATA_WIDTH-1:0]
@@ -63,7 +63,7 @@ module main (
     wire dmem_we = dbus_we & (dbus_addr[28]);
     wire [31:0] dmem_addr = dbus_addr;
     wire [31:0] dmem_wdata = dbus_wdata;
-    wire [3:0] dmem_wstrb = dbus_wstrb;
+    wire  [3:0] dmem_wstrb = dbus_wstrb;
     wire [31:0] dmem_rdata;
     m_dmem dmem (
         .clk_i  (clk),         // input  wire

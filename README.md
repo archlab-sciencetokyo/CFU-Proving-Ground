@@ -2,14 +2,17 @@
 
 ## Memory Map
 
-| address | desription |
-| ----------------------- | ---------- |
-| 0x00000000 - 0x0FFFFFFF | IMEM (ROM) |
-| 0x10000000 - 0x1FFFFFFF | BOOT RAM   |
-| 0x20000000 - 0x2FFFFFFF | CSR        |
-| 0x40000000 - 0x4FFFFFFF | DDR3       |
-| 0x80000000 - 0x8FFFFFFF | MMIO       |
+| address                 | type    | desription        |
+| ----------------------- | ------- | ----------------- |
+| 0x00000000 - 0x00002000 | ROM     | 8 KiB bootrom     |
+| 0x10000000 - 0x40000000 | -       | MMIO              |
+| 0x20000000 - 0x20070800 | RAM     | 240x240x8bit VMEM | 
+| 0x40000000 - 0x4FFFFFFF | **RAM** | IMEM              |
+| 0x80000000 - 0x90000000 | RAM     | 256MiB DDR3       |
 
-UART (SEND) 0x80040000
-UART (READ) 0x80040004
+## MMIO
+| address    | R/W     | desription |
+| ---------- | ------- | ---------- |
+| 0x10000000 | W       | UART TX    |
+| 0x10000004 | R       | UART RX    |
 

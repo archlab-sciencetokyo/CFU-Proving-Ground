@@ -40,7 +40,6 @@ module main (
     wire                      [31:0] dbus_wdata;
     wire                      [ 3:0] dbus_wstrb;
     wire                      [31:0] dbus_rdata;
-    assign rst = !locked || !rst_ni;
     cpu cpu (
         .clk_i        (clk),         // input  wire
         .rst_i        (rst),         // input  wire
@@ -60,21 +59,20 @@ module main (
     wire [15:0] vmem_addr;
     wire  [2:0] vmem_wdata;
     wire [15:0] vmem_raddr;
-    wire  [2:0] vmem_rdata_t;
     wire [15:0] vmem_rdata;
-    assign vmem_we    = dbus_we & (dbus_addr[29]);
-    assign vmem_addr  = dbus_addr[15:0];
-    assign vmem_wdata = dbus_wdata[2:0];
-    assign vmem_rdata = {{5{vmem_rdata_t[2]}}, {6{vmem_rdata_t[1]}}, {5{vmem_rdata_t[0]}}};
     vmem vmem (
         .clk_i  (clk),          // input wire
         .we_i   (vmem_we),      // input wire
         .waddr_i(vmem_addr),    // input wire [15:0]
         .wdata_i(vmem_wdata),   // input wire [15:0]
         .raddr_i(vmem_raddr),   // input wire [15:0]
-        .rdata_o(vmem_rdata_t)  // output wire [15:0]
+        .rdata_o(vmem_rdata)  // output wire [15:0]
     );
 
+    wire [15:0] color_data;
+    assign color_data = {{5{vmem_rdata[2]}},
+                         {6{vmem_rdata[1]}},
+                         {5{vmem_rdata[0]}}};
     m_st7789_disp st7789_disp (
         .w_clk     (clk),         // input  wire
         .st7789_SDA(st7789_SDA),  // output wire
@@ -82,18 +80,18 @@ module main (
         .st7789_DC (st7789_DC),   // output wire
         .st7789_RES(st7789_RES),  // output wire
         .w_raddr   (vmem_raddr),  // output wire [15:0]
-        .w_rdata   (vmem_rdata)   // input  wire [15:0]
+        .w_rdata   (color_data)   // input  wire [15:0]
     );
 
 //==============================================================================
-// 0x4000_0000 - 0x5000_0000 : IMEM
+// 0x0000_0000 - 0x0000_2000 : 8 KiB bootrom
 //------------------------------------------------------------------------------ 
-    wire [$clog2(`IMEM_ENTRIES)-1:0] imem_raddr;
-    wire                      [31:0] imem_rdata;
-    m_imem imem (
-        .clk_i  (clk),         // input  wire
-        .raddr_i(imem_raddr),  // input  wire [ADDR_WIDTH-1:0]
-        .rdata_o(imem_rdata)   // output reg  [DATA_WIDTH-1:0]
+    wire [$clog2(`IMEM_ENTRIES)-1:0] bootrom_raddr;
+    wire                      [31:0] bootrom_rdata;
+    bootrom bootrom (
+        .clk_i  (clk),             // input  wire
+        .raddr_i(bootrom_raddr),  // input  wire [ADDR_WIDTH-1:0]
+        .rdata_o(bootrom_rdata)   // output reg  [DATA_WIDTH-1:0]
     );
 
 //==============================================================================
@@ -117,21 +115,24 @@ module main (
 // Memory Management Unit
 //------------------------------------------------------------------------------
     mmu mmu (
-        .clk_i         (clk),          // input  wire
-        .cpu_ibus_raddr(ibus_raddr), // input  wire [ADDR_WIDTH
-        .cpu_ibus_rdata(ibus_rdata), // output wire [DATA_WIDTH
-        .cpu_dbus_addr (dbus_addr),  // input  wire [ADDR_WIDTH
-        .cpu_dbus_we   (dbus_we),    // input  wire
-        .cpu_dbus_wdata(dbus_wdata), // input  wire [DATA_WIDTH
-        .cpu_dbus_wstrb(dbus_wstrb), // input  wire [
-        .cpu_dbus_rdata(dbus_rdata), // output wire [DATA_WIDTH
-        .imem_raddr    (imem_raddr),  // output wire [ADDR
-        .imem_rdata    (imem_rdata),   // input  wire [DATA_WIDTH
+        .clk_i         (clk),         // input  wire
+        .cpu_ibus_raddr(ibus_raddr),  // input  wire [ADDR_WIDTH
+        .cpu_ibus_rdata(ibus_rdata),  // output wire [DATA_WIDTH
+        .cpu_dbus_addr (dbus_addr),   // input  wire [ADDR_WIDTH
+        .cpu_dbus_we   (dbus_we),     // input  wire
+        .cpu_dbus_wdata(dbus_wdata),  // input  wire [DATA_WIDTH
+        .cpu_dbus_wstrb(dbus_wstrb),  // input  wire [
+        .cpu_dbus_rdata(dbus_rdata),  // output wire [DATA_WIDTH
+        .bootrom_raddr (bootrom_raddr),  // output wire [ADDR
+        .bootrom_rdata (bootrom_rdata),  // input  wire [DATA_WIDTH
         .dmem_we       (dmem_we),     // output wire
         .dmem_addr     (dmem_addr),   // output wire [ADDR_WIDTH
         .dmem_wdata    (dmem_wdata),  // output wire [DATA
         .dmem_wstrb    (dmem_wstrb),  // output wire [STRB_WIDTH
-        .dmem_rdata    (dmem_rdata)   // input  wire [
+        .dmem_rdata    (dmem_rdata),  // input  wire [
+        .vmem_we       (vmem_we),     // output wire
+        .vmem_addr     (vmem_addr),   // output wire [15:0
+        .vmem_wdata    (vmem_wdata)   // output wire [2:0]
     );
 endmodule  // main
 
@@ -146,18 +147,22 @@ module mmu (
     input  wire                      [ 3:0] cpu_dbus_wstrb,
     output wire                      [31:0] cpu_dbus_rdata,
     // IMEM
-    output wire [$clog2(`IMEM_ENTRIES)-1:0] imem_raddr,
-    input  wire                      [31:0] imem_rdata,
+    output wire [$clog2(`IMEM_ENTRIES)-1:0] bootrom_raddr,
+    input  wire                      [31:0] bootrom_rdata,
     // DMEM
-    output wire                             dmem_we,
-    output wire                      [31:0] dmem_addr,
-    output wire                      [31:0] dmem_wdata,
-    output wire                       [3:0] dmem_wstrb,
-    input  wire                      [31:0] dmem_rdata
+    output wire        dmem_we,
+    output wire [31:0] dmem_addr,
+    output wire [31:0] dmem_wdata,
+    output wire  [3:0] dmem_wstrb,
+    input  wire [31:0] dmem_rdata,
+    // VMEM
+    output wire        vmem_we,
+    output wire [15:0] vmem_addr,
+    output wire  [2:0] vmem_wdata
 );
-    // CPU <-> IMEM
-    assign imem_raddr      = cpu_ibus_raddr;
-    assign cpu_ibus_rdata  = imem_rdata;
+    // CPU <-> bootrom
+    assign bootrom_raddr      = cpu_ibus_raddr;
+    assign cpu_ibus_rdata  = bootrom_rdata;
 
     // CPU <-> DMEM
     assign dmem_we    = cpu_dbus_we & (cpu_dbus_addr[28]);
@@ -165,9 +170,14 @@ module mmu (
     assign dmem_wdata = cpu_dbus_wdata;
     assign dmem_wstrb = cpu_dbus_wstrb;
     assign cpu_dbus_rdata = dmem_rdata;
+
+    // CPU <-> VMEM
+    assign vmem_we    = cpu_dbus_we & (cpu_dbus_addr[29]);
+    assign vmem_addr  = cpu_dbus_addr[15:0];
+    assign vmem_wdata = cpu_dbus_wdata[2:0];
 endmodule  // mmu
 
-module m_imem (
+module bootrom (
     input  wire        clk_i,
     input  wire [$clog2(`IMEM_ENTRIES)-1:0] raddr_i,
     output wire [31:0] rdata_o

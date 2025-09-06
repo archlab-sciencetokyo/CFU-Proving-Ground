@@ -13,9 +13,10 @@ module main (
 //==============================================================================
 // Clock and Reset
 //------------------------------------------------------------------------------
-    reg rst_ni = 1;
+    reg  rst_ni = 1;
     wire clk;
     wire locked;
+    wire rst;
 `ifdef SYNTHESIS
     clk_wiz_0 clk_wiz_0 (
         .clk_out1(clk),      // output clk_out1
@@ -27,11 +28,11 @@ module main (
     assign clk    = clk_i;
     assign locked = 1'b1;
 `endif
+    assign rst    = ~rst_ni | ~locked;
 
 //==============================================================================
 // CPU
 //------------------------------------------------------------------------------
-    wire                             rst;
     wire [$clog2(`IMEM_ENTRIES)-1:0] ibus_raddr;
     wire                      [31:0] ibus_rdata;
     wire                      [31:0] dbus_addr;
@@ -103,10 +104,6 @@ module main (
     wire [31:0] dmem_wdata;
     wire  [3:0] dmem_wstrb;
     wire [31:0] dmem_rdata;
-    assign dmem_we    = dbus_we & (dbus_addr[28]);
-    assign dmem_addr  = dbus_addr;
-    assign dmem_wdata = dbus_wdata;
-    assign dmem_wstrb = dbus_wstrb;
     m_dmem dmem (
         .clk_i  (clk),         // input  wire
         .we_i   (dmem_we),     // input  wire                  
@@ -115,13 +112,12 @@ module main (
         .wstrb_i(dmem_wstrb),  // input  wire [STRB_WIDTH-1:0] 
         .rdata_o(dmem_rdata)   // output reg  [DATA_WIDTH-1:0] 
     );
-    assign dbus_rdata = dmem_rdata;
 
 //==============================================================================
 // Memory Management Unit
 //------------------------------------------------------------------------------
     mmu mmu (
-        .clk_i       (clk),          // input  wire
+        .clk_i         (clk),          // input  wire
         .cpu_ibus_raddr(ibus_raddr), // input  wire [ADDR_WIDTH
         .cpu_ibus_rdata(ibus_rdata), // output wire [DATA_WIDTH
         .cpu_dbus_addr (dbus_addr),  // input  wire [ADDR_WIDTH
@@ -130,12 +126,18 @@ module main (
         .cpu_dbus_wstrb(dbus_wstrb), // input  wire [
         .cpu_dbus_rdata(dbus_rdata), // output wire [DATA_WIDTH
         .imem_raddr    (imem_raddr),  // output wire [ADDR
-        .imem_rdata    (imem_rdata)   // input  wire [DATA_WIDTH
+        .imem_rdata    (imem_rdata),   // input  wire [DATA_WIDTH
+        .dmem_we       (dmem_we),     // output wire
+        .dmem_addr     (dmem_addr),   // output wire [ADDR_WIDTH
+        .dmem_wdata    (dmem_wdata),  // output wire [DATA
+        .dmem_wstrb    (dmem_wstrb),  // output wire [STRB_WIDTH
+        .dmem_rdata    (dmem_rdata)   // input  wire [
     );
 endmodule  // main
 
 module mmu (
     input  wire                             clk_i,
+    // CPU
     input  wire [$clog2(`IMEM_ENTRIES)-1:0] cpu_ibus_raddr,
     output wire                      [31:0] cpu_ibus_rdata,
     input  wire                      [31:0] cpu_dbus_addr,
@@ -143,12 +145,27 @@ module mmu (
     input  wire                      [31:0] cpu_dbus_wdata,
     input  wire                      [ 3:0] cpu_dbus_wstrb,
     output wire                      [31:0] cpu_dbus_rdata,
+    // IMEM
     output wire [$clog2(`IMEM_ENTRIES)-1:0] imem_raddr,
-    input  wire                      [31:0] imem_rdata
+    input  wire                      [31:0] imem_rdata,
+    // DMEM
+    output wire                             dmem_we,
+    output wire                      [31:0] dmem_addr,
+    output wire                      [31:0] dmem_wdata,
+    output wire                       [3:0] dmem_wstrb,
+    input  wire                      [31:0] dmem_rdata
 );
+    // CPU <-> IMEM
     assign imem_raddr      = cpu_ibus_raddr;
     assign cpu_ibus_rdata  = imem_rdata;
-endmodule
+
+    // CPU <-> DMEM
+    assign dmem_we    = cpu_dbus_we & (cpu_dbus_addr[28]);
+    assign dmem_addr  = cpu_dbus_addr;
+    assign dmem_wdata = cpu_dbus_wdata;
+    assign dmem_wstrb = cpu_dbus_wstrb;
+    assign cpu_dbus_rdata = dmem_rdata;
+endmodule  // mmu
 
 module m_imem (
     input  wire        clk_i,

@@ -39,5 +39,5 @@ SECTIONS
     }
 }
 
-PROVIDE(_tohost = 0x80000000);
+PROVIDE(_tohost = 0x10000000);
 PROVIDE(_fstack = ORIGIN(dmem) + LENGTH(dmem));

@@ -10,12 +10,12 @@ module main (
     output wire st7789_DC,
     output wire st7789_RES
 );
-    reg rst_ni = 1;
-    wire clk, locked;
-
 //==============================================================================
 // Clock and Reset
 //------------------------------------------------------------------------------
+    reg rst_ni = 1;
+    wire clk;
+    wire locked;
 `ifdef SYNTHESIS
     clk_wiz_0 clk_wiz_0 (
         .clk_out1(clk),      // output clk_out1
@@ -32,8 +32,8 @@ module main (
 // CPU
 //------------------------------------------------------------------------------
     wire                             rst;
-    wire [$clog2(`IMEM_ENTRIES)-1:0] imem_raddr;
-    wire                      [31:0] imem_rdata;
+    wire [$clog2(`IMEM_ENTRIES)-1:0] ibus_raddr;
+    wire                      [31:0] ibus_rdata;
     wire                      [31:0] dbus_addr;
     wire                             dbus_we;
     wire                      [31:0] dbus_wdata;
@@ -43,8 +43,8 @@ module main (
     cpu cpu (
         .clk_i        (clk),         // input  wire
         .rst_i        (rst),         // input  wire
-        .ibus_addr_o  (imem_raddr),  // output wire [`IBUS_ADDR_WIDTH-1:0]
-        .ibus_data_i  (imem_rdata),  // input  wire [`IBUS_DATA_WIDTH-1:0]
+        .ibus_addr_o  (ibus_raddr),  // output wire [`IBUS_ADDR_WIDTH-1:0]
+        .ibus_data_i  (ibus_rdata),  // input  wire [`IBUS_DATA_WIDTH-1:0]
         .dbus_addr_o  (dbus_addr),   // output wire [`DBUS_ADDR_WIDTH-1:0]
         .dbus_wvalid_o(dbus_we),     // output wire
         .dbus_wdata_o (dbus_wdata),  // output wire [`DBUS_DATA_WIDTH-1:0]
@@ -87,6 +87,8 @@ module main (
 //==============================================================================
 // 0x4000_0000 - 0x5000_0000 : IMEM
 //------------------------------------------------------------------------------ 
+    wire [$clog2(`IMEM_ENTRIES)-1:0] imem_raddr;
+    wire                      [31:0] imem_rdata;
     m_imem imem (
         .clk_i  (clk),         // input  wire
         .raddr_i(imem_raddr),  // input  wire [ADDR_WIDTH-1:0]
@@ -114,7 +116,39 @@ module main (
         .rdata_o(dmem_rdata)   // output reg  [DATA_WIDTH-1:0] 
     );
     assign dbus_rdata = dmem_rdata;
+
+//==============================================================================
+// Memory Management Unit
+//------------------------------------------------------------------------------
+    mmu mmu (
+        .clk_i       (clk),          // input  wire
+        .cpu_ibus_raddr(ibus_raddr), // input  wire [ADDR_WIDTH
+        .cpu_ibus_rdata(ibus_rdata), // output wire [DATA_WIDTH
+        .cpu_dbus_addr (dbus_addr),  // input  wire [ADDR_WIDTH
+        .cpu_dbus_we   (dbus_we),    // input  wire
+        .cpu_dbus_wdata(dbus_wdata), // input  wire [DATA_WIDTH
+        .cpu_dbus_wstrb(dbus_wstrb), // input  wire [
+        .cpu_dbus_rdata(dbus_rdata), // output wire [DATA_WIDTH
+        .imem_raddr    (imem_raddr),  // output wire [ADDR
+        .imem_rdata    (imem_rdata)   // input  wire [DATA_WIDTH
+    );
 endmodule  // main
+
+module mmu (
+    input  wire                             clk_i,
+    input  wire [$clog2(`IMEM_ENTRIES)-1:0] cpu_ibus_raddr,
+    output wire                      [31:0] cpu_ibus_rdata,
+    input  wire                      [31:0] cpu_dbus_addr,
+    input  wire                             cpu_dbus_we,
+    input  wire                      [31:0] cpu_dbus_wdata,
+    input  wire                      [ 3:0] cpu_dbus_wstrb,
+    output wire                      [31:0] cpu_dbus_rdata,
+    output wire [$clog2(`IMEM_ENTRIES)-1:0] imem_raddr,
+    input  wire                      [31:0] imem_rdata
+);
+    assign imem_raddr      = cpu_ibus_raddr;
+    assign cpu_ibus_rdata  = imem_rdata;
+endmodule
 
 module m_imem (
     input  wire        clk_i,

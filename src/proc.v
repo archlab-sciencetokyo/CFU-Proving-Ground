@@ -1,4 +1,5 @@
-/******************************************************************************************/
+/* CFU Proving Ground since 2025-02    Copyright(c) 2025 Archlab. Science Tokyo /
+/ Released under the MIT license https://opensource.org/licenses/mit           */
 `default_nettype none
 `include "config.vh"
 /******************************************************************************************/
@@ -12,12 +13,12 @@ module cpu (
     input  wire                        clk_i,
     input  wire                        rst_i,
     output wire [$clog2(`IMEM_ENTRIES)-1:0] ibus_araddr_o,
-    input  wire [31:0] ibus_rdata_i,
-    output wire [31:0] dbus_addr_o,
-    output wire                        dbus_wvalid_o,
-    output wire [31:0] dbus_wdata_o,
-    output wire [31:0] dbus_wstrb_o,
-    input  wire [31:0] dbus_rdata_i
+    input  wire                      [31:0] ibus_rdata_i,
+    output wire                      [31:0] dbus_addr_o,
+    output wire                             dbus_wvalid_o,
+    output wire                      [31:0] dbus_wdata_o,
+    output wire                      [31:0] dbus_wstrb_o,
+    input  wire                      [31:0] dbus_rdata_i
 );
 
     //-----------------------------------------------------------------------------------------

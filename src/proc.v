@@ -26,11 +26,11 @@ module cpu (
 // pipeline registers
 //------------------------------------------------------------------------------
     // IF: Instruction Fetch
-    reg [          31:0] r_pc;  // program counter
+    reg [               31:0] r_pc;  // program counter
 
     // ID: Instruction Decode
     reg                       IfId_v;
-    reg [          31:0] IfId_pc;
+    reg [               31:0] IfId_pc;
     reg [               31:0] IfId_ir;
     reg                       IfId_br_pred_tkn;
     reg [                1:0] IfId_pat_hist;
@@ -43,7 +43,7 @@ module cpu (
 
     // EX: Execution
     reg                       IdEx_v;
-    reg [          31:0] IdEx_pc;
+    reg [               31:0] IdEx_pc;
     reg [               31:0] IdEx_ir;
     reg                       IdEx_br_pred_tkn;
     reg [                1:0] IdEx_pat_hist;
@@ -55,28 +55,28 @@ module cpu (
     reg [`CFU_CTRL_WIDTH-1:0] IdEx_cfu_ctrl;
     reg                       IdEx_rs1_fwd_Ma_to_Ex;
     reg                       IdEx_rs2_fwd_Ma_to_Ex;
-    reg [          31:0] IdEx_src1;
-    reg [          31:0] IdEx_src2;
-    reg [          31:0] IdEx_imm;
+    reg [               31:0] IdEx_src1;
+    reg [               31:0] IdEx_src2;
+    reg [               31:0] IdEx_imm;
     reg                       IdEx_rf_we;
     reg [                4:0] IdEx_rd;
     reg [               31:0] IdEx_j_pc4;
 
     // MA: Memory Access
     reg                       ExMa_v;
-    reg [          31:0] ExMa_pc;
+    reg [               31:0] ExMa_pc;
     reg [               31:0] ExMa_ir;
     reg [                1:0] ExMa_pat_hist;
     reg                       ExMa_is_ctrl_tsfr;
     reg                       ExMa_br_tkn;
     reg                       ExMa_br_misp_rslt1;
     reg                       ExMa_br_misp_rslt2;
-    reg [          31:0] ExMa_br_tkn_pc;
+    reg [               31:0] ExMa_br_tkn_pc;
     reg [`LSU_CTRL_WIDTH-1:0] ExMa_lsu_ctrl;
     reg [ `DBUS_OFFSET_W-1:0] ExMa_dbus_offset;
     reg                       ExMa_rf_we;
     reg [                4:0] ExMa_rd;
-    reg [          31:0] ExMa_rslt;
+    reg [               31:0] ExMa_rslt;
     reg [               31:0] ExMa_mdc_rslt;  // mul_div_cfu_rslt
     reg                       ExMa_j_b_insn;  // jump or branch insn
     reg                       ExMa_mul_stall;
@@ -85,49 +85,48 @@ module cpu (
 
     // WB: Write Back
     reg                       MaWb_v;
-    reg [          31:0] MaWb_pc;
+    reg [               31:0] MaWb_pc;
     reg [               31:0] MaWb_ir;
     reg                       MaWb_rf_we;
     reg [                4:0] MaWb_rd;
-    reg [          31:0] MaWb_rslt;
+    reg [               31:0] MaWb_rslt;
 
 //------------------------------------------------------------------------------
 // pipeline control
 //------------------------------------------------------------------------------
-    reg                       rst;
-    always @(posedge clk_i) rst <= rst_i;
+    reg rst; always @(posedge clk_i) rst <= rst_i;
 
-    wire Ma_br_tkn = (ExMa_v && ExMa_br_tkn);
-    wire        Ma_br_misp     = (rst) ? 1 : 
+    wire Ma_br_tkn  = (ExMa_v && ExMa_br_tkn);
+    wire Ma_br_misp = (rst) ? 1 : 
                                  (ExMa_v && ExMa_is_ctrl_tsfr && 
                                  ((Ma_br_tkn) ? ExMa_br_misp_rslt1 : ExMa_br_misp_rslt2));
     wire [31:0] Ma_br_true_pc  = (rst) ? 0 : 
                                  (ExMa_br_tkn) ? ExMa_br_tkn_pc : ExMa_pc+4;
 
-    wire If_v = (Ma_br_misp) ? 0 : (IfId_load_muldiv_use) ? IfId_v : 1;
-    wire Id_v = (Ma_br_misp || IfId_load_muldiv_use) ? 0 : IfId_v;
-    wire Ex_v = (Ma_br_misp) ? 0 : IdEx_v;
-    wire Ma_v = ExMa_v;
+    wire If_v  = (Ma_br_misp) ? 0 : (IfId_load_muldiv_use) ? IfId_v : 1;
+    wire Id_v  = (Ma_br_misp || IfId_load_muldiv_use) ? 0 : IfId_v;
+    wire Ex_v  = (Ma_br_misp) ? 0 : IdEx_v;
+    wire Ma_v  = ExMa_v;
     wire stall = ExMa_stall;
 
 //------------------------------------------------------------------------------
 // IF: Instruction Fetch
 //------------------------------------------------------------------------------
-    wire [`PC_W-1:0] If_pc;  // the program counter of the next clock cycle
-    wire [`PC_W-1:0] If_pc_inc;  //
-    wire If_pc_stall;
-    wire [1:0] If_pat_hist;
-    wire If_br_pred_tkn;
-    wire [31:0] If_br_pred_pc;
+    wire [`PC_W-1:0]    If_pc;  // the program counter of the next clock cycle
+    wire [`PC_W-1:0]    If_pc_inc;  //
+    wire                If_pc_stall;
+    wire [1:0]          If_pat_hist;
+    wire                If_br_pred_tkn;
+    wire [31:0]         If_br_pred_pc;
     wire [`ITYPE_W-1:0] If_instr_type;
-    wire If_rf_we;
-    wire [4:0] If_rd;
-    wire [4:0] If_rs1;
-    wire [4:0] If_rs2;
-    wire [31:0] If_ir;  // instruction from imem
+    wire                If_rf_we;
+    wire [4:0]          If_rd;
+    wire [4:0]          If_rs1;
+    wire [4:0]          If_rs2;
+    wire [31:0]         If_ir;  // instruction from imem
 
     assign ibus_addr_o = If_pc[$clog2(`IMEM_ENTRIES)+1:2];  // read address of imem
-    assign If_ir = ibus_data_i;  // instruction from imem
+    assign If_ir       = ibus_data_i;  // instruction from imem
 
     bimodal bimodal (
         .clk_i        (clk_i),           // input  wire
@@ -144,9 +143,9 @@ module cpu (
     );
 
     assign If_pc_stall = ExMa_stall || IfId_load_muldiv_use;
-    assign If_pc_inc = (If_pc_stall) ? 0 : 4;
-    assign If_pc = (Ma_br_misp                   ) ? Ma_br_true_pc :
-                   (!If_pc_stall & If_br_pred_tkn) ? If_br_pred_pc : r_pc+If_pc_inc;
+    assign If_pc_inc   = (If_pc_stall) ? 0 : 4;
+    assign If_pc       = (Ma_br_misp                   ) ? Ma_br_true_pc :
+                         (!If_pc_stall & If_br_pred_tkn) ? If_br_pred_pc : r_pc+If_pc_inc;
 
     pre_decoder pre_decoder (
         .ir_i        (If_ir),          // input  wire         [31:0]
@@ -239,7 +238,7 @@ module cpu (
     wire Id_rs2_fwd_Wb_to_Ex = ExMa_v && ExMa_rf_we && (ExMa_rd == IfId_rs2);
 
     wire [31:0] Id_pc_in = (Id_src2_ctrl[`SRC2_CTRL_USE_AUIPC]) ? IfId_pc : 0;
-    wire Id_use_imm = Id_src2_ctrl[`SRC2_CTRL_USE_AUIPC] | Id_src2_ctrl[`SRC2_CTRL_USE_IMM];
+    wire Id_use_imm      = Id_src2_ctrl[`SRC2_CTRL_USE_AUIPC] | Id_src2_ctrl[`SRC2_CTRL_USE_IMM];
 
     // source select
     wire [31:0] Id_src1 = (Id_rs1_fwd_Wb_to_Ex) ? Ma_rslt : Id_xrs1;
@@ -332,7 +331,7 @@ module cpu (
     );
 
     ///// multiplier unit
-    wire             Ex_mul_stall;
+    wire        Ex_mul_stall;
     wire [31:0] Ex_mul_rslt;
     multiplier multiplier (
         .clk_i     (clk_i),          // input  wire

@@ -143,6 +143,25 @@ module main (
     );
 
 //==============================================================================
+// 0x4000_0000 - 0x5000_0000 : IMEM
+//==============================================================================
+    wire [$clog2(`IMEM_ENTRIES)-1:0] imem_raddr;
+    wire                      [31:0] imem_rdata;
+    wire                             imem_wvalid;
+    wire [$clog2(`IMEM_ENTRIES)-1:0] imem_waddr;
+    wire                       [3:0] imem_wen;
+    wire                      [31:0] imem_wdata;
+    imem imem (
+        .clk_i    (sys_clk),       // input  wire
+        .raddr_i  (imem_raddr),    // input  wire [$clog2(`IMEM_ENTRIES)-1:0]
+        .rdata_o  (imem_rdata),    // output wire [31:0]
+        .wvalid_i (imem_wvalid),   // input  wire
+        .waddr_i  (imem_waddr),    // input  wire [$clog2(`IMEM_ENTRIES)-1:0]
+        .wen_i    (imem_wen),      // input  wire [3:0]
+        .wdata_i  (imem_wdata)     // input  wire [31:0]
+    );
+
+//==============================================================================
 // 0x8000_0000 - 0x9000_0000 : LiteDRAM
 //------------------------------------------------------------------------------
     wire          litedram_init_done;
@@ -171,36 +190,36 @@ module main (
     wire    [3:0] litedram_ctrl_sel;
     wire          litedram_ctrl_stb;
     wire          litedram_ctrl_we;
-litedram_core litedram (
-    .clk                         (clk),                  // input  wire
-    .init_done                   (litedram_init_done),   // output wire
-    .init_error                  (litedram_init_error),  // output wire
-    .sim_trace                   (0),                    // input  wire
-    .user_clk                    (sys_clk),              // output wire
-    .user_port_native_cmd_addr   (litedram_cmd_addr),    // input  wire   [23:0]
-    .user_port_native_cmd_ready  (litedram_cmd_ready),   // output wire
-    .user_port_native_cmd_valid  (litedram_cmd_valid),   // input  wire
-    .user_port_native_cmd_we     (litedram_cmd_we),      // input  wire
-    .user_port_native_rdata_data (litedram_rdata_data),  // output wire  [127:0]
-    .user_port_native_rdata_ready(litedram_rdata_ready), // input  wire
-    .user_port_native_rdata_valid(litedram_rdata_valid), // output wire
-    .user_port_native_wdata_data (litedram_wdata_data),  // input  wire  [127:0]
-    .user_port_native_wdata_ready(litedram_wdata_ready), // output wire
-    .user_port_native_wdata_valid(litedram_wdata_valid), // input  wire
-    .user_port_native_wdata_we   (litedram_wdata_we),    // input  wire   [15:0]
-    .user_rst                    (sys_rst),              // output wire
-    .wb_ctrl_ack                 (litedram_ctrl_ack),    // output wire
-    .wb_ctrl_adr                 (litedram_ctrl_adr),    // input  wire   [29:0]
-    .wb_ctrl_bte                 (litedram_ctrl_bte),    // input  wire    [1:0]
-    .wb_ctrl_cti                 (litedram_ctrl_cti),    // input  wire    [2:0]
-    .wb_ctrl_cyc                 (litedram_ctrl_cyc),    // input  wire
-    .wb_ctrl_dat_r               (litedram_ctrl_dat_r),  // output wire   [31:0]  
-    .wb_ctrl_dat_w               (litedram_ctrl_dat_w),  // input  wire   [31:0]  
-    .wb_ctrl_err                 (litedram_ctrl_err),    // output wire           
-    .wb_ctrl_sel                 (litedram_ctrl_sel),    // input  wire    [3:0]  
-    .wb_ctrl_stb                 (litedram_ctrl_stb),    // input  wire           
-    .wb_ctrl_we                  (litedram_ctrl_we)      // input  wire           
-);
+    litedram_core litedram (
+        .clk                         (clk),                  // input  wire
+        .init_done                   (litedram_init_done),   // output wire
+        .init_error                  (litedram_init_error),  // output wire
+        .sim_trace                   (0),                    // input  wire
+        .user_clk                    (sys_clk),              // output wire
+        .user_port_native_cmd_addr   (litedram_cmd_addr),    // input  wire   [23:0]
+        .user_port_native_cmd_ready  (litedram_cmd_ready),   // output wire
+        .user_port_native_cmd_valid  (litedram_cmd_valid),   // input  wire
+        .user_port_native_cmd_we     (litedram_cmd_we),      // input  wire
+        .user_port_native_rdata_data (litedram_rdata_data),  // output wire  [127:0]
+        .user_port_native_rdata_ready(litedram_rdata_ready), // input  wire
+        .user_port_native_rdata_valid(litedram_rdata_valid), // output wire
+        .user_port_native_wdata_data (litedram_wdata_data),  // input  wire  [127:0]
+        .user_port_native_wdata_ready(litedram_wdata_ready), // output wire
+        .user_port_native_wdata_valid(litedram_wdata_valid), // input  wire
+        .user_port_native_wdata_we   (litedram_wdata_we),    // input  wire   [15:0]
+        .user_rst                    (sys_rst),              // output wire
+        .wb_ctrl_ack                 (litedram_ctrl_ack),    // output wire
+        .wb_ctrl_adr                 (litedram_ctrl_adr),    // input  wire   [29:0]
+        .wb_ctrl_bte                 (litedram_ctrl_bte),    // input  wire    [1:0]
+        .wb_ctrl_cti                 (litedram_ctrl_cti),    // input  wire    [2:0]
+        .wb_ctrl_cyc                 (litedram_ctrl_cyc),    // input  wire
+        .wb_ctrl_dat_r               (litedram_ctrl_dat_r),  // output wire   [31:0]  
+        .wb_ctrl_dat_w               (litedram_ctrl_dat_w),  // input  wire   [31:0]  
+        .wb_ctrl_err                 (litedram_ctrl_err),    // output wire           
+        .wb_ctrl_sel                 (litedram_ctrl_sel),    // input  wire    [3:0]  
+        .wb_ctrl_stb                 (litedram_ctrl_stb),    // input  wire           
+        .wb_ctrl_we                  (litedram_ctrl_we)      // input  wire           
+    );
 
 //==============================================================================
 // Memory Management Unit
@@ -293,340 +312,29 @@ module mmu (
     assign cpu_dbus_cmd_ack   = 1;
 endmodule  // mmu
 
-module uart (
-    input  wire       clk_i     ,
-    input  wire       rst_i     ,
-    output wire       txd_o     ,
-    input  wire       rxd_i     ,
-    input  wire       wvalid_i  ,
-    output wire       wready_o  ,
-    input  wire [7:0] wdata_i   ,
-    output wire       rvalid_o  ,
-    input  wire       rready_i  ,
-    output wire [7:0] rdata_o
+module imem (
+    input  wire                             clk_i,
+    input  wire [$clog2(`IMEM_ENTRIES)-1:0] raddr_i,
+    output wire                      [31:0] rdata_o,
+    input  wire                             wvalid_i,
+    input  wire [$clog2(`IMEM_ENTRIES)-1:0] waddr_i,
+    input  wire                       [3:0] wen_i,
+    input  wire                      [31:0] wdata_i
 );
-    localparam FIFO_DEPTH   = 2048;
-    localparam DETECT_COUNT = 4;
-
-    wire       uart_wvalid  ;
-    wire       uart_wready  ;
-    wire [7:0] uart_wdata   ;
-
-    // FIFO for UART transmitter
-    fifo #(
-        .DATA_WIDTH     (8              ),
-        .FIFO_DEPTH     (FIFO_DEPTH     )
-    ) tx_fifo (
-        .clk_i          (clk_i          ),
-        .rst_i          (rst_i          ),
-        .wvalid_i       (wvalid_i       ),
-        .wready_o       (wready_o       ),
-        .wdata_i        (wdata_i        ),
-        .rvalid_o       (uart_wvalid    ),
-        .rready_i       (uart_wready    ),
-        .rdata_o        (uart_wdata     )
-    );
-
-    // UART transmitter
-    uart_tx #(
-        .CLK_FREQ_MHZ   (`CLK_FREQ_MHZ   ),
-        .BAUD_RATE      (`UART_BAUDRATE )
-    ) uart_tx (
-        .clk_i          (clk_i          ),
-        .rst_i          (rst_i          ),
-        .txd_o          (txd_o          ),
-        .wvalid_i       (uart_wvalid    ),
-        .wready_o       (uart_wready    ),
-        .wdata_i        (uart_wdata     )
-    );
-
-    // UART receiver
-    uart_rx #(
-        .CLK_FREQ_MHZ   (`CLK_FREQ_MHZ  ),
-        .BAUD_RATE      (`UART_BAUDRATE),
-        .DETECT_COUNT   (DETECT_COUNT   )
-    ) uart_rx (
-        .clk_i          (clk_i          ),
-        .rst_i          (rst_i          ),
-        .rxd_i          (rxd_i          ),
-        .rvalid_o       (rvalid_o       ),
-        .rready_i       (rready_i       ),
-        .rdata_o        (rdata_o        )
-    );
-endmodule  // uart
-
-module fifo #(
-    parameter DATA_WIDTH    = 32    ,
-    parameter FIFO_DEPTH    = 2048
-) (
-    input  wire                  clk_i      ,
-    input  wire                  rst_i      ,
-    input  wire                  wvalid_i   ,
-    output wire                  wready_o   ,
-    input  wire [DATA_WIDTH-1:0] wdata_i    ,
-    output wire                  rvalid_o   ,
-    input  wire                  rready_i   ,
-    output reg  [DATA_WIDTH-1:0] rdata_o
-);
-
-    reg [DATA_WIDTH-1:0] ram [0:FIFO_DEPTH-1];
-
-    reg                            full_nq  , full_nd   ;
-    reg                            empty_nq , empty_nd  ;
-    reg   [$clog2(FIFO_DEPTH)-1:0] waddr_q  , waddr_d   ;
-    reg   [$clog2(FIFO_DEPTH)-1:0] raddr_q  , raddr_d   ;
-    reg [$clog2(FIFO_DEPTH+1)-1:0] count_q  , count_d   ;
-    reg                            rvalid_q , rvalid_d  ;
-
-    assign wready_o = full_nq   ;
-    assign rvalid_o = rvalid_q  ;
-
-    always @(*) begin
-        full_nd     = full_nq   ;
-        empty_nd    = empty_nq  ;
-        waddr_d     = waddr_q   ;
-        raddr_d     = raddr_q   ;
-        count_d     = count_q   ;
-        rvalid_d    = empty_nq  ;
-        if (rvalid_o && rready_i) begin
-            raddr_d     = raddr_q+'h1   ;
-            rvalid_d    = 1'b0          ;
-        end
-        if (wvalid_i && wready_o) begin
-            waddr_d     = waddr_q+'h1   ;
-        end
-        casez ({wvalid_i && wready_o, rvalid_o && rready_i}) // {fifo_write, fifo_read}
-            2'b10  : begin
-                if (count_q==FIFO_DEPTH-1) full_nd  = 1'b0  ;
-                empty_nd    = 1'b1          ;
-                count_d     = count_q+'h1   ;
-            end
-            2'b01  : begin
-                full_nd     = 1'b1          ;
-                if (count_q=='h1         ) empty_nd = 1'b0  ;
-                count_d     = count_q-'h1   ;
-            end
-            default: ;
-        endcase
-    end
-
-    // FIFO read/write
-    always @(posedge clk_i) begin
-        rdata_o <= ram[raddr_q];
-        if (wvalid_i && wready_o) begin
-            ram[waddr_q] <= wdata_i;
-        end
-    end
+    reg [31:0] rdata = 0;
+    reg [31:0] imem [0:`IMEM_ENTRIES-1];
 
     always @(posedge clk_i) begin
-        if (rst_i) begin
-            full_nq     <= 1'b1     ;
-            empty_nq    <= 1'b0     ;
-            waddr_q     <= 'h0      ;
-            raddr_q     <= 'h0      ;
-            count_q     <= 'h0      ;
-            rvalid_q    <= 1'b0     ;
-        end else begin
-            full_nq     <= full_nd  ;
-            empty_nq    <= empty_nd ;
-            waddr_q     <= waddr_d  ;
-            raddr_q     <= raddr_d  ;
-            count_q     <= count_d  ;
-            rvalid_q    <= rvalid_d ;
+        rdata <= imem[raddr_i];
+        if (wvalid_i) begin
+            if (wen_i[0]) imem[waddr_i][7:0]   <= wdata_i[7:0];
+            if (wen_i[1]) imem[waddr_i][15:8]  <= wdata_i[15:8];
+            if (wen_i[2]) imem[waddr_i][23:16] <= wdata_i[23:16];
+            if (wen_i[3]) imem[waddr_i][31:24] <= wdata_i[31:24];
         end
     end
-endmodule  // fifo
-
-module uart_rx #(
-    parameter CLK_FREQ_MHZ  = 100   ,
-    parameter BAUD_RATE     = 115200,
-    parameter DETECT_COUNT  = 4
-) (
-    input  wire       clk_i     ,
-    input  wire       rst_i     ,
-    input  wire       rxd_i     ,
-    output wire       rvalid_o  ,
-    input  wire       rready_i  ,
-    output wire [7:0] rdata_o
-);
-
-    localparam WAIT_COUNT = ((CLK_FREQ_MHZ*1000*1000)/BAUD_RATE);
-
-    // 2-FF synchronizer
-    wire rxd;
-    synchronizer sync_rxd (
-        .clk_i   (clk_i     ),
-        .d_i     (rxd_i     ),
-        .q_o     (rxd       )
-    );
-
-    // FSM
-    reg state_q, state_d;
-    localparam IDLE = 1'b0;
-    localparam RUN  = 1'b1;
-
-    reg [$clog2(DETECT_COUNT+1)-1:0] detect_cntr_q  , detect_cntr_d ;
-    reg                              rvalid_q       , rvalid_d      ;
-    reg                        [7:0] rx_data_q      , rx_data_d     ;
-    reg                        [7:0] buf_q          , buf_d         ;
-    reg                        [3:0] bit_cntr_q     , bit_cntr_d    ;
-    reg     [$clog2(WAIT_COUNT)-1:0] wait_cntr_q    , wait_cntr_d   ;
-
-    assign rvalid_o = rvalid_q  ;
-    assign rdata_o  = rx_data_q ;
-
-    always @(*) begin
-        detect_cntr_d   = (rxd) ? 'h0 : detect_cntr_q+'h1;
-        rvalid_d        = rvalid_q          ;
-        rx_data_d       = rx_data_q         ;
-        buf_d           = buf_q             ;
-        bit_cntr_d      = bit_cntr_q        ;
-        wait_cntr_d     = wait_cntr_q-'h1   ;
-        state_d         = state_q           ;
-        if (rvalid_o && rready_i) begin
-            rvalid_d = 1'b0;
-        end
-        case (state_q)
-            IDLE: begin
-                if (detect_cntr_q>=DETECT_COUNT-1) begin
-                    bit_cntr_d      = 4'd9                          ;
-                    wait_cntr_d     = WAIT_COUNT-DETECT_COUNT-'h3   ;
-                    state_d         = RUN                           ;
-                end
-            end
-            RUN: begin
-                if (wait_cntr_q==(WAIT_COUNT/2)) begin
-                    if (~|bit_cntr_q) begin // bit_cntr_q==0
-                        rvalid_d    = 1'b1                          ;
-                        rx_data_d   = buf_q                         ;
-                        state_d     = IDLE                          ;
-                    end
-                    buf_d           = {rxd, buf_q[7:1]}             ;
-                    bit_cntr_d      = bit_cntr_q-4'd1               ;
-                end
-                if (~|wait_cntr_q) begin // wait_cntr_q==0
-                    wait_cntr_d     = WAIT_COUNT-'h1                ;
-                end
-            end
-            default: begin
-                rvalid_d            = 1'b0                          ;
-                state_d             = IDLE                          ;
-            end
-        endcase
-    end
-
-    always @(posedge clk_i) begin
-        if (rst_i) begin
-            detect_cntr_q   <= 'h0          ;
-            rvalid_q        <= 1'b0         ;
-            state_q         <= IDLE         ;
-        end else begin
-            detect_cntr_q   <= detect_cntr_d;
-            rvalid_q        <= rvalid_d     ;
-            rx_data_q       <= rx_data_d    ;
-            buf_q           <= buf_d        ;
-            bit_cntr_q      <= bit_cntr_d   ;
-            wait_cntr_q     <= wait_cntr_d  ;
-            state_q         <= state_d      ;
-        end
-    end
-
-endmodule  // uart_rx
-
-module uart_tx #(
-    parameter CLK_FREQ_MHZ  = 100   ,
-    parameter BAUD_RATE     = 115200
-) (
-    input  wire       clk_i     ,
-    input  wire       rst_i     ,
-    output wire       txd_o     ,
-    input  wire       wvalid_i  ,
-    output wire       wready_o  ,
-    input  wire [7:0] wdata_i
-);
-
-    localparam WAIT_COUNT = ((CLK_FREQ_MHZ*1000*1000)/BAUD_RATE);
-
-    // FSM
-    reg state_q, state_d;
-    localparam IDLE = 1'b0;
-    localparam RUN  = 1'b1;
-
-    reg                          wready_q       , wready_d      ;
-    reg                    [8:0] buf_q = 9'h1   , buf_d         ;
-    reg                    [3:0] bit_cntr_q     , bit_cntr_d    ;
-    reg [$clog2(WAIT_COUNT)-1:0] wait_cntr_q    , wait_cntr_d   ;
-
-    assign txd_o    = buf_q[0]          ;
-    assign wready_o = wready_q          ;
-
-    always @(*) begin
-        wready_d    = wready_q          ;
-        buf_d       = buf_q             ;
-        bit_cntr_d  = bit_cntr_q        ;
-        wait_cntr_d = wait_cntr_q-'h1   ;
-        state_d     = state_q           ;
-        case (state_q)
-            IDLE: begin
-                if (wvalid_i) begin // (wvalid_i && wready_o)
-                    wready_d        = 1'b0              ;
-                    buf_d           = {wdata_i, 1'b0}   ;
-                    bit_cntr_d      = 4'd9              ;
-                    wait_cntr_d     = WAIT_COUNT-'h1    ;
-                    state_d         = RUN               ;
-                end
-            end
-            RUN: begin
-                if (~|wait_cntr_q) begin // (wait_cntr_q==0)
-                    buf_d           = {1'b1, buf_q[8:1]};
-                    bit_cntr_d      = bit_cntr_q-4'd1   ;
-                    wait_cntr_d     = WAIT_COUNT-'h1    ;
-                end
-                if (wait_cntr_q==((WAIT_COUNT-1)/2)) begin
-                    if (~|bit_cntr_q) begin // (bit_cntr_q==0)
-                        wready_d    = 1'b1              ;
-                        state_d     = IDLE              ;
-                    end
-                end
-            end
-            default: begin
-                wready_d            = 1'b1              ;
-                buf_d               = 9'h1              ; // txd_o <= 1'b1;
-                state_d             = IDLE              ;
-            end
-        endcase
-    end
-
-    always @(posedge clk_i) begin
-        if (rst_i) begin
-            wready_q    <= 1'b1         ;
-            buf_q       <= 9'h1         ; // txd_o <= 1'b1;
-            state_q     <= IDLE         ;
-        end else begin
-            wready_q    <= wready_d     ;
-            buf_q       <= buf_d        ;
-            bit_cntr_q  <= bit_cntr_d   ;
-            wait_cntr_q <= wait_cntr_d  ;
-            state_q     <= state_d      ;
-        end
-    end
-
-endmodule  // uart_tx
-
-module synchronizer (
-    input  wire clk_i   ,
-    input  wire d_i     ,
-    output wire q_o
-);
-
-    reg ff1, ff2;
-    always @(posedge clk_i) begin
-        ff1 <= d_i  ;
-        ff2 <= ff1  ;
-    end
-    assign q_o = ff2;
-
-endmodule  // synchronizer
+    assign rdata_o = rdata;
+endmodule
 
 module bootrom (
     input  wire                             clk_i,
@@ -642,12 +350,12 @@ module bootrom (
 endmodule
 
 module sdram (
-    input  wire                             clk_i,
-    input  wire [$clog2(`DMEM_ENTRIES)-1:0] addr_i,
-    output wire                      [31:0] rdata_o,
-    input  wire                             wvalid_i,
-    input  wire                       [3:0] wen_i,
-    input  wire                      [31:0] wdata_i
+    input  wire        clk_i,
+    input  wire  [9:0] addr_i,
+    output wire [31:0] rdata_o,
+    input  wire        wvalid_i,
+    input  wire  [3:0] wen_i,
+    input  wire [31:0] wdata_i
 );
     reg [31:0] rdata = 0;
     reg [31:0] ram [0:1023];
@@ -662,61 +370,6 @@ module sdram (
             if (wen_i[3]) ram[addr_i][31:24] <= wdata_i[31:24];
         end
     end
-    assign rdata_o = rdata;
-endmodule
-
-module m_dmem (
-    input  wire        clk_i,
-    input  wire        we_i,
-    input  wire [31:0] addr_i,
-    input  wire [31:0] wdata_i,
-    input  wire [ 3:0] wstrb_i,
-    output wire [31:0] rdata_o,
-    output wire        rdata_valid_o
-);
-
-    (* ram_style = "block" *) reg [31:0] dmem[0:`DMEM_ENTRIES-1];
- //   `include "dmem_init.vh"
-
-    wire [$clog2(`DMEM_ENTRIES)-1:0] valid_addr = addr_i[$clog2(`DMEM_ENTRIES)+1:2];
-
-    reg [31:0] rdata = 0;
-    reg        rdata_valid = 0;
-    always @(posedge clk_i) begin
-        if (we_i) begin  ///// data bus
-            if (wstrb_i[0]) dmem[valid_addr][7:0] <= wdata_i[7:0];
-            if (wstrb_i[1]) dmem[valid_addr][15:8] <= wdata_i[15:8];
-            if (wstrb_i[2]) dmem[valid_addr][23:16] <= wdata_i[23:16];
-            if (wstrb_i[3]) dmem[valid_addr][31:24] <= wdata_i[31:24];
-        end
-        rdata <= dmem[valid_addr];
-        rdata_valid <= 1;
-    end
-    assign rdata_o = rdata;
-    assign rdata_valid_o = rdata_valid;
-endmodule
-
-module perf_cntr (
-    input  wire        clk_i,
-    input  wire [ 3:0] addr_i,
-    input  wire [ 2:0] wdata_i,
-    input  wire        w_en_i,
-    output wire [31:0] rdata_o
-);
-    reg [63:0] mcycle = 0;
-    reg [ 1:0] cnt_ctrl = 0;
-    reg [31:0] rdata = 0;
-
-    always @(posedge clk_i) begin
-        rdata <= (addr_i[2]) ? mcycle[31:0] : mcycle[63:32];
-        if (w_en_i && addr_i == 0) cnt_ctrl <= wdata_i[1:0];
-        case (cnt_ctrl)
-            0: mcycle <= 0;
-            1: mcycle <= mcycle + 1;
-            default: ;
-        endcase
-    end
-
     assign rdata_o = rdata;
 endmodule
 
@@ -772,7 +425,6 @@ module vmem (
 
     assign rdata_o = (sel) ? rdata_hi : rdata_lo;
 
-
 `ifndef SYNTHESIS
     reg  [15:0] r_adr_p = 0;
     reg  [15:0] r_dat_p = 0;
@@ -798,7 +450,6 @@ module vmem (
             endcase
         end
 `endif
-
 endmodule
 
 module m_st7789_disp (
@@ -951,6 +602,4 @@ module m_spi (
     assign busy = (r_state != 0 || en);
 endmodule
 /*********************************************************************************************/
-
-
 `resetall

@@ -29,7 +29,6 @@ module top;
         .rxd_i    (rxd),
         .txd_o    (txd)
     );
-    
 
 //==============================================================================
 // Perfomance Counter
@@ -51,13 +50,10 @@ module top;
 //==============================================================================
 // Dump 
 //------------------------------------------------------------------------------
-    `define DEBUG
-    `ifdef DEBUG
-        initial begin
-            $dumpfile("build/sim.vcd");
-            $dumpvars(0, top);
-        end
-    `endif
+    initial begin
+        $dumpfile("build/sim.vcd");
+        $dumpvars(0, top);
+    end
 
 //==============================================================================
 // Condition for simulation to end

@@ -738,6 +738,7 @@ module store_unit (
     assign dbus_cmd_offset_o = dbus_cmd_addr_o[1:0];
 
     assign dbus_cmd_we_o = valid_i && lsu_ctrl_i[`LSU_CTRL_IS_STORE];
+    assign dbus_cmd_valid_o = (lsu_ctrl_i[`LSU_CTRL_IS_STORE] | lsu_ctrl_i[`LSU_CTRL_IS_LOAD]) & valid_i;
 
     wire w_sb = lsu_ctrl_i[`LSU_CTRL_IS_BYTE];
     wire w_sh = lsu_ctrl_i[`LSU_CTRL_IS_HALFWORD];

@@ -45,7 +45,7 @@ module main (
     wire                      [31:0] dbus_write_data;
     wire                       [3:0] dbus_write_en;
     cpu cpu (
-        .clk_i        (clk),         // input  wire
+        .clk_i        (sys_clk),         // input  wire
         .rst_i        (rst),         // input  wire
         .ibus_addr_o  (ibus_raddr),  // output wire [`IBUS_ADDR_WIDTH-1:0]
         .ibus_data_i  (ibus_rdata),  // input  wire [`IBUS_DATA_WIDTH-1:0]
@@ -59,14 +59,31 @@ module main (
     );
 
 //==============================================================================
-// 0x0000_0000 - 0x0000_2000 : 8 KiB bootrom
+// 0x0000_0000 - 0x0000_1000 : 4 KiB bootrom
 //------------------------------------------------------------------------------ 
     wire [$clog2(`IMEM_ENTRIES)-1:0] bootrom_raddr;
     wire                      [31:0] bootrom_rdata;
     bootrom bootrom (
-        .clk_i  (clk),            // input  wire
-        .raddr_i(bootrom_raddr),  // input  wire [ADDR_WIDTH-1:0]
-        .rdata_o(bootrom_rdata)   // output reg  [DATA_WIDTH-1:0]
+        .clk_i   (sys_clk),        // input  wire
+        .raddr_i (bootrom_raddr),  // input  wire [ADDR_WIDTH-1:0]
+        .rdata_o (bootrom_rdata)
+    );
+
+//==============================================================================
+// 0x0000_1000 - 0x0000_2000 : 4 KiB sdram
+//==============================================================================
+    wire [$clog2(`DMEM_ENTRIES)-1:0] sdram_addr;
+    wire                      [31:0] sdram_rdata;
+    wire                             sdram_wvalid;
+    wire                       [3:0] sdram_wen;
+    wire                      [31:0] sdram_wdata;
+    sdram sdram (
+        .clk_i    (sys_clk),       // input  wire
+        .addr_i   (sdram_addr),    // input  wire [$clog2(`DMEM_ENTRIES)-1:0]
+        .rdata_o  (sdram_rdata),   // output wire [31:0]
+        .wvalid_i (sdram_wvalid),  // input  wire
+        .wen_i    (sdram_wen),     // input  wire [3:0]
+        .wdata_i  (sdram_wdata)    // input  wire [31:0]
     );
 
 //==============================================================================
@@ -82,7 +99,7 @@ module main (
     wire uart_rready;
     wire uart_rdata;
     uart uart (
-        .clk_i   (clk),
+        .clk_i   (sys_clk),
         .rst_i   (rst),
         .txd_o   (uart_txd),
         .rxd_i   (uart_rxd),
@@ -103,7 +120,7 @@ module main (
     wire [15:0] vmem_raddr;
     wire [15:0] vmem_rdata;
     vmem vmem (
-        .clk_i  (clk),          // input wire
+        .clk_i  (sys_clk),          // input wire
         .we_i   (vmem_we),      // input wire
         .waddr_i(vmem_waddr),    // input wire [15:0]
         .wdata_i(vmem_wdata),   // input wire [15:0]
@@ -116,7 +133,7 @@ module main (
                          {6{vmem_rdata[1]}},
                          {5{vmem_rdata[0]}}};
     m_st7789_disp st7789_disp (
-        .w_clk     (clk),         // input  wire
+        .w_clk     (sys_clk),         // input  wire
         .st7789_SDA(st7789_SDA),  // output wire
         .st7789_SCL(st7789_SCL),  // output wire
         .st7789_DC (st7789_DC),   // output wire
@@ -126,29 +143,70 @@ module main (
     );
 
 //==============================================================================
-// 0x8000_0000 - 0x9000_0000 : DMEM
+// 0x8000_0000 - 0x9000_0000 : LiteDRAM
 //------------------------------------------------------------------------------
-    wire        dmem_we;
-    wire [31:0] dmem_addr;
-    wire [31:0] dmem_wdata;
-    wire  [3:0] dmem_wstrb;
-    wire [31:0] dmem_rdata;
-    wire        dmem_rvalid;
-    m_dmem dmem (
-        .clk_i  (clk),         // input  wire
-        .we_i   (dmem_we),     // input  wire                  
-        .addr_i (dmem_addr),   // input  wire [ADDR_WIDTH-1:0] 
-        .wdata_i(dmem_wdata),  // input  wire [DATA_WIDTH-1:0] 
-        .wstrb_i(dmem_wstrb),  // input  wire [STRB_WIDTH-1:0] 
-        .rdata_o(dmem_rdata),   // output reg  [DATA_WIDTH-1:0] 
-        .rdata_valid_o(dmem_rvalid)  // output reg
-    );
+    wire          litedram_init_done;
+    wire          litedram_init_error;
+    wire          sys_clk;
+    wire   [23:0] litedram_cmd_addr;
+    wire          litedram_cmd_ready;
+    wire          litedram_cmd_valid;
+    wire          litedram_cmd_we;
+    wire  [127:0] litedram_rdata_data;
+    wire          litedram_rdata_ready;
+    wire          litedram_rdata_valid;
+    wire  [127:0] litedram_wdata_data;
+    wire          litedram_wdata_ready;
+    wire          litedram_wdata_valid;
+    wire   [15:0] litedram_wdata_we;
+    wire          sys_rst;
+    wire          litedram_ctrl_ack;
+    wire   [29:0] litedram_ctrl_adr;
+    wire    [1:0] litedram_ctrl_bte;
+    wire    [2:0] litedram_ctrl_cti;
+    wire          litedram_ctrl_cyc;
+    wire   [31:0] litedram_ctrl_dat_r;
+    wire   [31:0] litedram_ctrl_dat_w;
+    wire          litedram_ctrl_err;
+    wire    [3:0] litedram_ctrl_sel;
+    wire          litedram_ctrl_stb;
+    wire          litedram_ctrl_we;
+litedram_core litedram (
+    .clk                         (clk),                  // input  wire
+    .init_done                   (litedram_init_done),   // output wire
+    .init_error                  (litedram_init_error),  // output wire
+    .sim_trace                   (0),                    // input  wire
+    .user_clk                    (sys_clk),              // output wire
+    .user_port_native_cmd_addr   (litedram_cmd_addr),    // input  wire   [23:0]
+    .user_port_native_cmd_ready  (litedram_cmd_ready),   // output wire
+    .user_port_native_cmd_valid  (litedram_cmd_valid),   // input  wire
+    .user_port_native_cmd_we     (litedram_cmd_we),      // input  wire
+    .user_port_native_rdata_data (litedram_rdata_data),  // output wire  [127:0]
+    .user_port_native_rdata_ready(litedram_rdata_ready), // input  wire
+    .user_port_native_rdata_valid(litedram_rdata_valid), // output wire
+    .user_port_native_wdata_data (litedram_wdata_data),  // input  wire  [127:0]
+    .user_port_native_wdata_ready(litedram_wdata_ready), // output wire
+    .user_port_native_wdata_valid(litedram_wdata_valid), // input  wire
+    .user_port_native_wdata_we   (litedram_wdata_we),    // input  wire   [15:0]
+    .user_rst                    (sys_rst),              // output wire
+    .wb_ctrl_ack                 (litedram_ctrl_ack),    // output wire
+    .wb_ctrl_adr                 (litedram_ctrl_adr),    // input  wire   [29:0]
+    .wb_ctrl_bte                 (litedram_ctrl_bte),    // input  wire    [1:0]
+    .wb_ctrl_cti                 (litedram_ctrl_cti),    // input  wire    [2:0]
+    .wb_ctrl_cyc                 (litedram_ctrl_cyc),    // input  wire
+    .wb_ctrl_dat_r               (litedram_ctrl_dat_r),  // output wire   [31:0]  
+    .wb_ctrl_dat_w               (litedram_ctrl_dat_w),  // input  wire   [31:0]  
+    .wb_ctrl_err                 (litedram_ctrl_err),    // output wire           
+    .wb_ctrl_sel                 (litedram_ctrl_sel),    // input  wire    [3:0]  
+    .wb_ctrl_stb                 (litedram_ctrl_stb),    // input  wire           
+    .wb_ctrl_we                  (litedram_ctrl_we)      // input  wire           
+);
 
 //==============================================================================
 // Memory Management Unit
 //------------------------------------------------------------------------------
     mmu mmu (
-        .clk_i               (clk),            // input  wire
+        .clk_i               (sys_clk),            // input  wire
         .cpu_ibus_raddr      (ibus_raddr),     // input  wire [ADDR_WIDTH
         .cpu_ibus_rdata      (ibus_rdata),     // output wire [DATA_WIDTH
         .cpu_dbus_cmd_addr   (dbus_cmd_addr),
@@ -160,6 +218,11 @@ module main (
         .cpu_dbus_write_en   (dbus_write_en),
         .bootrom_raddr       (bootrom_raddr),  // output wire [ADDR
         .bootrom_rdata       (bootrom_rdata),  // input  wire [DATA_WIDTH
+        .sdram_addr          (sdram_addr),     // output wire [$clog2(`DMEM_ENTRIES)-1:0]
+        .sdram_rdata         (sdram_rdata),    // input  wire [31:0]
+        .sdram_wvalid        (sdram_wvalid),   // output wire
+        .sdram_wen           (sdram_wen),      // output wire [3:0]
+        .sdram_wdata         (sdram_wdata),    // output wire [31:0]
         .uart_wvalid         (uart_wvalid),    // output wire
         .uart_wready         (uart_wready),    // input  wire
         .uart_wdata          (uart_wdata),     // output wire [7:0]
@@ -168,13 +231,7 @@ module main (
         .uart_rdata          (uart_rdata),     // input  wire [7:0]
         .vmem_we             (vmem_we),        // output wire
         .vmem_waddr          (vmem_waddr),    // output wire [15:0
-        .vmem_wdata          (vmem_wdata),     // output wire [2:0]
-        .dmem_we             (dmem_we),        // output wire
-        .dmem_addr           (dmem_addr),      // output wire [ADDR_WIDTH
-        .dmem_wdata          (dmem_wdata),     // output wire [DATA
-        .dmem_wstrb          (dmem_wstrb),     // output wire [STRB_WIDTH
-        .dmem_rdata          (dmem_rdata),     // input  wire [DATA_WIDTH-1:0]
-        .dmem_rvalid         (dmem_rvalid)     // input  wire
+        .vmem_wdata          (vmem_wdata)     // output wire [2:0]
     );
 endmodule  // main
 
@@ -196,6 +253,12 @@ module mmu (
     // bootrom
     output wire [$clog2(`IMEM_ENTRIES)-1:0] bootrom_raddr,
     input  wire                      [31:0] bootrom_rdata,
+    // sdram
+    output  wire [$clog2(`DMEM_ENTRIES)-1:0] sdram_addr,
+    input   wire                      [31:0] sdram_rdata,
+    output  wire                             sdram_wvalid,
+    output  wire                       [3:0] sdram_wen,
+    output  wire                      [31:0] sdram_wdata,
     // UART
     output wire                             uart_wvalid,
     input  wire                             uart_wready,
@@ -206,45 +269,28 @@ module mmu (
     // VMEM
     output wire                             vmem_we,
     output wire                      [15:0] vmem_waddr,
-    output wire                       [2:0] vmem_wdata,
-    // DMEM
-    output wire                             dmem_we,
-    output wire                      [31:0] dmem_addr,
-    output wire                      [31:0] dmem_wdata,
-    output wire                       [3:0] dmem_wstrb,
-    input  wire                      [31:0] dmem_rdata,
-    input  wire                             dmem_rvalid
+    output wire                       [2:0] vmem_wdata
 );
     // CPU -> bootrom
     assign bootrom_raddr  = cpu_ibus_raddr;
 
-    // CPU -> UART
-    // assign uart_wvalid  = cpu_dbus_we & cpu_dbus_addr[28];
-    // assign uart_wdata   = cpu_dbus_wdata[7:0];
+    // CPU -> sdram
+    assign sdram_addr    = cpu_dbus_cmd_addr[15:2];
+    assign sdram_wvalid  = cpu_dbus_cmd_valid & cpu_dbus_cmd_we & (cpu_dbus_cmd_addr < 32'h0000_2000);
+    assign sdram_wen     = cpu_dbus_write_en;
+    assign sdram_wdata   = cpu_dbus_write_data;
 
     // CPU -> VMEM
     assign vmem_we    = cpu_dbus_cmd_we & cpu_dbus_cmd_addr[29];
     assign vmem_waddr = cpu_dbus_cmd_addr[15:0];
     assign vmem_wdata = cpu_dbus_write_data[2:0];
 
-    // CPU -> DMEM
-    assign dmem_we    = cpu_dbus_cmd_we & cpu_dbus_cmd_addr[31];
-    assign dmem_addr  = cpu_dbus_cmd_addr;
-    assign dmem_wdata = cpu_dbus_write_data;
-    assign dmem_wstrb = cpu_dbus_write_en;
-
     // CPU <- bootrom
     assign cpu_ibus_rdata = bootrom_rdata;
 
-    // CPU <- DMEM or UART
-    //reg bus_sel = 0; // 0: DMEM, 1: UART
-    //always @(posedge clk_i) begin
-    //    bus_sel <= (cpu_dbus_addr==32'h1000_0004);
-    //end
-    //assign cpu_dbus_rdata = (bus_sel ? uart_rdata : dmem_rdata);
-    assign cpu_dbus_read_data = dmem_rdata;
-    assign cpu_dbus_cmd_ack = 1;
-    // assign cpu_dbus_rdata = (dmem_rdata);
+    // CPU <- sdram
+    assign cpu_dbus_read_data = sdram_rdata;
+    assign cpu_dbus_cmd_ack   = 1;
 endmodule  // mmu
 
 module uart (
@@ -583,16 +629,38 @@ module synchronizer (
 endmodule  // synchronizer
 
 module bootrom (
-    input  wire        clk_i,
+    input  wire                             clk_i,
     input  wire [$clog2(`IMEM_ENTRIES)-1:0] raddr_i,
-    output wire [31:0] rdata_o
+    output wire                      [31:0] rdata_o
 );
-    reg [31:0] imem[0:`IMEM_ENTRIES-1];
     reg [31:0] rdata = 0;
-    `include "imem_init.vh"
+    reg [31:0] rom [0:1023];
+    `include "bootrom_init.vh"
+
+    always @(posedge clk_i) rdata <= rom[raddr_i];
+    assign rdata_o = rdata;
+endmodule
+
+module sdram (
+    input  wire                             clk_i,
+    input  wire [$clog2(`DMEM_ENTRIES)-1:0] addr_i,
+    output wire                      [31:0] rdata_o,
+    input  wire                             wvalid_i,
+    input  wire                       [3:0] wen_i,
+    input  wire                      [31:0] wdata_i
+);
+    reg [31:0] rdata = 0;
+    reg [31:0] ram [0:1023];
+    `include "sdram_init.vh"
 
     always @(posedge clk_i) begin
-        rdata <= imem[raddr_i];
+        rdata <= ram[addr_i];
+        if (wvalid_i) begin
+            if (wen_i[0]) ram[addr_i][7:0]   <= wdata_i[7:0];
+            if (wen_i[1]) ram[addr_i][15:8]  <= wdata_i[15:8];
+            if (wen_i[2]) ram[addr_i][23:16] <= wdata_i[23:16];
+            if (wen_i[3]) ram[addr_i][31:24] <= wdata_i[31:24];
+        end
     end
     assign rdata_o = rdata;
 endmodule
@@ -608,7 +676,7 @@ module m_dmem (
 );
 
     (* ram_style = "block" *) reg [31:0] dmem[0:`DMEM_ENTRIES-1];
-    `include "dmem_init.vh"
+ //   `include "dmem_init.vh"
 
     wire [$clog2(`DMEM_ENTRIES)-1:0] valid_addr = addr_i[$clog2(`DMEM_ENTRIES)+1:2];
 

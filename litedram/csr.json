@@ -1,0 +1,165 @@
+{
+    "csr_bases": {
+        "ddrctrl": 0,
+        "sdram": 2048
+    },
+    "csr_registers": {
+        "ddrctrl_init_done": {
+            "addr": 0,
+            "size": 1,
+            "type": "rw"
+        },
+        "ddrctrl_init_error": {
+            "addr": 4,
+            "size": 1,
+            "type": "rw"
+        },
+        "sdram_dfii_control": {
+            "addr": 2048,
+            "size": 1,
+            "type": "rw"
+        },
+        "sdram_dfii_pi0_command": {
+            "addr": 2052,
+            "size": 1,
+            "type": "rw"
+        },
+        "sdram_dfii_pi0_command_issue": {
+            "addr": 2056,
+            "size": 1,
+            "type": "rw"
+        },
+        "sdram_dfii_pi0_address": {
+            "addr": 2060,
+            "size": 1,
+            "type": "rw"
+        },
+        "sdram_dfii_pi0_baddress": {
+            "addr": 2064,
+            "size": 1,
+            "type": "rw"
+        },
+        "sdram_dfii_pi0_wrdata": {
+            "addr": 2068,
+            "size": 1,
+            "type": "rw"
+        },
+        "sdram_dfii_pi0_rddata": {
+            "addr": 2072,
+            "size": 1,
+            "type": "ro"
+        },
+        "sdram_dfii_pi1_command": {
+            "addr": 2076,
+            "size": 1,
+            "type": "rw"
+        },
+        "sdram_dfii_pi1_command_issue": {
+            "addr": 2080,
+            "size": 1,
+            "type": "rw"
+        },
+        "sdram_dfii_pi1_address": {
+            "addr": 2084,
+            "size": 1,
+            "type": "rw"
+        },
+        "sdram_dfii_pi1_baddress": {
+            "addr": 2088,
+            "size": 1,
+            "type": "rw"
+        },
+        "sdram_dfii_pi1_wrdata": {
+            "addr": 2092,
+            "size": 1,
+            "type": "rw"
+        },
+        "sdram_dfii_pi1_rddata": {
+            "addr": 2096,
+            "size": 1,
+            "type": "ro"
+        },
+        "sdram_dfii_pi2_command": {
+            "addr": 2100,
+            "size": 1,
+            "type": "rw"
+        },
+        "sdram_dfii_pi2_command_issue": {
+            "addr": 2104,
+            "size": 1,
+            "type": "rw"
+        },
+        "sdram_dfii_pi2_address": {
+            "addr": 2108,
+            "size": 1,
+            "type": "rw"
+        },
+        "sdram_dfii_pi2_baddress": {
+            "addr": 2112,
+            "size": 1,
+            "type": "rw"
+        },
+        "sdram_dfii_pi2_wrdata": {
+            "addr": 2116,
+            "size": 1,
+            "type": "rw"
+        },
+        "sdram_dfii_pi2_rddata": {
+            "addr": 2120,
+            "size": 1,
+            "type": "ro"
+        },
+        "sdram_dfii_pi3_command": {
+            "addr": 2124,
+            "size": 1,
+            "type": "rw"
+        },
+        "sdram_dfii_pi3_command_issue": {
+            "addr": 2128,
+            "size": 1,
+            "type": "rw"
+        },
+        "sdram_dfii_pi3_address": {
+            "addr": 2132,
+            "size": 1,
+            "type": "rw"
+        },
+        "sdram_dfii_pi3_baddress": {
+            "addr": 2136,
+            "size": 1,
+            "type": "rw"
+        },
+        "sdram_dfii_pi3_wrdata": {
+            "addr": 2140,
+            "size": 1,
+            "type": "rw"
+        },
+        "sdram_dfii_pi3_rddata": {
+            "addr": 2144,
+            "size": 1,
+            "type": "ro"
+        }
+    },
+    "constants": {
+        "config_platform_name": "sim",
+        "config_clock_frequency": 100000000,
+        "config_cpu_type_none": null,
+        "config_cpu_variant_standard": null,
+        "config_cpu_family": null,
+        "config_cpu_name": null,
+        "config_cpu_human_name": "unknown",
+        "config_csr_data_width": 32,
+        "config_csr_alignment": 32,
+        "config_bus_standard": "wishbone",
+        "config_bus_data_width": 32,
+        "config_bus_address_width": 32,
+        "config_bus_bursting": 0
+    },
+    "memories": {
+        "csr": {
+            "base": 0,
+            "size": 65536,
+            "type": "io"
+        }
+    }
+}

@@ -23,7 +23,9 @@ user_config:
 	python3 scripts/user_config.py
 
 sim:
-	$(RTLSIM) --binary --trace --top-module top -Ibuild -Isrc --Wno-WIDTHTRUNC --Wno-WIDTHEXPAND -o top src/*.v
+	$(RTLSIM) --binary --trace --top-module top -Ibuild -Isrc \
+	--Wno-WIDTHTRUNC --Wno-WIDTHEXPAND --Wno-COMBDLY --Wno-CASEINCOMPLETE \
+	-o top src/*.v
 	gcc -O2 dispemu/dispemu.c -o build/dispemu -lcairo -lX11
 
 prog:
@@ -31,39 +33,39 @@ prog:
 
 imem_image:
 	$(OBJDUMP) -d build/main.elf > build/main.dump
-	$(OBJCOPY) -O binary --only-section=.text build/main.elf build/imem_init.bin
-	dd if=build/imem_init.bin of=build/imem_init.img conv=sync bs=1KiB
-	hexdump -v -e '1/4 "%08x\n"' build/imem_init.img > build/imem_init.32.hex
+	$(OBJCOPY) -O binary --only-section=.text build/main.elf build/bootrom_init.bin
+	dd if=build/bootrom_init.bin of=build/bootrom_init.img conv=sync bs=1KiB
+	hexdump -v -e '1/4 "%08x\n"' build/bootrom_init.img > build/bootrom_init.32.hex
 	{ \
 		cnt=0; \
 		echo "initial begin"; \
 		while read line; do \
-			echo "    imem[$$cnt] = 32'h$$line;"; \
+			echo "    rom[$$cnt] = 32'h$$line;"; \
 			cnt=$$((cnt + 1)); \
-		done < build/imem_init.32.hex; \
+		done < build/bootrom_init.32.hex; \
 		echo "end"; \
-	} > build/imem_init.vh
+	} > build/bootrom_init.vh
 
 dmem_image:
 	$(OBJCOPY) -O binary build/main.elf --only-section=.data   \
 								     --only-section=.rodata \
 									 --only-section=.bss    \
-									 build/dmem_init.bin
-	dd if=build/dmem_init.bin of=build/dmem_init.img bs=1k conv=sync
-	hexdump -v -e '1/4 "%08x\n"' build/dmem_init.img > build/dmem_init.32.hex
+									 build/sdram_init.bin
+	dd if=build/sdram_init.bin of=build/sdram_init.img bs=1k conv=sync
+	hexdump -v -e '1/4 "%08x\n"' build/sdram_init.img > build/sdram_init.32.hex
 	{ \
 		cnt=0; \
 		echo "initial begin"; \
 		while read line; do \
-			echo "    dmem[$$cnt] = 32'h$$line;"; \
+			echo "    ram[$$cnt] = 32'h$$line;"; \
 			cnt=$$((cnt + 1)); \
-		done < build/dmem_init.32.hex; \
+		done < build/sdram_init.32.hex; \
 		echo "end"; \
-	} > build/dmem_init.vh
+	} > build/sdram_init.vh
 
 remove-junk:
-	rm -f build/imem_init.bin build/imem_init.img build/imem_init.32.hex
-	rm -f build/dmem_init.bin build/dmem_init.img build/dmem_init.32.hex
+	rm -f build/bootrom_init.bin build/bootrom_init.img build/bootrom_init.32.hex
+	rm -f build/sdram_init.bin build/sdram_init.img build/sdram_init.32.hex
 
 bit:
 	mkdir -p vivado
@@ -95,9 +97,9 @@ regression-test:
 		./obj_dir/top; \
 	done
 
-TEST ?= mul
+TEST ?= sw
 single-test:
-	cp tests/rv32um-p-$(TEST).elf build/main.elf
+	cp tests/rv32ui-p-$(TEST).elf build/main.elf
 	make imem_image dmem_image > /dev/null
 	make remove-junk > /dev/null
 	make sim > /dev/null

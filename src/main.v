@@ -21,10 +21,10 @@ module main (
     wire rst;
 `ifdef SYNTHESIS
     clk_wiz_0 clk_wiz_0 (
-        .clk_out1(clk),      // output clk_out1
-        .reset   (!rst_ni),  // input reset
-        .locked  (locked),   // output locked
-        .clk_in1 (clk_i)     // input clk_in1
+        .clk_out1 (clk),      // output clk_out1
+        .reset    (!rst_ni),  // input reset
+        .locked   (locked),   // output locked
+        .clk_in1  (clk_i)     // input clk_in1
     );
 `else
     assign clk    = clk_i;
@@ -45,17 +45,17 @@ module main (
     wire                      [31:0] dbus_write_data;
     wire                       [3:0] dbus_write_en;
     cpu cpu (
-        .clk_i        (sys_clk),         // input  wire
-        .rst_i        (rst),         // input  wire
-        .ibus_addr_o  (ibus_raddr),  // output wire [`IBUS_ADDR_WIDTH-1:0]
-        .ibus_data_i  (ibus_rdata),  // input  wire [`IBUS_DATA_WIDTH-1:0]
-        .dbus_cmd_addr_o(dbus_cmd_addr),
-        .dbus_cmd_we_o(dbus_cmd_we),
-        .dbus_cmd_valid_o(dbus_cmd_valid),
-        .dbus_cmd_ack_i(dbus_cmd_ack),
-        .dbus_read_data_i(dbus_read_data),
-        .dbus_write_data_o(dbus_write_data),
-        .dbus_write_en_o(dbus_write_en)
+        .clk_i             (sys_clk),         // input  wire
+        .rst_i             (rst),         // input  wire
+        .ibus_addr_o       (ibus_raddr),  // output wire [`IBUS_ADDR_WIDTH-1:0]
+        .ibus_data_i       (ibus_rdata),  // input  wire [`IBUS_DATA_WIDTH-1:0]
+        .dbus_cmd_addr_o   (dbus_cmd_addr),
+        .dbus_cmd_we_o     (dbus_cmd_we),
+        .dbus_cmd_valid_o  (dbus_cmd_valid),
+        .dbus_cmd_ack_i    (dbus_cmd_ack),
+        .dbus_read_data_i  (dbus_read_data),
+        .dbus_write_data_o (dbus_write_data),
+        .dbus_write_en_o   (dbus_write_en)
     );
 
 //==============================================================================
@@ -99,16 +99,16 @@ module main (
     wire uart_rready;
     wire uart_rdata;
     uart uart (
-        .clk_i   (sys_clk),
-        .rst_i   (rst),
-        .txd_o   (uart_txd),
-        .rxd_i   (uart_rxd),
-        .wvalid_i(uart_wvalid),
-        .wready_o(uart_wready),
-        .wdata_i (uart_wdata),
-        .rvalid_o(uart_rvalid),
-        .rready_i(uart_rready),
-        .rdata_o (uart_rdata)
+        .clk_i    (sys_clk),
+        .rst_i    (rst),
+        .txd_o    (uart_txd),
+        .rxd_i    (uart_rxd),
+        .wvalid_i (uart_wvalid),
+        .wready_o (uart_wready),
+        .wdata_i  (uart_wdata),
+        .rvalid_o (uart_rvalid),
+        .rready_i (uart_rready),
+        .rdata_o  (uart_rdata)
     );
 
 //==============================================================================
@@ -120,12 +120,12 @@ module main (
     wire [15:0] vmem_raddr;
     wire [15:0] vmem_rdata;
     vmem vmem (
-        .clk_i  (sys_clk),          // input wire
-        .we_i   (vmem_we),      // input wire
-        .waddr_i(vmem_waddr),    // input wire [15:0]
-        .wdata_i(vmem_wdata),   // input wire [15:0]
-        .raddr_i(vmem_raddr),   // input wire [15:0]
-        .rdata_o(vmem_rdata)  // output wire [15:0]
+        .clk_i   (sys_clk),          // input wire
+        .we_i    (vmem_we),      // input wire
+        .waddr_i (vmem_waddr),    // input wire [15:0]
+        .wdata_i (vmem_wdata),   // input wire [15:0]
+        .raddr_i (vmem_raddr),   // input wire [15:0]
+        .rdata_o (vmem_rdata)  // output wire [15:0]
     );
 
     wire [15:0] color_data;
@@ -133,13 +133,13 @@ module main (
                          {6{vmem_rdata[1]}},
                          {5{vmem_rdata[0]}}};
     m_st7789_disp st7789_disp (
-        .w_clk     (sys_clk),         // input  wire
-        .st7789_SDA(st7789_SDA),  // output wire
-        .st7789_SCL(st7789_SCL),  // output wire
-        .st7789_DC (st7789_DC),   // output wire
-        .st7789_RES(st7789_RES),  // output wire
-        .w_raddr   (vmem_raddr),  // output wire [15:0]
-        .w_rdata   (color_data)   // input  wire [15:0]
+        .w_clk      (sys_clk),         // input  wire
+        .st7789_SDA (st7789_SDA),  // output wire
+        .st7789_SCL (st7789_SCL),  // output wire
+        .st7789_DC  (st7789_DC),   // output wire
+        .st7789_RES (st7789_RES),  // output wire
+        .w_raddr    (vmem_raddr),  // output wire [15:0]
+        .w_rdata    (color_data)   // input  wire [15:0]
     );
 
 //==============================================================================
@@ -191,35 +191,35 @@ module main (
     wire          litedram_ctrl_stb;
     wire          litedram_ctrl_we;
     litedram_core litedram (
-        .clk                         (clk),                  // input  wire
-        .init_done                   (litedram_init_done),   // output wire
-        .init_error                  (litedram_init_error),  // output wire
-        .sim_trace                   (0),                    // input  wire
-        .user_clk                    (sys_clk),              // output wire
-        .user_port_native_cmd_addr   (litedram_cmd_addr),    // input  wire   [23:0]
-        .user_port_native_cmd_ready  (litedram_cmd_ready),   // output wire
-        .user_port_native_cmd_valid  (litedram_cmd_valid),   // input  wire
-        .user_port_native_cmd_we     (litedram_cmd_we),      // input  wire
-        .user_port_native_rdata_data (litedram_rdata_data),  // output wire  [127:0]
-        .user_port_native_rdata_ready(litedram_rdata_ready), // input  wire
-        .user_port_native_rdata_valid(litedram_rdata_valid), // output wire
-        .user_port_native_wdata_data (litedram_wdata_data),  // input  wire  [127:0]
-        .user_port_native_wdata_ready(litedram_wdata_ready), // output wire
-        .user_port_native_wdata_valid(litedram_wdata_valid), // input  wire
-        .user_port_native_wdata_we   (litedram_wdata_we),    // input  wire   [15:0]
-        .user_rst                    (sys_rst),              // output wire
-        .wb_ctrl_ack                 (litedram_ctrl_ack),    // output wire
-        .wb_ctrl_adr                 (litedram_ctrl_adr),    // input  wire   [29:0]
-        .wb_ctrl_bte                 (litedram_ctrl_bte),    // input  wire    [1:0]
-        .wb_ctrl_cti                 (litedram_ctrl_cti),    // input  wire    [2:0]
-        .wb_ctrl_cyc                 (litedram_ctrl_cyc),    // input  wire
-        .wb_ctrl_dat_r               (litedram_ctrl_dat_r),  // output wire   [31:0]  
-        .wb_ctrl_dat_w               (litedram_ctrl_dat_w),  // input  wire   [31:0]  
-        .wb_ctrl_err                 (litedram_ctrl_err),    // output wire           
-        .wb_ctrl_sel                 (litedram_ctrl_sel),    // input  wire    [3:0]  
-        .wb_ctrl_stb                 (litedram_ctrl_stb),    // input  wire           
-        .wb_ctrl_we                  (litedram_ctrl_we)      // input  wire           
-    );
+        .clk                          (clk),                  // input  wire
+        .init_done                    (litedram_init_done),   // output wire
+        .init_error                   (litedram_init_error),  // output wire
+        .sim_trace                    (0),                    // input  wire
+        .user_clk                     (sys_clk),              // output wire
+        .user_port_native_cmd_addr    (litedram_cmd_addr),    // input  wire   [23:0]
+        .user_port_native_cmd_ready   (litedram_cmd_ready),   // output wire
+        .user_port_native_cmd_valid   (litedram_cmd_valid),   // input  wire
+        .user_port_native_cmd_we      (litedram_cmd_we),      // input  wire
+        .user_port_native_rdata_data  (litedram_rdata_data),  // output wire  [127:0]
+        .user_port_native_rdata_ready (litedram_rdata_ready), // input  wire
+        .user_port_native_rdata_valid (litedram_rdata_valid), // output wire
+        .user_port_native_wdata_data  (litedram_wdata_data),  // input  wire  [127:0]
+        .user_port_native_wdata_ready (litedram_wdata_ready), // output wire
+        .user_port_native_wdata_valid (litedram_wdata_valid), // input  wire
+        .user_port_native_wdata_we    (litedram_wdata_we),    // input  wire   [15:0]
+        .user_rst                     (sys_rst),              // output wire
+        .wb_ctrl_ack                  (litedram_ctrl_ack),    // output wire
+        .wb_ctrl_adr                  (litedram_ctrl_adr),    // input  wire   [29:0]
+        .wb_ctrl_bte                  (litedram_ctrl_bte),    // input  wire    [1:0]
+        .wb_ctrl_cti                  (litedram_ctrl_cti),    // input  wire    [2:0]
+        .wb_ctrl_cyc                  (litedram_ctrl_cyc),    // input  wire
+        .wb_ctrl_dat_r                (litedram_ctrl_dat_r),  // output wire   [31:0]  
+        .wb_ctrl_dat_w                (litedram_ctrl_dat_w),  // input  wire   [31:0]  
+        .wb_ctrl_err                  (litedram_ctrl_err),    // output wire           
+        .wb_ctrl_sel                  (litedram_ctrl_sel),    // input  wire    [3:0]  
+        .wb_ctrl_stb                  (litedram_ctrl_stb),    // input  wire           
+        .wb_ctrl_we                   (litedram_ctrl_we)      // input  wire           
+    ); 
 
 //==============================================================================
 // Memory Management Unit
@@ -273,11 +273,11 @@ module mmu (
     output wire [$clog2(`IMEM_ENTRIES)-1:0] bootrom_raddr,
     input  wire                      [31:0] bootrom_rdata,
     // sdram
-    output  wire [$clog2(`DMEM_ENTRIES)-1:0] sdram_addr,
-    input   wire                      [31:0] sdram_rdata,
-    output  wire                             sdram_wvalid,
-    output  wire                       [3:0] sdram_wen,
-    output  wire                      [31:0] sdram_wdata,
+    output wire [$clog2(`DMEM_ENTRIES)-1:0] sdram_addr,
+    input  wire                      [31:0] sdram_rdata,
+    output wire                             sdram_wvalid,
+    output wire                       [3:0] sdram_wen,
+    output wire                      [31:0] sdram_wdata,
     // UART
     output wire                             uart_wvalid,
     input  wire                             uart_wready,

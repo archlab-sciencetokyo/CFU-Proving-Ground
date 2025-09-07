@@ -95,10 +95,11 @@ regression-test:
 		./obj_dir/top; \
 	done
 
-TEST ?= lb
+TEST ?= mul
 single-test:
-	cp tests/rv32ui-p-$(TEST).elf build/main.elf
+	cp tests/rv32um-p-$(TEST).elf build/main.elf
 	make imem_image dmem_image > /dev/null
+	make remove-junk > /dev/null
 	make sim > /dev/null
 	./obj_dir/top
 

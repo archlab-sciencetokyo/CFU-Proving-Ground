@@ -51,13 +51,13 @@ module top;
 //==============================================================================
 // Dump 
 //------------------------------------------------------------------------------
-    // `define DEBUG
-    // `ifdef DEBUG
-    //     initial begin
-    //         $dumpfile("dump.vcd");
-    //         $dumpvars(0, top);
-    //     end
-    // `endif
+    `define DEBUG
+    `ifdef DEBUG
+        initial begin
+            $dumpfile("build/sim.vcd");
+            $dumpvars(0, top);
+        end
+    `endif
 
 //==============================================================================
 // Condition for simulation to end
@@ -68,13 +68,13 @@ module top;
             $write("\033[31mTEST FAILED: Timeout\033[0m\n");
             $fatal;
         end
-        if (m0.cpu.dbus_addr_o[28] && m0.cpu.dbus_wvalid_o) begin
-            if (m0.cpu.dbus_wdata_o == 32'h777) begin
+        if (m0.cpu.dbus_cmd_addr_o[28] && m0.cpu.dbus_cmd_we_o) begin
+            if (m0.cpu.dbus_write_data_o == 32'h777) begin
                 $write("\033[32mTEST PASSED\033[0m\n");
                 $finish;
             end
             else begin
-                $write("\033[31mTEST FAILED: %h\033[0m\n", m0.cpu.dbus_wdata_o);
+                $write("\033[31mTEST FAILED: %h\033[0m\n", m0.cpu.dbus_write_data_o);
                 $fatal;
             end
         end

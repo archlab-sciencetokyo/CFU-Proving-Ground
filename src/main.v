@@ -37,21 +37,25 @@ module main (
 //------------------------------------------------------------------------------
     wire [$clog2(`IMEM_ENTRIES)-1:0] ibus_raddr;
     wire                      [31:0] ibus_rdata;
-    wire                      [31:0] dbus_addr;
-    wire                             dbus_we;
-    wire                      [31:0] dbus_wdata;
-    wire                      [ 3:0] dbus_wstrb;
-    wire                      [31:0] dbus_rdata;
+    wire                      [31:0] dbus_cmd_addr;
+    wire                             dbus_cmd_we;
+    wire                             dbus_cmd_valid;
+    wire                             dbus_cmd_ack;
+    wire                      [31:0] dbus_read_data;
+    wire                      [31:0] dbus_write_data;
+    wire                       [3:0] dbus_write_en;
     cpu cpu (
         .clk_i        (clk),         // input  wire
         .rst_i        (rst),         // input  wire
         .ibus_addr_o  (ibus_raddr),  // output wire [`IBUS_ADDR_WIDTH-1:0]
         .ibus_data_i  (ibus_rdata),  // input  wire [`IBUS_DATA_WIDTH-1:0]
-        .dbus_addr_o  (dbus_addr),   // output wire [`DBUS_ADDR_WIDTH-1:0]
-        .dbus_wvalid_o(dbus_we),     // output wire
-        .dbus_wdata_o (dbus_wdata),  // output wire [`DBUS_DATA_WIDTH-1:0]
-        .dbus_wstrb_o (dbus_wstrb),  // output wire [`DBUS_STRB_WIDTH-1:0]
-        .dbus_rdata_i (dbus_rdata)   // input  wire [`DBUS_DATA_WIDTH-1:0]
+        .dbus_cmd_addr_o(dbus_cmd_addr),
+        .dbus_cmd_we_o(dbus_cmd_we),
+        .dbus_cmd_valid_o(dbus_cmd_valid),
+        .dbus_cmd_ack_i(dbus_cmd_ack),
+        .dbus_read_data_i(dbus_read_data),
+        .dbus_write_data_o(dbus_write_data),
+        .dbus_write_en_o(dbus_write_en)
     );
 
 //==============================================================================
@@ -129,56 +133,66 @@ module main (
     wire [31:0] dmem_wdata;
     wire  [3:0] dmem_wstrb;
     wire [31:0] dmem_rdata;
+    wire        dmem_rvalid;
     m_dmem dmem (
         .clk_i  (clk),         // input  wire
         .we_i   (dmem_we),     // input  wire                  
         .addr_i (dmem_addr),   // input  wire [ADDR_WIDTH-1:0] 
         .wdata_i(dmem_wdata),  // input  wire [DATA_WIDTH-1:0] 
         .wstrb_i(dmem_wstrb),  // input  wire [STRB_WIDTH-1:0] 
-        .rdata_o(dmem_rdata)   // output reg  [DATA_WIDTH-1:0] 
+        .rdata_o(dmem_rdata),   // output reg  [DATA_WIDTH-1:0] 
+        .rdata_valid_o(dmem_rvalid)  // output reg
     );
 
 //==============================================================================
 // Memory Management Unit
 //------------------------------------------------------------------------------
     mmu mmu (
-        .clk_i         (clk),            // input  wire
-        .cpu_ibus_raddr(ibus_raddr),     // input  wire [ADDR_WIDTH
-        .cpu_ibus_rdata(ibus_rdata),     // output wire [DATA_WIDTH
-        .cpu_dbus_addr (dbus_addr),      // input  wire [ADDR_WIDTH
-        .cpu_dbus_we   (dbus_we),        // input  wire
-        .cpu_dbus_wdata(dbus_wdata),     // input  wire [DATA_WIDTH
-        .cpu_dbus_wstrb(dbus_wstrb),     // input  wire [
-        .cpu_dbus_rdata(dbus_rdata),     // output wire [DATA_WIDTH
-        .bootrom_raddr (bootrom_raddr),  // output wire [ADDR
-        .bootrom_rdata (bootrom_rdata),  // input  wire [DATA_WIDTH
-        .uart_wvalid   (uart_wvalid),    // output wire
-        .uart_wready   (uart_wready),    // input  wire
-        .uart_wdata    (uart_wdata),     // output wire [7:0]
-        .uart_rvalid   (uart_rvalid),    // input  wire
-        .uart_rready   (uart_rready),    // output wire
-        .uart_rdata    (uart_rdata),     // input  wire [7:0]
-        .vmem_we       (vmem_we),        // output wire
-        .vmem_waddr    (vmem_waddr),    // output wire [15:0
-        .vmem_wdata    (vmem_wdata),     // output wire [2:0]
-        .dmem_we       (dmem_we),        // output wire
-        .dmem_addr     (dmem_addr),      // output wire [ADDR_WIDTH
-        .dmem_wdata    (dmem_wdata),     // output wire [DATA
-        .dmem_wstrb    (dmem_wstrb),     // output wire [STRB_WIDTH
-        .dmem_rdata    (dmem_rdata)      // input  wire [
+        .clk_i               (clk),            // input  wire
+        .cpu_ibus_raddr      (ibus_raddr),     // input  wire [ADDR_WIDTH
+        .cpu_ibus_rdata      (ibus_rdata),     // output wire [DATA_WIDTH
+        .cpu_dbus_cmd_addr   (dbus_cmd_addr),
+        .cpu_dbus_cmd_we     (dbus_cmd_we),
+        .cpu_dbus_cmd_valid  (dbus_cmd_valid),
+        .cpu_dbus_cmd_ack    (dbus_cmd_ack),
+        .cpu_dbus_read_data  (dbus_read_data),
+        .cpu_dbus_write_data (dbus_write_data),
+        .cpu_dbus_write_en   (dbus_write_en),
+        .bootrom_raddr       (bootrom_raddr),  // output wire [ADDR
+        .bootrom_rdata       (bootrom_rdata),  // input  wire [DATA_WIDTH
+        .uart_wvalid         (uart_wvalid),    // output wire
+        .uart_wready         (uart_wready),    // input  wire
+        .uart_wdata          (uart_wdata),     // output wire [7:0]
+        .uart_rvalid         (uart_rvalid),    // input  wire
+        .uart_rready         (uart_rready),    // output wire
+        .uart_rdata          (uart_rdata),     // input  wire [7:0]
+        .vmem_we             (vmem_we),        // output wire
+        .vmem_waddr          (vmem_waddr),    // output wire [15:0
+        .vmem_wdata          (vmem_wdata),     // output wire [2:0]
+        .dmem_we             (dmem_we),        // output wire
+        .dmem_addr           (dmem_addr),      // output wire [ADDR_WIDTH
+        .dmem_wdata          (dmem_wdata),     // output wire [DATA
+        .dmem_wstrb          (dmem_wstrb),     // output wire [STRB_WIDTH
+        .dmem_rdata          (dmem_rdata),     // input  wire [DATA_WIDTH-1:0]
+        .dmem_rvalid         (dmem_rvalid)     // input  wire
     );
 endmodule  // main
 
+//==============================================================================
+// Sub Modules
+//------------------------------------------------------------------------------
 module mmu (
     input  wire                             clk_i,
     // CPU
     input  wire [$clog2(`IMEM_ENTRIES)-1:0] cpu_ibus_raddr,
     output wire                      [31:0] cpu_ibus_rdata,
-    input  wire                      [31:0] cpu_dbus_addr,
-    input  wire                             cpu_dbus_we,
-    input  wire                      [31:0] cpu_dbus_wdata,
-    input  wire                      [ 3:0] cpu_dbus_wstrb,
-    output wire                      [31:0] cpu_dbus_rdata,
+    input  wire                      [31:0] cpu_dbus_cmd_addr,
+    input  wire                             cpu_dbus_cmd_we,
+    input  wire                             cpu_dbus_cmd_valid,
+    output wire                             cpu_dbus_cmd_ack,
+    output wire                      [31:0] cpu_dbus_read_data,
+    input  wire                      [31:0] cpu_dbus_write_data,
+    input  wire                       [3:0] cpu_dbus_write_en,
     // bootrom
     output wire [$clog2(`IMEM_ENTRIES)-1:0] bootrom_raddr,
     input  wire                      [31:0] bootrom_rdata,
@@ -198,34 +212,38 @@ module mmu (
     output wire                      [31:0] dmem_addr,
     output wire                      [31:0] dmem_wdata,
     output wire                       [3:0] dmem_wstrb,
-    input  wire                      [31:0] dmem_rdata
+    input  wire                      [31:0] dmem_rdata,
+    input  wire                             dmem_rvalid
 );
     // CPU -> bootrom
     assign bootrom_raddr  = cpu_ibus_raddr;
 
     // CPU -> UART
-    assign uart_wvalid  = cpu_dbus_we & cpu_dbus_addr[28];
-    assign uart_wdata   = cpu_dbus_wdata[7:0];
+    // assign uart_wvalid  = cpu_dbus_we & cpu_dbus_addr[28];
+    // assign uart_wdata   = cpu_dbus_wdata[7:0];
 
     // CPU -> VMEM
-    assign vmem_we    = cpu_dbus_we & cpu_dbus_addr[29];
-    assign vmem_waddr = cpu_dbus_addr[15:0];
-    assign vmem_wdata = cpu_dbus_wdata[2:0];
+    assign vmem_we    = cpu_dbus_cmd_we & cpu_dbus_cmd_addr[29];
+    assign vmem_waddr = cpu_dbus_cmd_addr[15:0];
+    assign vmem_wdata = cpu_dbus_write_data[2:0];
 
     // CPU -> DMEM
-    assign dmem_we    = cpu_dbus_we & cpu_dbus_addr[31];
-    assign dmem_addr  = cpu_dbus_addr;
-    assign dmem_wdata = cpu_dbus_wdata;
-    assign dmem_wstrb = cpu_dbus_wstrb;
+    assign dmem_we    = cpu_dbus_cmd_we & cpu_dbus_cmd_addr[31];
+    assign dmem_addr  = cpu_dbus_cmd_addr;
+    assign dmem_wdata = cpu_dbus_write_data;
+    assign dmem_wstrb = cpu_dbus_write_en;
 
     // CPU <- bootrom
     assign cpu_ibus_rdata = bootrom_rdata;
+
     // CPU <- DMEM or UART
-    reg bus_sel = 0; // 0: DMEM, 1: UART
-    always @(posedge clk_i) begin
-        bus_sel <= (cpu_dbus_addr==32'h1000_0004);
-    end
-    assign cpu_dbus_rdata = (bus_sel ? uart_rdata : dmem_rdata);
+    //reg bus_sel = 0; // 0: DMEM, 1: UART
+    //always @(posedge clk_i) begin
+    //    bus_sel <= (cpu_dbus_addr==32'h1000_0004);
+    //end
+    //assign cpu_dbus_rdata = (bus_sel ? uart_rdata : dmem_rdata);
+    assign cpu_dbus_read_data = dmem_rdata;
+    assign cpu_dbus_cmd_ack = 1;
     // assign cpu_dbus_rdata = (dmem_rdata);
 endmodule  // mmu
 
@@ -585,7 +603,8 @@ module m_dmem (
     input  wire [31:0] addr_i,
     input  wire [31:0] wdata_i,
     input  wire [ 3:0] wstrb_i,
-    output wire [31:0] rdata_o
+    output wire [31:0] rdata_o,
+    output wire        rdata_valid_o
 );
 
     (* ram_style = "block" *) reg [31:0] dmem[0:`DMEM_ENTRIES-1];
@@ -594,6 +613,7 @@ module m_dmem (
     wire [$clog2(`DMEM_ENTRIES)-1:0] valid_addr = addr_i[$clog2(`DMEM_ENTRIES)+1:2];
 
     reg [31:0] rdata = 0;
+    reg        rdata_valid = 0;
     always @(posedge clk_i) begin
         if (we_i) begin  ///// data bus
             if (wstrb_i[0]) dmem[valid_addr][7:0] <= wdata_i[7:0];
@@ -602,8 +622,10 @@ module m_dmem (
             if (wstrb_i[3]) dmem[valid_addr][31:24] <= wdata_i[31:24];
         end
         rdata <= dmem[valid_addr];
+        rdata_valid <= 1;
     end
     assign rdata_o = rdata;
+    assign rdata_valid_o = rdata_valid;
 endmodule
 
 module perf_cntr (

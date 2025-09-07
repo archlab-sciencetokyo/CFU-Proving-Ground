@@ -10,15 +10,17 @@
 
 /******************************************************************************/
 module cpu (
-    input  wire                        clk_i,
-    input  wire                        rst_i,
+    input  wire                             clk_i,
+    input  wire                             rst_i,
     output wire [$clog2(`IMEM_ENTRIES)-1:0] ibus_addr_o,
     input  wire                      [31:0] ibus_data_i,
-    output wire                      [31:0] dbus_addr_o,
-    output wire                             dbus_wvalid_o,
-    output wire                      [31:0] dbus_wdata_o,
-    output wire                      [31:0] dbus_wstrb_o,
-    input  wire                      [31:0] dbus_rdata_i
+    output wire                      [31:0] dbus_cmd_addr_o,
+    output wire                             dbus_cmd_we_o,
+    output wire                             dbus_cmd_valid_o,
+    input  wire                             dbus_cmd_ack_i,
+    input  wire                      [31:0] dbus_read_data_i,
+    output wire                      [31:0] dbus_write_data_o,
+    output wire                       [3:0] dbus_write_en_o
 );
 //------------------------------------------------------------------------------
 // pipeline registers
@@ -314,21 +316,19 @@ module cpu (
         .br_tkn_pc_o    (Ex_br_tkn_pc)       // output wire           [`XLEN-1:0]
     );
 
-    ///// store unit
-    wire [         31:0] dbus_addr = dbus_addr_o;  // for simulation
-    wire [         31:0] dbus_wdata = dbus_wdata_o;  // for simulation
-    wire [`DBUS_OFFSET_W-1:0] dbus_offset;  // Note
+    wire [1:0] dbus_offset;
     store_unit store_unit (
-        .valid_i      (Ex_valid),       // input  wire
-        .lsu_ctrl_i   (IdEx_lsu_ctrl),  // input  wire [`LSU_CTRL_WIDTH-1:0]
-        .src1_i       (Ex_src1),        // input  wire           [`XLEN-1:0]
-        .src2_i       (Ex_src2),        // input  wire           [`XLEN-1:0]
-        .imm_i        (IdEx_imm),       // input  wire           [`XLEN-1:0]
-        .dbus_addr_o  (dbus_addr_o),    // output wire           [`XLEN-1:0]
-        .dbus_offset_o(dbus_offset),    // output wire    [OFFSET_WIDTH-1:0]
-        .dbus_wvalid_o(dbus_wvalid_o),  // output wire
-        .dbus_wdata_o (dbus_wdata_o),   // output wire           [`XLEN-1:0]
-        .dbus_wstrb_o (dbus_wstrb_o)    // output wire         [`XBYTES-1:0]
+        .valid_i          (Ex_valid),       // input  wire
+        .lsu_ctrl_i       (IdEx_lsu_ctrl),  // input  wire [`lsu_ctrl_width-1:0]
+        .src1_i           (Ex_src1),        // input  wire           [`xlen-1:0]
+        .src2_i           (Ex_src2),        // input  wire           [`xlen-1:0]
+        .imm_i            (IdEx_imm),       // input  wire           [`xlen-1:0]
+        .dbus_cmd_addr_o  (dbus_cmd_addr_o),
+        .dbus_cmd_we_o    (dbus_cmd_we_o),
+        .dbus_cmd_valid_o (dbus_cmd_valid_o),
+        .dbus_cmd_offset_o(dbus_offset),
+        .dbus_write_data_o(dbus_write_data_o),
+        .dbus_write_en_o  (dbus_write_en_o)
     );
 
     ///// multiplier unit
@@ -347,7 +347,7 @@ module cpu (
     );
 
     ///// divider unit
-    wire             Ex_div_stall;
+    wire        Ex_div_stall;
     wire [31:0] Ex_div_rslt;
     divider divider (
         .clk_i     (clk_i),          // input  wire
@@ -362,8 +362,8 @@ module cpu (
     );
 
     ///// custom function unit    
-    wire             Ex_cfu_en = IdEx_cfu_ctrl[0] & Ex_valid;
-    wire             Ex_cfu_stall;
+    wire        Ex_cfu_en = IdEx_cfu_ctrl[0] & Ex_valid;
+    wire        Ex_cfu_stall;
     wire [31:0] Ex_cfu_rslt;
     cfu cfu (
         .clk_i   (clk_i),                // input  wire        
@@ -412,7 +412,9 @@ module cpu (
     load_unit load_unit (
         .lsu_ctrl_i   (ExMa_lsu_ctrl),     // input  wire [`LSU_CTRL_WIDTH-1:0]
         .dbus_offset_i(ExMa_dbus_offset),  // input  wire    [OFFSET_WIDTH-1:0]
-        .dbus_rdata_i (dbus_rdata_i),      // input  wire           [`XLEN-1:0]
+        .dbus_read_data_i (dbus_read_data_i),      // input  wire           [`XLEN-1:0]
+        .dbus_cmd_ack_i(dbus_cmd_ack_i), // input  wire
+        .waiting_cmd_ack(), // input  wire
         .rslt_o       (Ma_load_rslt)       // output wire           [`XLEN-1:0]
     );
 
@@ -726,57 +728,61 @@ module store_unit (
     input  wire [31:0] src1_i,
     input  wire [31:0] src2_i,
     input  wire [31:0] imm_i,
-    output wire [31:0] dbus_addr_o,
-    output wire [ 1:0] dbus_offset_o,  // ??
-    output wire        dbus_wvalid_o,  // ??
-    output wire [31:0] dbus_wdata_o,
-    output wire [ 3:0] dbus_wstrb_o
+    output wire [31:0] dbus_cmd_addr_o,
+    output wire        dbus_cmd_we_o,
+    output wire        dbus_cmd_valid_o,
+    output wire  [1:0] dbus_cmd_offset_o,
+    output wire [31:0] dbus_write_data_o,
+    output wire  [3:0] dbus_write_en_o
 );
 
-    assign dbus_addr_o   = src1_i + imm_i;  // calculate address with adder
-    assign dbus_offset_o = dbus_addr_o[1:0];
+    assign dbus_cmd_addr_o   = src1_i + imm_i;  // calculate address with adder
+    assign dbus_cmd_offset_o = dbus_cmd_addr_o[1:0];
 
-    assign dbus_wvalid_o = valid_i && lsu_ctrl_i[`LSU_CTRL_IS_STORE];
+    assign dbus_cmd_we_o = valid_i && lsu_ctrl_i[`LSU_CTRL_IS_STORE];
 
     wire w_sb = lsu_ctrl_i[`LSU_CTRL_IS_BYTE];
     wire w_sh = lsu_ctrl_i[`LSU_CTRL_IS_HALFWORD];
     wire w_sw = lsu_ctrl_i[`LSU_CTRL_IS_WORD];
 
-    assign dbus_wdata_o[7:0] = src2_i[7:0];
-    assign dbus_wdata_o[15:8] = (w_sb) ? src2_i[7:0] : src2_i[15:8];
-    assign dbus_wdata_o[23:16] = (w_sw) ? src2_i[23:16] : src2_i[7:0];
-    assign dbus_wdata_o[31:24] = (w_sb) ? src2_i[7:0] : (w_sh) ? src2_i[15:8] : src2_i[31:24];
+    assign dbus_write_data_o[7:0]   = src2_i[7:0];
+    assign dbus_write_data_o[15:8]  = (w_sb) ? src2_i[7:0] : src2_i[15:8];
+    assign dbus_write_data_o[23:16] = (w_sw) ? src2_i[23:16] : src2_i[7:0];
+    assign dbus_write_data_o[31:24] = (w_sb) ? src2_i[7:0] : (w_sh) ? src2_i[15:8] : src2_i[31:24];
 
-    assign dbus_wstrb_o[0] = (w_sb && dbus_offset_o==0) || (w_sh && dbus_offset_o[1]==0) || w_sw;
-    assign dbus_wstrb_o[1] = (w_sb && dbus_offset_o==1) || (w_sh && dbus_offset_o[1]==0) || w_sw;
-    assign dbus_wstrb_o[2] = (w_sb && dbus_offset_o==2) || (w_sh && dbus_offset_o[1]==1) || w_sw;
-    assign dbus_wstrb_o[3] = (w_sb && dbus_offset_o==3) || (w_sh && dbus_offset_o[1]==1) || w_sw;
+    assign dbus_write_en_o[0] = (w_sb && dbus_cmd_offset_o==0) || (w_sh && dbus_cmd_offset_o[1]==0) || w_sw;
+    assign dbus_write_en_o[1] = (w_sb && dbus_cmd_offset_o==1) || (w_sh && dbus_cmd_offset_o[1]==0) || w_sw;
+    assign dbus_write_en_o[2] = (w_sb && dbus_cmd_offset_o==2) || (w_sh && dbus_cmd_offset_o[1]==1) || w_sw;
+    assign dbus_write_en_o[3] = (w_sb && dbus_cmd_offset_o==3) || (w_sh && dbus_cmd_offset_o[1]==1) || w_sw;
 endmodule
 
 /******************************************************************************/
 module load_unit (
     input  wire [ 5:0] lsu_ctrl_i,
     input  wire [ 1:0] dbus_offset_i,
-    input  wire [31:0] dbus_rdata_i,
+    input  wire [31:0] dbus_read_data_i,
+    input  wire        dbus_cmd_ack_i,
+    output wire        waiting_cmd_ack,
     output wire [31:0] rslt_o
 );
+    assign waiting_cmd_ack = 0;// lsu_ctrl_i[`LSU_CTRL_IS_LOAD] & !dbus_cmd_ack_i;
 
-    wire w_lb = lsu_ctrl_i[`LSU_CTRL_IS_BYTE];
-    wire w_lh = lsu_ctrl_i[`LSU_CTRL_IS_HALFWORD];
-    wire w_lw = lsu_ctrl_i[`LSU_CTRL_IS_WORD];
-    wire w_signed = lsu_ctrl_i[`LSU_CTRL_IS_SIGNED];
-    wire w_load = lsu_ctrl_i[`LSU_CTRL_IS_LOAD];
-    wire [1:0] ost = dbus_offset_i;  // offset
-    wire [31:0] d = dbus_rdata_i;  // data
+    wire        w_lb     = lsu_ctrl_i[`LSU_CTRL_IS_BYTE];
+    wire        w_lh     = lsu_ctrl_i[`LSU_CTRL_IS_HALFWORD];
+    wire        w_lw     = lsu_ctrl_i[`LSU_CTRL_IS_WORD];
+    wire        w_signed = lsu_ctrl_i[`LSU_CTRL_IS_SIGNED];
+    wire        w_load   = lsu_ctrl_i[`LSU_CTRL_IS_LOAD];
+    wire  [1:0] ost      = dbus_offset_i;  // offset
+    wire [31:0] d        = dbus_read_data_i;  // data
 
     wire w_lb_sign = w_lb & ((ost==0) ? d[7] : (ost==1) ? d[15] :(ost==2) ? d[23] : d[31]) & w_signed;
     wire w_lh_sign = w_lh & ((ost[1] == 0) ? d[15] : d[31]) & w_signed;
 
     wire [7:0] w1, w2, w3, w4;
-    assign w1   = (w_load==0) ? 0 : (w_lw || (w_lh & ost[1]==0) || (w_lb & ost==0)) ? d[7:0] : 
+    assign w1 = (w_load==0) ? 0 : (w_lw || (w_lh & ost[1]==0) || (w_lb & ost==0)) ? d[7:0] : 
                            (w_lb && ost==1) ? d[15:8] : ((w_lb && ost==2) || 
                            (w_lh && ost[1]==1)) ? d[23:16] : d[31:24];
-    assign w2  = (w_load==0) ? 0 : (w_lw || (w_lh && ost[1]==0)) ? d[15:8] : 
+    assign w2 = (w_load==0) ? 0 : (w_lw || (w_lh && ost[1]==0)) ? d[15:8] : 
                            (w_lh && ost[1]==1) ? d[31:24] : (w_lb_sign) ? 8'hff : 0;
     assign w3 = (w_load == 0) ? 0 : (w_lw) ? d[23:16] : ((w_lb_sign) || (w_lh_sign)) ? 8'hff : 0;
     assign w4 = (w_load == 0) ? 0 : (w_lw) ? d[31:24] : ((w_lb_sign) || (w_lh_sign)) ? 8'hff : 0;

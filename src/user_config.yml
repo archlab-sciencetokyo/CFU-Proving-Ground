@@ -1,5 +1,6 @@
 lcd_rotate: 0  # 0: 0 degree, 1: 90 degree, 2: 180 degree, 3: 270 degree (Left Rotate)
-clk_freq_mhz: 160  # operating clock frequency in MHz
+clk_freq_mhz: 100  # operating clock frequency in MHz
 btb_entries: 2048  # BTB entries
 imem_size_kbyte: 32  # instruction memory size in KByte
 dmem_size_kbyte: 16  # data memory size in KByte
+uart_baudrate: 1000000 # UART baudrate

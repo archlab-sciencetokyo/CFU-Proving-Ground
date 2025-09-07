@@ -337,9 +337,9 @@ module imem (
 endmodule
 
 module bootrom (
-    input  wire                             clk_i,
-    input  wire [$clog2(`IMEM_ENTRIES)-1:0] raddr_i,
-    output wire                      [31:0] rdata_o
+    input  wire        clk_i,
+    input  wire  [9:0] raddr_i,
+    output wire [31:0] rdata_o
 );
     reg [31:0] rdata = 0;
     reg [31:0] rom [0:1023];
@@ -385,11 +385,10 @@ module vmem (
     reg [2:0] vmem_lo[0:32767];  // vmem
     reg [2:0] vmem_hi[0:32767];  // vmem
     integer i;
-    initial
-        for (i = 0; i < 32768; i = i + 1) begin
-            vmem_lo[i] = 0;
-            vmem_hi[i] = 0;
-        end
+    initial for (i = 0; i < 32768; i = i + 1) begin
+        vmem_lo[i] = 0;
+        vmem_hi[i] = 0;
+    end
 
     reg        we;
     reg        top;

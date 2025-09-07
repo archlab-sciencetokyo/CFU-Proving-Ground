@@ -221,9 +221,9 @@ module mmu (
     // CPU <- bootrom
     assign cpu_ibus_rdata = bootrom_rdata;
     // CPU <- DMEM or UART
-    reg bus_sel; // 0: DMEM, 1: UART
+    reg bus_sel = 0; // 0: DMEM, 1: UART
     always @(posedge clk_i) begin
-        bus_sel <= cpu_dbus_addr[28];
+        bus_sel <= (cpu_dbus_addr==32'h1000_0004);
     end
     assign cpu_dbus_rdata = (bus_sel ? uart_rdata : dmem_rdata);
     // assign cpu_dbus_rdata = (dmem_rdata);

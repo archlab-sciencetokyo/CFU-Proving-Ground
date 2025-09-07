@@ -94,14 +94,14 @@ module main (
 // 0x2000_0000 - 0x2007_0800 : VMEM
 //------------------------------------------------------------------------------
     wire        vmem_we;
-    wire [15:0] vmem_addr;
+    wire [15:0] vmem_waddr;
     wire  [2:0] vmem_wdata;
     wire [15:0] vmem_raddr;
     wire [15:0] vmem_rdata;
     vmem vmem (
         .clk_i  (clk),          // input wire
         .we_i   (vmem_we),      // input wire
-        .waddr_i(vmem_addr),    // input wire [15:0]
+        .waddr_i(vmem_waddr),    // input wire [15:0]
         .wdata_i(vmem_wdata),   // input wire [15:0]
         .raddr_i(vmem_raddr),   // input wire [15:0]
         .rdata_o(vmem_rdata)  // output wire [15:0]
@@ -153,7 +153,7 @@ module main (
         .bootrom_raddr (bootrom_raddr),  // output wire [ADDR
         .bootrom_rdata (bootrom_rdata),  // input  wire [DATA_WIDTH
         .vmem_we       (vmem_we),        // output wire
-        .vmem_addr     (vmem_addr),      // output wire [15:0
+        .vmem_waddr     (vmem_waddr),    // output wire [15:0
         .vmem_wdata    (vmem_wdata),     // output wire [2:0]
         .dmem_we       (dmem_we),        // output wire
         .dmem_addr     (dmem_addr),      // output wire [ADDR_WIDTH
@@ -178,7 +178,7 @@ module mmu (
     input  wire                      [31:0] bootrom_rdata,
     // VMEM
     output wire        vmem_we,
-    output wire [15:0] vmem_addr,
+    output wire [15:0] vmem_waddr,
     output wire  [2:0] vmem_wdata,
     // DMEM
     output wire        dmem_we,
@@ -195,7 +195,7 @@ module mmu (
 
     // CPU -> VMEM
     assign vmem_we    = cpu_dbus_we & (cpu_dbus_addr[29]);
-    assign vmem_addr  = cpu_dbus_addr[15:0];
+    assign vmem_waddr = cpu_dbus_addr[15:0];
     assign vmem_wdata = cpu_dbus_wdata[2:0];
 
     // CPU -> DMEM
@@ -271,7 +271,7 @@ module uart #(
         .rready_i       (rready_i       ),
         .rdata_o        (rdata_o        )
     );
-endmodule
+endmodule  // uart
 
 module fifo #(
     parameter DATA_WIDTH    = 32    ,

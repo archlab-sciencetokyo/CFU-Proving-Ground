@@ -229,12 +229,7 @@ module mmu (
     // assign cpu_dbus_rdata = (dmem_rdata);
 endmodule  // mmu
 
-module uart #(
-    parameter CLK_FREQ_MHZ  = 100       ,
-    parameter BAUD_RATE     = 115200    ,
-    parameter DETECT_COUNT  = 4         ,
-    parameter FIFO_DEPTH    = 2048
-) (
+module uart (
     input  wire       clk_i     ,
     input  wire       rst_i     ,
     output wire       txd_o     ,
@@ -246,6 +241,8 @@ module uart #(
     input  wire       rready_i  ,
     output wire [7:0] rdata_o
 );
+    localparam FIFO_DEPTH   = 2048;
+    localparam DETECT_COUNT = 4;
 
     wire       uart_wvalid  ;
     wire       uart_wready  ;
@@ -268,8 +265,8 @@ module uart #(
 
     // UART transmitter
     uart_tx #(
-        .CLK_FREQ_MHZ   (CLK_FREQ_MHZ   ),
-        .BAUD_RATE      (BAUD_RATE      )
+        .CLK_FREQ_MHZ   (`CLK_FREQ_MHZ   ),
+        .BAUD_RATE      (`UART_BAUDRATE )
     ) uart_tx (
         .clk_i          (clk_i          ),
         .rst_i          (rst_i          ),
@@ -281,8 +278,8 @@ module uart #(
 
     // UART receiver
     uart_rx #(
-        .CLK_FREQ_MHZ   (CLK_FREQ_MHZ   ),
-        .BAUD_RATE      (BAUD_RATE      ),
+        .CLK_FREQ_MHZ   (`CLK_FREQ_MHZ  ),
+        .BAUD_RATE      (`UART_BAUDRATE),
         .DETECT_COUNT   (DETECT_COUNT   )
     ) uart_rx (
         .clk_i          (clk_i          ),

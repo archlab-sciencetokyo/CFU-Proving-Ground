@@ -97,9 +97,8 @@ module cpu (
     reg rst; always @(posedge clk_i) rst <= rst_i;
 
     wire Ma_br_tkn  = (ExMa_v && ExMa_br_tkn);
-    wire Ma_br_misp = (rst) ? 1 : 
-                                 (ExMa_v && ExMa_is_ctrl_tsfr && 
-                                 ((Ma_br_tkn) ? ExMa_br_misp_rslt1 : ExMa_br_misp_rslt2));
+    wire Ma_br_misp = (rst) ? 1 : (ExMa_v && ExMa_is_ctrl_tsfr && 
+                                  ((Ma_br_tkn) ? ExMa_br_misp_rslt1 : ExMa_br_misp_rslt2));
     wire [31:0] Ma_br_true_pc  = (rst) ? 0 : 
                                  (ExMa_br_tkn) ? ExMa_br_tkn_pc : ExMa_pc+4;
 
@@ -219,7 +218,7 @@ module cpu (
     // register file
     wire [31:0] Id_xrs1;
     wire [31:0] Id_xrs2;
-    wire             Wb_xreg_we = MaWb_v && MaWb_rf_we && !ExMa_stall;
+    wire        Wb_xreg_we = MaWb_v && MaWb_rf_we && !ExMa_stall;
     regfile xreg (
         .clk_i  (clk_i),       // input  wire
         .rs1_i  (IfId_rs1),    // input  wire       [4:0]
@@ -237,8 +236,8 @@ module cpu (
     wire Id_rs1_fwd_Wb_to_Ex = ExMa_v && ExMa_rf_we && (ExMa_rd == IfId_rs1);
     wire Id_rs2_fwd_Wb_to_Ex = ExMa_v && ExMa_rf_we && (ExMa_rd == IfId_rs2);
 
-    wire [31:0] Id_pc_in = (Id_src2_ctrl[`SRC2_CTRL_USE_AUIPC]) ? IfId_pc : 0;
-    wire Id_use_imm      = Id_src2_ctrl[`SRC2_CTRL_USE_AUIPC] | Id_src2_ctrl[`SRC2_CTRL_USE_IMM];
+    wire [31:0] Id_pc_in   = (Id_src2_ctrl[`SRC2_CTRL_USE_AUIPC]) ? IfId_pc : 0;
+    wire        Id_use_imm = Id_src2_ctrl[`SRC2_CTRL_USE_AUIPC] | Id_src2_ctrl[`SRC2_CTRL_USE_IMM];
 
     // source select
     wire [31:0] Id_src1 = (Id_rs1_fwd_Wb_to_Ex) ? Ma_rslt : Id_xrs1;

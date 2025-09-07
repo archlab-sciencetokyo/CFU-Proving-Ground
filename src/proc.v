@@ -602,10 +602,10 @@ module bru (
     assign br_misp_rslt2_o = (npc_i != (pc_i + 'h4));
 endmodule
 
-`define DIV_IDLE 0
+`define DIV_IDLE  0
 `define DIV_CHECK 1
-`define DIV_EXEC 2
-`define DIV_RET 3
+`define DIV_EXEC  2
+`define DIV_RET   3
 /******************************************************************************/
 module divider (
     input  wire        clk_i      ,
@@ -676,7 +676,7 @@ endmodule
 
 `define MUL_IDLE 0
 `define MUL_EXEC 1
-`define MUL_RET 2
+`define MUL_RET  2
 /******************************************************************************/
 module multiplier (
     input  wire        clk_i,

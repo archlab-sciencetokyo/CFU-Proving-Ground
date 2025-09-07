@@ -95,3 +95,10 @@ regression-test:
 		./obj_dir/top; \
 	done
 
+TEST ?= lb
+single-test:
+	cp tests/rv32ui-p-$(TEST).elf build/main.elf
+	make imem_image dmem_image > /dev/null
+	make sim > /dev/null
+	./obj_dir/top
+

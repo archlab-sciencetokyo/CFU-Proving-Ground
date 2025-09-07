@@ -152,8 +152,14 @@ module main (
         .cpu_dbus_rdata(dbus_rdata),     // output wire [DATA_WIDTH
         .bootrom_raddr (bootrom_raddr),  // output wire [ADDR
         .bootrom_rdata (bootrom_rdata),  // input  wire [DATA_WIDTH
+        .uart_wvalid   (uart_wvalid),    // output wire
+        .uart_wready   (uart_wready),    // input  wire
+        .uart_wdata    (uart_wdata),     // output wire [7:0]
+        .uart_rvalid   (uart_rvalid),    // input  wire
+        .uart_rready   (uart_rready),    // output wire
+        .uart_rdata    (uart_rdata),     // input  wire [7:0]
         .vmem_we       (vmem_we),        // output wire
-        .vmem_waddr     (vmem_waddr),    // output wire [15:0
+        .vmem_waddr    (vmem_waddr),    // output wire [15:0
         .vmem_wdata    (vmem_wdata),     // output wire [2:0]
         .dmem_we       (dmem_we),        // output wire
         .dmem_addr     (dmem_addr),      // output wire [ADDR_WIDTH
@@ -176,36 +182,51 @@ module mmu (
     // bootrom
     output wire [$clog2(`IMEM_ENTRIES)-1:0] bootrom_raddr,
     input  wire                      [31:0] bootrom_rdata,
+    // UART
+    output wire                             uart_wvalid,
+    input  wire                             uart_wready,
+    output wire                       [7:0] uart_wdata,
+    input  wire                             uart_rvalid,
+    output wire                             uart_rready,
+    input  wire                       [7:0] uart_rdata,
     // VMEM
-    output wire        vmem_we,
-    output wire [15:0] vmem_waddr,
-    output wire  [2:0] vmem_wdata,
+    output wire                             vmem_we,
+    output wire                      [15:0] vmem_waddr,
+    output wire                       [2:0] vmem_wdata,
     // DMEM
-    output wire        dmem_we,
-    output wire [31:0] dmem_addr,
-    output wire [31:0] dmem_wdata,
-    output wire  [3:0] dmem_wstrb,
-    input  wire [31:0] dmem_rdata
+    output wire                             dmem_we,
+    output wire                      [31:0] dmem_addr,
+    output wire                      [31:0] dmem_wdata,
+    output wire                       [3:0] dmem_wstrb,
+    input  wire                      [31:0] dmem_rdata
 );
     // CPU -> bootrom
     assign bootrom_raddr  = cpu_ibus_raddr;
 
-    // CPU <- bootrom
-    assign cpu_ibus_rdata = bootrom_rdata;
+    // CPU -> UART
+    assign uart_wvalid  = cpu_dbus_we & cpu_dbus_addr[28];
+    assign uart_wdata   = cpu_dbus_wdata[7:0];
 
     // CPU -> VMEM
-    assign vmem_we    = cpu_dbus_we & (cpu_dbus_addr[29]);
+    assign vmem_we    = cpu_dbus_we & cpu_dbus_addr[29];
     assign vmem_waddr = cpu_dbus_addr[15:0];
     assign vmem_wdata = cpu_dbus_wdata[2:0];
 
     // CPU -> DMEM
-    assign dmem_we    = cpu_dbus_we & (cpu_dbus_addr[31]);
+    assign dmem_we    = cpu_dbus_we & cpu_dbus_addr[31];
     assign dmem_addr  = cpu_dbus_addr;
     assign dmem_wdata = cpu_dbus_wdata;
     assign dmem_wstrb = cpu_dbus_wstrb;
 
-    // CPU <- DMEM
-    assign cpu_dbus_rdata = dmem_rdata;
+    // CPU <- bootrom
+    assign cpu_ibus_rdata = bootrom_rdata;
+    // CPU <- DMEM or UART
+    reg bus_sel; // 0: DMEM, 1: UART
+    always @(posedge clk_i) begin
+        bus_sel <= cpu_dbus_addr[28];
+    end
+    assign cpu_dbus_rdata = (bus_sel ? uart_rdata : dmem_rdata);
+    // assign cpu_dbus_rdata = (dmem_rdata);
 endmodule  // mmu
 
 module uart #(

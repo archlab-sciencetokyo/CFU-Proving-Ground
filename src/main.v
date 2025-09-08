@@ -181,8 +181,6 @@ module main (
     wire          sys_rst;
     wire          litedram_ctrl_ack;
     wire   [29:0] litedram_ctrl_adr;
-    wire    [1:0] litedram_ctrl_bte;
-    wire    [2:0] litedram_ctrl_cti;
     wire          litedram_ctrl_cyc;
     wire   [31:0] litedram_ctrl_dat_r;
     wire   [31:0] litedram_ctrl_dat_w;
@@ -210,8 +208,8 @@ module main (
         .user_rst                     (sys_rst),              // output wire
         .wb_ctrl_ack                  (litedram_ctrl_ack),    // output wire
         .wb_ctrl_adr                  (litedram_ctrl_adr),    // input  wire   [29:0]
-        .wb_ctrl_bte                  (litedram_ctrl_bte),    // input  wire    [1:0]
-        .wb_ctrl_cti                  (litedram_ctrl_cti),    // input  wire    [2:0]
+        .wb_ctrl_bte                  (0),                    // input  wire    [1:0]
+        .wb_ctrl_cti                  (0),                    // input  wire    [2:0]
         .wb_ctrl_cyc                  (litedram_ctrl_cyc),    // input  wire
         .wb_ctrl_dat_r                (litedram_ctrl_dat_r),  // output wire   [31:0]  
         .wb_ctrl_dat_w                (litedram_ctrl_dat_w),  // input  wire   [31:0]  
@@ -225,32 +223,41 @@ module main (
 // Memory Management Unit
 //------------------------------------------------------------------------------
     mmu mmu (
-        .clk_i               (sys_clk),            // input  wire
-        .cpu_ibus_raddr      (ibus_raddr),     // input  wire [ADDR_WIDTH
-        .cpu_ibus_rdata      (ibus_rdata),     // output wire [DATA_WIDTH
-        .cpu_dbus_cmd_addr   (dbus_cmd_addr),
-        .cpu_dbus_cmd_we     (dbus_cmd_we),
-        .cpu_dbus_cmd_valid  (dbus_cmd_valid),
-        .cpu_dbus_cmd_ack    (dbus_cmd_ack),
-        .cpu_dbus_read_data  (dbus_read_data),
-        .cpu_dbus_write_data (dbus_write_data),
-        .cpu_dbus_write_en   (dbus_write_en),
-        .bootrom_raddr       (bootrom_raddr),  // output wire [ADDR
-        .bootrom_rdata       (bootrom_rdata),  // input  wire [DATA_WIDTH
-        .sdram_addr          (sdram_addr),     // output wire [$clog2(`DMEM_ENTRIES)-1:0]
-        .sdram_rdata         (sdram_rdata),    // input  wire [31:0]
-        .sdram_wvalid        (sdram_wvalid),   // output wire
-        .sdram_wen           (sdram_wen),      // output wire [3:0]
-        .sdram_wdata         (sdram_wdata),    // output wire [31:0]
-        .uart_wvalid         (uart_wvalid),    // output wire
-        .uart_wready         (uart_wready),    // input  wire
-        .uart_wdata          (uart_wdata),     // output wire [7:0]
-        .uart_rvalid         (uart_rvalid),    // input  wire
-        .uart_rready         (uart_rready),    // output wire
-        .uart_rdata          (uart_rdata),     // input  wire [7:0]
-        .vmem_we             (vmem_we),        // output wire
-        .vmem_waddr          (vmem_waddr),    // output wire [15:0
-        .vmem_wdata          (vmem_wdata)     // output wire [2:0]
+        .clk_i                 (sys_clk),        // input  wire
+        .cpu_ibus_raddr_i      (ibus_raddr),     // input  wire [ADDR_WIDTH
+        .cpu_ibus_rdata_o      (ibus_rdata),     // output wire [DATA_WIDTH
+        .cpu_dbus_cmd_addr_i   (dbus_cmd_addr),
+        .cpu_dbus_cmd_we_i     (dbus_cmd_we),
+        .cpu_dbus_cmd_valid_i  (dbus_cmd_valid),
+        .cpu_dbus_cmd_ack_o    (dbus_cmd_ack),
+        .cpu_dbus_read_data_o  (dbus_read_data),
+        .cpu_dbus_write_data_i (dbus_write_data),
+        .cpu_dbus_write_en_i   (dbus_write_en),
+        .bootrom_raddr_o       (bootrom_raddr),  // output wire [ADDR
+        .bootrom_rdata_i       (bootrom_rdata),  // input  wire [DATA_WIDTH
+        .sdram_addr_o          (sdram_addr),     // output wire [$clog2(`DMEM_ENTRIES)-1:0]
+        .sdram_rdata_i         (sdram_rdata),    // input  wire [31:0]
+        .sdram_wvalid_o        (sdram_wvalid),   // output wire
+        .sdram_wen_o           (sdram_wen),      // output wire [3:0]
+        .sdram_wdata_o         (sdram_wdata),    // output wire [31:0]
+        .uart_wvalid_o         (uart_wvalid),    // output wire
+        .uart_wready_i         (uart_wready),    // input  wire
+        .uart_wdata_o          (uart_wdata),     // output wire [7:0]
+        .uart_rvalid_i         (uart_rvalid),    // input  wire
+        .uart_rready_o         (uart_rready),    // output wire
+        .uart_rdata_i          (uart_rdata),     // input  wire [7:0]
+        .vmem_we_o             (vmem_we),        // output wire
+        .vmem_waddr_o          (vmem_waddr),     // output wire [15:0
+        .vmem_wdata_o          (vmem_wdata),     // output wire [2:0]
+        .litedram_ctrl_ack_i   (litedram_ctrl_ack),
+        .litedram_ctrl_adr_o   (litedram_ctrl_adr),
+        .litedram_ctrl_cyc_o   (litedram_ctrl_cyc),
+        .litedram_ctrl_dat_r_i (litedram_ctrl_dat_r),
+        .litedram_ctrl_dat_w_o (litedram_ctrl_dat_w),
+        .litedram_ctrl_err_i   (litedram_ctrl_err),
+        .litedram_ctrl_sel_o   (litedram_ctrl_sel),
+        .litedram_ctrl_stb_o   (litedram_ctrl_stb),
+        .litedram_ctrl_we_o    (litedram_ctrl_we)
     );
 endmodule  // main
 
@@ -260,56 +267,84 @@ endmodule  // main
 module mmu (
     input  wire                             clk_i,
     // CPU
-    input  wire [$clog2(`IMEM_ENTRIES)-1:0] cpu_ibus_raddr,
-    output wire                      [31:0] cpu_ibus_rdata,
-    input  wire                      [31:0] cpu_dbus_cmd_addr,
-    input  wire                             cpu_dbus_cmd_we,
-    input  wire                             cpu_dbus_cmd_valid,
-    output wire                             cpu_dbus_cmd_ack,
-    output wire                      [31:0] cpu_dbus_read_data,
-    input  wire                      [31:0] cpu_dbus_write_data,
-    input  wire                       [3:0] cpu_dbus_write_en,
+    input  wire [$clog2(`IMEM_ENTRIES)-1:0] cpu_ibus_raddr_i,
+    output wire                      [31:0] cpu_ibus_rdata_o,
+    input  wire                      [31:0] cpu_dbus_cmd_addr_i,
+    input  wire                             cpu_dbus_cmd_we_i,
+    input  wire                             cpu_dbus_cmd_valid_i,
+    output wire                             cpu_dbus_cmd_ack_o,
+    output wire                      [31:0] cpu_dbus_read_data_o,
+    input  wire                      [31:0] cpu_dbus_write_data_i,
+    input  wire                       [3:0] cpu_dbus_write_en_i,
     // bootrom
-    output wire [$clog2(`IMEM_ENTRIES)-1:0] bootrom_raddr,
-    input  wire                      [31:0] bootrom_rdata,
+    output wire [$clog2(`IMEM_ENTRIES)-1:0] bootrom_raddr_o,
+    input  wire                      [31:0] bootrom_rdata_i,
     // sdram
-    output wire [$clog2(`DMEM_ENTRIES)-1:0] sdram_addr,
-    input  wire                      [31:0] sdram_rdata,
-    output wire                             sdram_wvalid,
-    output wire                       [3:0] sdram_wen,
-    output wire                      [31:0] sdram_wdata,
+    output wire [$clog2(`DMEM_ENTRIES)-1:0] sdram_addr_o,
+    input  wire                      [31:0] sdram_rdata_i,
+    output wire                             sdram_wvalid_o,
+    output wire                       [3:0] sdram_wen_o,
+    output wire                      [31:0] sdram_wdata_o,
     // UART
-    output wire                             uart_wvalid,
-    input  wire                             uart_wready,
-    output wire                       [7:0] uart_wdata,
-    input  wire                             uart_rvalid,
-    output wire                             uart_rready,
-    input  wire                       [7:0] uart_rdata,
+    output wire                             uart_wvalid_o,
+    input  wire                             uart_wready_i,
+    output wire                       [7:0] uart_wdata_o,
+    input  wire                             uart_rvalid_i,
+    output wire                             uart_rready_o,
+    input  wire                       [7:0] uart_rdata_i,
     // VMEM
-    output wire                             vmem_we,
-    output wire                      [15:0] vmem_waddr,
-    output wire                       [2:0] vmem_wdata
+    output wire                             vmem_we_o,
+    output wire                      [15:0] vmem_waddr_o,
+    output wire                       [2:0] vmem_wdata_o,
+    // LiteDRAM Wishbone Control Interface
+    input  wire                             litedram_ctrl_ack_i,
+    output wire                      [29:0] litedram_ctrl_adr_o,
+    output wire                             litedram_ctrl_cyc_o,
+    input  wire                      [31:0] litedram_ctrl_dat_r_i,
+    output wire                      [31:0] litedram_ctrl_dat_w_o,
+    input  wire                             litedram_ctrl_err_i,
+    output wire                       [3:0] litedram_ctrl_sel_o,
+    output wire                             litedram_ctrl_stb_o,
+    output wire                             litedram_ctrl_we_o
 );
+    wire   sdram_access = (cpu_dbus_cmd_addr_i < 32'h0000_2000);
+    wire   uart_access  = (cpu_dbus_cmd_addr_i == 32'h1000_0000) |
+                          (cpu_dbus_cmd_addr_i == 32'h1000_0004);
+    wire   vmem_access  = (cpu_dbus_cmd_addr_i[31:28] == 4'h2);
+    wire   csr_access   = (cpu_dbus_cmd_addr_i[31:28] == 4'hF);
+//==============================================================================
+// CPU Command Acknowledge and Read Data Bus
+//------------------------------------------------------------------------------
+    assign cpu_dbus_read_data_o = sdram_rdata_i;//(sdram_access) ? sdram_rdata_i : (csr_access) ? litedram_ctrl_dat_r_i : 0;
+    assign cpu_dbus_cmd_ack_o   = (sdram_access) ? 1'b1 : (csr_access) ? litedram_ctrl_ack_i : 1'b0;
+
     // CPU -> bootrom
-    assign bootrom_raddr  = cpu_ibus_raddr;
+    assign bootrom_raddr_o  = cpu_ibus_raddr_i;
 
     // CPU -> sdram
-    assign sdram_addr    = cpu_dbus_cmd_addr[15:2];
-    assign sdram_wvalid  = cpu_dbus_cmd_valid & cpu_dbus_cmd_we & (cpu_dbus_cmd_addr < 32'h0000_2000);
-    assign sdram_wen     = cpu_dbus_write_en;
-    assign sdram_wdata   = cpu_dbus_write_data;
+    assign sdram_addr_o    = cpu_dbus_cmd_addr_i[15:2];
+    assign sdram_wvalid_o  = cpu_dbus_cmd_valid_i & cpu_dbus_cmd_we_i & (cpu_dbus_cmd_addr_i < 32'h0000_2000);
+    assign sdram_wen_o     = cpu_dbus_write_en_i;
+    assign sdram_wdata_o   = cpu_dbus_write_data_i;
+
 
     // CPU -> VMEM
-    assign vmem_we    = cpu_dbus_cmd_we & cpu_dbus_cmd_addr[29];
-    assign vmem_waddr = cpu_dbus_cmd_addr[15:0];
-    assign vmem_wdata = cpu_dbus_write_data[2:0];
+    assign vmem_we_o    = cpu_dbus_cmd_we_i & cpu_dbus_cmd_addr_i[29];
+    assign vmem_waddr_o = cpu_dbus_cmd_addr_i[15:0];
+    assign vmem_wdata_o = cpu_dbus_write_data_i[2:0];
 
     // CPU <- bootrom
-    assign cpu_ibus_rdata = bootrom_rdata;
+    assign cpu_ibus_rdata_o = bootrom_rdata_i;
 
-    // CPU <- sdram
-    assign cpu_dbus_read_data = sdram_rdata;
-    assign cpu_dbus_cmd_ack   = 1;
+//==============================================================================
+// LiteDRAM Wishbone Control Interface
+//------------------------------------------------------------------------------
+    assign litedram_ctrl_adr_o   = cpu_dbus_cmd_addr_i[31:2];
+    assign litedram_ctrl_cyc_o   = (csr_access) ? cpu_dbus_cmd_valid_i : 1'b0;
+    assign litedram_ctrl_dat_w_o = cpu_dbus_write_data_i;
+    assign litedram_ctrl_sel_o   = cpu_dbus_write_en_i;
+    assign litedram_ctrl_stb_o   = (csr_access) ? cpu_dbus_cmd_valid_i : 1'b0;
+    assign litedram_ctrl_we_o    = (csr_access) ? cpu_dbus_cmd_we_i : 1'b0;
 endmodule  // mmu
 
 module imem (
@@ -377,9 +412,9 @@ module vmem (
     input  wire        clk_i,
     input  wire        we_i,
     input  wire [15:0] waddr_i,
-    input  wire [ 2:0] wdata_i,
+    input  wire  [2:0] wdata_i,
     input  wire [15:0] raddr_i,
-    output wire [ 2:0] rdata_o
+    output wire  [2:0] rdata_o
 );
 
     reg [2:0] vmem_lo[0:32767];  // vmem

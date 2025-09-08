@@ -64,7 +64,7 @@ module top;
             $write("\033[31mTEST FAILED: Timeout\033[0m\n");
             $fatal;
         end
-        if (m0.cpu.dbus_cmd_addr_o[28] && m0.cpu.dbus_cmd_we_o) begin
+        if (m0.cpu.dbus_cmd_addr_o[31:28] == 4'h1 && m0.cpu.dbus_cmd_we_o) begin
             if (m0.cpu.dbus_write_data_o == 32'h777) begin
                 $write("\033[32mTEST PASSED\033[0m\n");
                 $finish;

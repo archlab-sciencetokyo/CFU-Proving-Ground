@@ -47,6 +47,21 @@ boot_image:
 		echo "end"; \
 	} > build/bootrom_init.vh
 
+imem_image:
+	$(OBJDUMP) -d build/main.elf > build/main.dump
+	$(OBJCOPY) -O binary --only-section=.text build/main.elf build/bootrom_init.bin
+	dd if=build/bootrom_init.bin of=build/bootrom_init.img conv=sync bs=1KiB
+	hexdump -v -e '1/4 "%08x\n"' build/bootrom_init.img > build/bootrom_init.32.hex
+	{ \
+		cnt=0; \
+		echo "initial begin"; \
+		while read line; do \
+			echo "    rom[$$cnt] = 32'h$$line;"; \
+			cnt=$$((cnt + 1)); \
+		done < build/bootrom_init.32.hex; \
+		echo "end"; \
+	} > build/bootrom_init.vh
+
 dmem_image:
 	$(OBJCOPY) -O binary build/main.elf --only-section=.data   \
 								     --only-section=.rodata \
@@ -100,6 +115,8 @@ regression-test:
 
 TEST ?= sw
 single-test:
+	mkdir -p build
+	make user_config
 	cp tests/rv32ui-p-$(TEST).elf build/main.elf
 	make imem_image dmem_image > /dev/null
 	make remove-junk > /dev/null

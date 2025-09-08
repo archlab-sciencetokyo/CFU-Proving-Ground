@@ -31,23 +31,6 @@ module top;
     );
 
 //==============================================================================
-// Perfomance Counter
-//------------------------------------------------------------------------------
-    int unsigned mtime = 0;
-    int unsigned mcycle = 0;
-    int unsigned minstret = 0;
-    int unsigned br_pred_cntr = 0;
-    int unsigned br_misp_cntr = 0;
-    always @(posedge clk) begin
-        ++mtime;
-        if (!m0.rst && !cpu_sim_fini) ++mcycle;
-        if (!m0.rst && !cpu_sim_fini && !m0.cpu.stall && m0.cpu.ExMa_v)++minstret;
-        if (!m0.rst && !cpu_sim_fini && m0.cpu.ExMa_is_ctrl_tsfr)++br_pred_cntr;
-        if (!m0.rst && !cpu_sim_fini && m0.cpu.ExMa_is_ctrl_tsfr && m0.cpu.Ma_br_misp)
-            ++br_misp_cntr;
-    end
-
-//==============================================================================
 // Dump 
 //------------------------------------------------------------------------------
     initial begin

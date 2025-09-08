@@ -37,6 +37,7 @@ module main (
 //------------------------------------------------------------------------------
     wire [$clog2(`IMEM_ENTRIES)-1:0] ibus_raddr;
     wire                      [31:0] ibus_rdata;
+    wire                             ibus_ren;
     wire                      [31:0] dbus_cmd_addr;
     wire                             dbus_cmd_we;
     wire                             dbus_cmd_valid;
@@ -49,6 +50,7 @@ module main (
         .rst_i             (rst),         // input  wire
         .ibus_addr_o       (ibus_raddr),  // output wire [`IBUS_ADDR_WIDTH-1:0]
         .ibus_data_i       (ibus_rdata),  // input  wire [`IBUS_DATA_WIDTH-1:0]
+        .ibus_ren_o        (ibus_ren),
         .dbus_cmd_addr_o   (dbus_cmd_addr),
         .dbus_cmd_we_o     (dbus_cmd_we),
         .dbus_cmd_valid_o  (dbus_cmd_valid),
@@ -66,7 +68,8 @@ module main (
     bootrom bootrom (
         .clk_i   (sys_clk),        // input  wire
         .raddr_i (bootrom_raddr),  // input  wire [ADDR_WIDTH-1:0]
-        .rdata_o (bootrom_rdata)
+        .rdata_o (bootrom_rdata),  //
+        .ren_i   (ibus_ren)
     );
 
 //==============================================================================
@@ -315,7 +318,9 @@ module mmu (
 //==============================================================================
 // CPU Command Acknowledge and Read Data Bus
 //------------------------------------------------------------------------------
-    reg rdata_sel = 0; always @(posedge clk_i) rdata_sel <= sdram_access;
+    reg rdata_sel = 0; always @(posedge clk_i) begin
+        rdata_sel <= sdram_access;
+    end
     assign cpu_dbus_read_data_o = (rdata_sel) ? sdram_rdata_i :
                                                 litedram_ctrl_dat_r_i;
     assign cpu_dbus_cmd_ack_o   = (rdata_sel) ? 1'b1 : litedram_ctrl_ack_i;
@@ -376,13 +381,16 @@ endmodule
 module bootrom (
     input  wire        clk_i,
     input  wire  [9:0] raddr_i,
-    output wire [31:0] rdata_o
+    output wire [31:0] rdata_o,
+    input  wire        ren_i
 );
     reg [31:0] rdata = 0;
     reg [31:0] rom [0:1023];
     `include "bootrom_init.vh"
 
-    always @(posedge clk_i) rdata <= rom[raddr_i];
+    always @(posedge clk_i) if (ren_i) begin
+        rdata <= rom[raddr_i];
+    end
     assign rdata_o = rdata;
 endmodule
 

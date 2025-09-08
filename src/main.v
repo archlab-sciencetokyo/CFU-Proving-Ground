@@ -61,8 +61,8 @@ module main (
 //==============================================================================
 // 0x0000_0000 - 0x0000_1000 : 4 KiB bootrom
 //------------------------------------------------------------------------------ 
-    wire [$clog2(`IMEM_ENTRIES)-1:0] bootrom_raddr;
-    wire                      [31:0] bootrom_rdata;
+    wire  [9:0] bootrom_raddr;
+    wire [31:0] bootrom_rdata;
     bootrom bootrom (
         .clk_i   (sys_clk),        // input  wire
         .raddr_i (bootrom_raddr),  // input  wire [ADDR_WIDTH-1:0]
@@ -71,12 +71,12 @@ module main (
 
 //==============================================================================
 // 0x0000_1000 - 0x0000_2000 : 4 KiB sdram
-//==============================================================================
-    wire [$clog2(`DMEM_ENTRIES)-1:0] sdram_addr;
-    wire                      [31:0] sdram_rdata;
-    wire                             sdram_wvalid;
-    wire                       [3:0] sdram_wen;
-    wire                      [31:0] sdram_wdata;
+//------------------------------------------------------------------------------
+    wire  [9:0] sdram_addr;
+    wire [31:0] sdram_rdata;
+    wire        sdram_wvalid;
+    wire  [3:0] sdram_wen;
+    wire [31:0] sdram_wdata;
     sdram sdram (
         .clk_i    (sys_clk),       // input  wire
         .addr_i   (sdram_addr),    // input  wire [$clog2(`DMEM_ENTRIES)-1:0]

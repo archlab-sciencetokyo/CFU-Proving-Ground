@@ -31,9 +31,10 @@ sim:
 prog:
 	$(MAKE) -C prog -f prog.mk
 
-imem_image:
-	$(OBJDUMP) -d build/main.elf > build/main.dump
-	$(OBJCOPY) -O binary --only-section=.text build/main.elf build/bootrom_init.bin
+boot_image:
+	$(MAKE) -C boot -f boot.mk
+	$(OBJDUMP) -d build/boot.elf > build/boot.dump
+	$(OBJCOPY) -O binary --only-section=.text build/boot.elf build/bootrom_init.bin
 	dd if=build/bootrom_init.bin of=build/bootrom_init.img conv=sync bs=1KiB
 	hexdump -v -e '1/4 "%08x\n"' build/bootrom_init.img > build/bootrom_init.32.hex
 	{ \

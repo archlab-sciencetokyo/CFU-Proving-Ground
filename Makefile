@@ -113,7 +113,7 @@ regression-test:
 		./obj_dir/top; \
 	done
 
-TEST ?= jal
+TEST ?= addi
 single-test:
 	mkdir -p build
 	make user_config

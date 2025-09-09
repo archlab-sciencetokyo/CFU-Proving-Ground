@@ -113,11 +113,11 @@ regression-test:
 		./obj_dir/top; \
 	done
 
-TEST ?= lw
+TEST ?= rv32um-p-mul
 single-test:
 	mkdir -p build
 	make user_config
-	cp tests/rv32ui-p-$(TEST).elf build/main.elf
+	cp tests/$(TEST).elf build/main.elf
 	make imem_image dmem_image
 	make remove-junk
 	make sim

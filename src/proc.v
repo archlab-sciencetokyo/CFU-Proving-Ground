@@ -100,12 +100,12 @@ module cpu (
     reg  [31:0] pc = 0;
     reg rst; always @(posedge clk_i) rst <= rst_i;
 
-    wire If_stall = (cpu_state != RUNNING);
-    wire If_v     = (cpu_state == RUNNING);
-    wire Id_stall = (cpu_state != RUNNING);
-    wire Id_v     = IfId_v & ~ExMa_bru_misp & (cpu_state == RUNNING);
-    wire Ex_stall = (cpu_state != RUNNING);
-    wire Ex_v     = IdEx_v & ~ExMa_bru_misp & (cpu_state == RUNNING);
+    wire If_stall = IdEx_loaduse | Ex_busy;
+    wire If_v     = ~IdEx_loaduse & ~If_stall;
+    wire Id_stall = IdEx_loaduse | Ex_busy;
+    wire Id_v     = IfId_v & ~ExMa_bru_misp & ~IdEx_loaduse & ~Ex_busy;
+    wire Ex_stall = IdEx_loaduse | Ex_busy;
+    wire Ex_v     = IdEx_v & ~ExMa_bru_misp & ~IdEx_loaduse;
     wire Ma_stall = 0;
     wire Ma_v     = ExMa_v;
     wire Wb_stall = 0;
@@ -113,18 +113,9 @@ module cpu (
 
     wire Id_loaduse = Id_v & Ex_v & IdEx_lsu_ctrl[`LSU_CTRL_IS_LOAD]
                     & ((IdEx_rd == Id_rs1) | (IdEx_rd == Id_rs2));
-    localparam RUNNING = 0;
-    localparam LOADUSE_STALL = 1;
-    reg [1:0] cpu_state = RUNNING;
+    wire Ex_busy    = (Ex_mul_stall | Ex_div_stall | Ex_cfu_stall);
     always @(posedge clk_i) begin
-        case (cpu_state)
-            RUNNING: begin
-                if (Id_loaduse) cpu_state <= LOADUSE_STALL;
-            end
-            LOADUSE_STALL: begin
-                cpu_state <= RUNNING;
-            end
-        endcase
+        IdEx_loaduse <= Id_loaduse;
     end
 
 //==============================================================================
@@ -371,7 +362,7 @@ module cpu (
         ExMa_dbus_offset   <= dbus_offset;
         ExMa_rf_we         <= IdEx_rf_we;
         ExMa_rd            <= IdEx_rd;
-        ExMa_rslt          <= Ex_alu_rslt;
+        ExMa_rslt          <= Ex_alu_rslt | Ex_mul_rslt | Ex_div_rslt | Ex_cfu_rslt;
         ExMa_j_b_insn      <= IdEx_bru_ctrl[0] & Ex_v;
         ExMa_misp          <= Ex_bru_misp;
     end
@@ -676,7 +667,7 @@ module multiplier (
             state <= w_state;
         end
     end
-    assign stall_o = (w_state == `MUL_EXEC);
+    assign stall_o = (w_state != `MUL_IDLE);
 endmodule
 
 /******************************************************************************/

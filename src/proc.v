@@ -53,6 +53,8 @@ module cpu (
     reg [`CFU_CTRL_WIDTH-1:0] IdEx_cfu_ctrl;
     reg                       IdEx_rs1_fwd_Ma_to_Ex;
     reg                       IdEx_rs2_fwd_Ma_to_Ex;
+    reg                       IdEx_rs1;
+    reg                       IdEx_rs2;
     reg [               31:0] IdEx_src1;
     reg [               31:0] IdEx_src2;
     reg [               31:0] IdEx_imm;
@@ -95,16 +97,25 @@ module cpu (
     reg  [31:0] pc = 0;
     reg rst; always @(posedge clk_i) rst <= rst_i;
 
-    wire If_v     = 1;
+    wire If_v     = ~If_stall;
     wire Id_v     = IfId_v & ~ExMa_bru_misp;
-    wire Ex_v     = IdEx_v & ~ExMa_bru_misp;
+    wire Ex_v     = IdEx_v & ~ExMa_bru_misp & ~Ex_stall;
     wire Ma_v     = ExMa_v;
     wire Wb_v     = MaWb_v;
-    wire If_stall = 0;
-    wire Id_stall = 0;
-    wire Ex_stall = 0;
+    wire If_stall = IdEx_loaduse;
+    wire Id_stall = IdEx_loaduse;
+    wire Ex_stall = IdEx_loaduse;
     wire Ma_stall = 0;
     wire Wb_stall = 0;
+
+    wire Id_loaduse = Id_v & Ex_v & IdEx_lsu_ctrl[`LSU_CTRL_IS_LOAD]
+                    & ((IdEx_rd == Id_rs1) | (IdEx_rd == Id_rs2));
+    reg IdEx_loaduse = 0;
+    reg IdEx_rs1_fwd_Wb_to_Ex = 0;
+    reg IdEx_rs2_fwd_Wb_to_Ex = 0;
+    always @(posedge clk_i) begin
+        IdEx_loaduse          <= Id_loaduse;
+    end
 
 //==============================================================================
 // IF Stage
@@ -137,8 +148,8 @@ module cpu (
 // ID Stage
 //------------------------------------------------------------------------------
     always @(posedge clk_i) if (~Id_stall) begin
-        IfId_pc           <= If_next_pc;
         IfId_v            <= If_v;
+        IfId_pc           <= If_next_pc;
         IfId_pattern_hist <= If_pred_pattern_hist;
     end
 
@@ -186,8 +197,6 @@ module cpu (
 
     wire [31:0] Id_xrs1;
     wire [31:0] Id_xrs2;
-    wire        Wb_rf_we;
-    assign Wb_rf_we = Wb_v & MaWb_rf_we;
     regfile xreg (
         .clk_i  (clk_i),       // input  wire
         .rs1_i  (Id_rs1),      // input  wire       [4:0]
@@ -211,7 +220,10 @@ module cpu (
     wire [31:0] Id_src1 = (Id_rs1_fwd_Ma_to_Id) ? Ma_rslt : Id_xrs1;
     wire [31:0] Id_src2 =  (Id_rs2_fwd_Ma_to_Id) ? Ma_rslt : 
                            (Id_use_imm) ? Id_pc_in + Id_imm  : Id_xrs2;
+    wire Id_rs1_fwd_Wb_to_Ex = Ex_v & Ma_v & IdEx_lsu_ctrl[`LSU_CTRL_IS_LOAD] & (Id_rs1 == IdEx_rd);
+    wire Id_rs2_fwd_Wb_to_Ex = Ex_v & Ma_v & IdEx_lsu_ctrl[`LSU_CTRL_IS_LOAD] & (Id_rs2 == IdEx_rd);
 
+    // for JAL/JALR
     wire [31:0] Id_j_pc4 = (Id_bru_ctrl[`BRU_CTRL_IS_JAL_JALR]) ? IfId_pc + 4 : 0;
 
 //==============================================================================
@@ -228,8 +240,12 @@ module cpu (
         IdEx_lsu_ctrl         <= Id_lsu_ctrl;
         IdEx_mul_ctrl         <= Id_mul_ctrl;
         IdEx_div_ctrl         <= Id_div_ctrl;
+        IdEx_rs1              <= Id_rs1;
+        IdEx_rs2              <= Id_rs2;
         IdEx_rs1_fwd_Ma_to_Ex <= Id_rs1_fwd_Ma_to_Ex;
         IdEx_rs2_fwd_Ma_to_Ex <= Id_rs2_fwd_Ma_to_Ex;
+        IdEx_rs1_fwd_Wb_to_Ex <= Id_rs1_fwd_Wb_to_Ex;
+        IdEx_rs2_fwd_Wb_to_Ex <= Id_rs2_fwd_Wb_to_Ex;
         IdEx_src1             <= Id_src1;
         IdEx_src2             <= Id_src2;
         IdEx_imm              <= Id_imm;
@@ -238,8 +254,10 @@ module cpu (
         IdEx_cfu_ctrl         <= Id_cfu_ctrl;  // Note
     end
 
-    wire [31:0] Ex_src1 = (IdEx_rs1_fwd_Ma_to_Ex) ? ExMa_rslt : IdEx_src1;
-    wire [31:0] Ex_src2 = (IdEx_rs2_fwd_Ma_to_Ex) ? ExMa_rslt : IdEx_src2;
+    wire [31:0] Ex_src1 = (IdEx_rs1_fwd_Ma_to_Ex & Ma_v) ? ExMa_rslt :
+                          (IdEx_rs1_fwd_Wb_to_Ex & Wb_v) ? MaWb_rslt : IdEx_src1;
+    wire [31:0] Ex_src2 = (IdEx_rs2_fwd_Ma_to_Ex & Ma_v) ? ExMa_rslt :
+                          (IdEx_rs2_fwd_Wb_to_Ex & Wb_v) ? MaWb_rslt : IdEx_src2;
 
     wire [31:0] Ex_alu_rslt;
     alu alu (
@@ -327,11 +345,11 @@ module cpu (
 // MA Stage
 //------------------------------------------------------------------------------
     always @(posedge clk_i) if (~Ma_stall) begin
-        ExMa_mul_stall <= Ex_mul_stall;
-        ExMa_div_stall <= Ex_div_stall;
-        ExMa_stall     <= Ex_mul_stall | Ex_div_stall | Ex_cfu_stall;
-        ExMa_mdc_rslt  <= Ex_mul_rslt | Ex_div_rslt | Ex_cfu_rslt;
         ExMa_v             <= Ex_v;
+        ExMa_mul_stall     <= Ex_mul_stall;
+        ExMa_div_stall     <= Ex_div_stall;
+        ExMa_stall         <= Ex_mul_stall | Ex_div_stall | Ex_cfu_stall;
+        ExMa_mdc_rslt      <= Ex_mul_rslt | Ex_div_rslt | Ex_cfu_rslt;
         ExMa_pc            <= IdEx_pc;
         ExMa_ir            <= IdEx_ir;
         ExMa_pred_we       <= Ex_v & IdEx_bru_ctrl[`BRU_CTRL_IS_CTRL_TSFR];
@@ -371,6 +389,7 @@ module cpu (
         MaWb_rd    <= ExMa_rd;
         MaWb_rslt  <= Ma_rslt;
     end
+    wire Wb_rf_we = Wb_v & MaWb_rf_we;
 endmodule  // cpu
 
 /******************************************************************************/

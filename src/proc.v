@@ -53,6 +53,9 @@ module cpu (
     reg [`CFU_CTRL_WIDTH-1:0] IdEx_cfu_ctrl;
     reg                       IdEx_rs1_fwd_Ma_to_Ex;
     reg                       IdEx_rs2_fwd_Ma_to_Ex;
+    reg                       IdEx_rs1_fwd_Wb_to_Ex = 0;
+    reg                       IdEx_rs2_fwd_Wb_to_Ex = 0;
+    reg                       IdEx_loaduse = 0;
     reg                       IdEx_rs1;
     reg                       IdEx_rs2;
     reg [               31:0] IdEx_src1;
@@ -97,24 +100,31 @@ module cpu (
     reg  [31:0] pc = 0;
     reg rst; always @(posedge clk_i) rst <= rst_i;
 
-    wire If_v     = ~If_stall;
-    wire Id_v     = IfId_v & ~ExMa_bru_misp;
-    wire Ex_v     = IdEx_v & ~ExMa_bru_misp & ~Ex_stall;
-    wire Ma_v     = ExMa_v;
-    wire Wb_v     = MaWb_v;
-    wire If_stall = IdEx_loaduse;
-    wire Id_stall = IdEx_loaduse;
-    wire Ex_stall = IdEx_loaduse;
+    wire If_stall = (cpu_state != RUNNING);
+    wire If_v     = (cpu_state == RUNNING);
+    wire Id_stall = (cpu_state != RUNNING);
+    wire Id_v     = IfId_v & ~ExMa_bru_misp & (cpu_state == RUNNING);
+    wire Ex_stall = (cpu_state != RUNNING);
+    wire Ex_v     = IdEx_v & ~ExMa_bru_misp & (cpu_state == RUNNING);
     wire Ma_stall = 0;
+    wire Ma_v     = ExMa_v;
     wire Wb_stall = 0;
+    wire Wb_v     = MaWb_v;
 
     wire Id_loaduse = Id_v & Ex_v & IdEx_lsu_ctrl[`LSU_CTRL_IS_LOAD]
                     & ((IdEx_rd == Id_rs1) | (IdEx_rd == Id_rs2));
-    reg IdEx_loaduse = 0;
-    reg IdEx_rs1_fwd_Wb_to_Ex = 0;
-    reg IdEx_rs2_fwd_Wb_to_Ex = 0;
+    localparam RUNNING = 0;
+    localparam LOADUSE_STALL = 1;
+    reg [1:0] cpu_state = RUNNING;
     always @(posedge clk_i) begin
-        IdEx_loaduse          <= Id_loaduse;
+        case (cpu_state)
+            RUNNING: begin
+                if (Id_loaduse) cpu_state <= LOADUSE_STALL;
+            end
+            LOADUSE_STALL: begin
+                cpu_state <= RUNNING;
+            end
+        endcase
     end
 
 //==============================================================================
@@ -218,8 +228,8 @@ module cpu (
 
     //source select
     wire [31:0] Id_src1 = (Id_rs1_fwd_Ma_to_Id) ? Ma_rslt : Id_xrs1;
-    wire [31:0] Id_src2 =  (Id_rs2_fwd_Ma_to_Id) ? Ma_rslt : 
-                           (Id_use_imm) ? Id_pc_in + Id_imm  : Id_xrs2;
+    wire [31:0] Id_src2 = (Id_rs2_fwd_Ma_to_Id) ? Ma_rslt : 
+                          (Id_use_imm) ? Id_pc_in + Id_imm  : Id_xrs2;
     wire Id_rs1_fwd_Wb_to_Ex = Ex_v & Ma_v & IdEx_lsu_ctrl[`LSU_CTRL_IS_LOAD] & (Id_rs1 == IdEx_rd);
     wire Id_rs2_fwd_Wb_to_Ex = Ex_v & Ma_v & IdEx_lsu_ctrl[`LSU_CTRL_IS_LOAD] & (Id_rs2 == IdEx_rd);
 
@@ -641,10 +651,10 @@ module multiplier (
 );
 
     reg        [ 1:0] state = `MUL_IDLE;
-    reg signed [32:0] r_multiplicand;  // 33bit
-    reg signed [32:0] r_multiplier;  // 33bit
-    reg        [63:0] product;  // 64bit
-    reg               is_high;  // 
+    reg signed [32:0] r_multiplicand;
+    reg signed [32:0] r_multiplier;
+    reg        [63:0] product;
+    reg               is_high;
 
     assign rslt_o = (state != `MUL_RET) ? 0 : (is_high) ? product[63:32] : product[31:0];
 
@@ -666,7 +676,7 @@ module multiplier (
             state <= w_state;
         end
     end
-    assign stall_o = (w_state != `MUL_IDLE);
+    assign stall_o = (w_state == `MUL_EXEC);
 endmodule
 
 /******************************************************************************/

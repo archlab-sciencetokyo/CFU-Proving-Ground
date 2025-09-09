@@ -14,7 +14,7 @@ module cpu (
     input  wire        rst_i,
     output wire [31:0] ibus_addr_o,
     input  wire [31:0] ibus_data_i,
-    output wire        ibus_ren_o,
+    output wire        ibus_re_o,
     output wire [31:0] dbus_cmd_addr_o,
     output wire        dbus_cmd_valid_o,
     output wire        dbus_cmd_we_o,
@@ -31,7 +31,7 @@ module cpu (
     reg [               31:0] IfId_pc;
     reg [               31:0] IfId_ir;
     reg                       IfId_br_pred_tkn;
-    reg [                1:0] IfId_pat_hist;
+    reg [                1:0] IfId_pattern_hist;
     reg                       IfId_load_muldiv_use;
     reg [       `ITYPE_W-1:0] IfId_instr_type;
     reg                       IfId_rf_we;
@@ -44,7 +44,7 @@ module cpu (
     reg [               31:0] IdEx_pc;
     reg [               31:0] IdEx_ir;
     reg                       IdEx_br_pred_tkn;
-    reg [                1:0] IdEx_pat_hist;
+    reg [                1:0] IdEx_pattern_hist;
     reg [`ALU_CTRL_WIDTH-1:0] IdEx_alu_ctrl;
     reg [`BRU_CTRL_WIDTH-1:0] IdEx_bru_ctrl;
     reg [`LSU_CTRL_WIDTH-1:0] IdEx_lsu_ctrl;
@@ -109,52 +109,47 @@ module cpu (
 //==============================================================================
 // IF Stage
 //------------------------------------------------------------------------------
-    always @(posedge clk_i) if (!If_stall) begin
-        pc <= If_pc;
+    always @(posedge clk_i) if (~If_stall) begin
+        pc <= If_next_pc;
     end
-    wire [31:0] If_pc;
+    wire [31:0] If_next_pc;
     wire  [1:0] If_pred_pattern_hist;
     wire        If_pred_taken;
     wire [31:0] If_pred_pc;
-    bimodal pred (
-        .clk_i         (clk_i),              // input  wire
-        .raddr_i       (If_pc),              // input  wire [`XLEN-1:0]
-        .br_tkn_i      (ExMa_bru_taken),     // input  wire
-        .we_i          (ExMa_pred_we),       // input  wire                     
-        .br_tkn_pc_i   (ExMa_bru_taken_pc),  // input  wire [`XLEN-1:0]
-        .waddr_i       (ExMa_pc),            // input  wire [`XLEN-1:0]
-        .pat_hist_i    (ExMa_pattern_hist),  // input  wire       [1:0]
-        .pat_hist_o    (If_pred_pattern_hist),    // output reg        [1:0]
-        .br_pred_tkn_o (If_pred_taken),      // output wire
-        .br_pred_pc_o  (If_pred_pc)          // output reg  [`XLEN-1:0]
+    bimodal bimodal (
+        .clk_i          (clk_i),                 // input  wire
+        .re_i           (~If_stall),             // input  wire
+        .raddr_i        (If_next_pc),            // input  wire [`XLEN-1:0]
+        .we_i           (ExMa_pred_we),          // input  wire                     
+        .waddr_i        (ExMa_pc),               // input  wire [`XLEN-1:0]
+        .pattern_hist_i (ExMa_pattern_hist),     // input  wire       [1:0]
+        .istaken_i      (ExMa_bru_taken),        // input  wire
+        .taken_pc_i     (ExMa_bru_taken_pc),     // input  wire [`XLEN-1:0]
+        .pattern_hist_o (If_pred_pattern_hist),  // output reg        [1:0]
+        .pred_istaken_o (If_pred_taken),         // output wire
+        .pred_pc_o      (If_pred_pc)             // output reg  [`XLEN-1:0]
     );
-    assign If_pc       = (ExMa_bru_misp) ? ExMa_bru_taken_pc :
+    assign If_next_pc  = (ExMa_bru_misp) ? ExMa_bru_taken_pc :
                          (If_pred_taken) ? If_pred_pc : pc+4;
-    assign ibus_addr_o = If_pc[31:2];
+    assign ibus_addr_o = If_next_pc[31:2];
 
 //==============================================================================
 // ID Stage
 //------------------------------------------------------------------------------
-    always @(posedge clk_i) if (!Id_stall) begin
-        IfId_pc <= If_pc;
-        IfId_v  <= If_v;
-        IfId_pat_hist <= If_pred_pattern_hist;
+    always @(posedge clk_i) if (~Id_stall) begin
+        IfId_pc           <= If_next_pc;
+        IfId_v            <= If_v;
+        IfId_pattern_hist <= If_pred_pattern_hist;
     end
-    assign ibus_ren_o = ~Id_stall;
 
-    wire [`SRC2_CTRL_WIDTH-1:0] Id_src2_ctrl;
-    wire [ `ALU_CTRL_WIDTH-1:0] Id_alu_ctrl;
-    wire [ `BRU_CTRL_WIDTH-1:0] Id_bru_ctrl;
-    wire [ `LSU_CTRL_WIDTH-1:0] Id_lsu_ctrl;
-    wire [ `MUL_CTRL_WIDTH-1:0] Id_mul_ctrl;
-    wire [ `DIV_CTRL_WIDTH-1:0] Id_div_ctrl;
-    wire [ `CFU_CTRL_WIDTH-1:0] Id_cfu_ctrl;
-    wire         [`ITYPE_W-1:0] Id_ir_type;
-    wire                 [31:0] Id_ir    = ibus_data_i;
-    wire                        Id_rf_we;
-    wire                  [4:0] Id_rd;
-    wire                  [4:0] Id_rs1;
-    wire                  [4:0] Id_rs2;
+    wire         [31:0] Id_ir;
+    wire [`ITYPE_W-1:0] Id_ir_type;
+    wire                Id_rf_we;
+    wire          [4:0] Id_rd;
+    wire          [4:0] Id_rs1;
+    wire          [4:0] Id_rs2;
+    assign ibus_re_o = ~Id_stall;
+    assign Id_ir     = ibus_data_i;
     pre_decoder pre_decoder (
         .ir_i        (Id_ir),
         .instr_type_o(Id_ir_type),
@@ -163,6 +158,14 @@ module cpu (
         .rs1_o       (Id_rs1),
         .rs2_o       (Id_rs2)
     );
+
+    wire [`SRC2_CTRL_WIDTH-1:0] Id_src2_ctrl;
+    wire [ `ALU_CTRL_WIDTH-1:0] Id_alu_ctrl;
+    wire [ `BRU_CTRL_WIDTH-1:0] Id_bru_ctrl;
+    wire [ `LSU_CTRL_WIDTH-1:0] Id_lsu_ctrl;
+    wire [ `MUL_CTRL_WIDTH-1:0] Id_mul_ctrl;
+    wire [ `DIV_CTRL_WIDTH-1:0] Id_div_ctrl;
+    wire [ `CFU_CTRL_WIDTH-1:0] Id_cfu_ctrl;
     decoder decoder (
         .ir_i       (Id_ir),         // input  wire                 [31:0]
         .src2_ctrl_o(Id_src2_ctrl),  // output wire [`SRC2_CTRL_WIDTH-1:0]
@@ -183,7 +186,8 @@ module cpu (
 
     wire [31:0] Id_xrs1;
     wire [31:0] Id_xrs2;
-    wire        Wb_rf_we = Wb_v & MaWb_rf_we;
+    wire        Wb_rf_we;
+    assign Wb_rf_we = Wb_v & MaWb_rf_we;
     regfile xreg (
         .clk_i  (clk_i),       // input  wire
         .rs1_i  (Id_rs1),      // input  wire       [4:0]
@@ -213,12 +217,12 @@ module cpu (
 //==============================================================================
 // EX Stage
 //------------------------------------------------------------------------------
-    always @(posedge clk_i) if (!Ex_stall) begin
+    always @(posedge clk_i) if (~Ex_stall) begin
         IdEx_v                <= Id_v;
         IdEx_pc               <= IfId_pc;
         IdEx_ir               <= Id_ir;
         IdEx_j_pc4            <= Id_j_pc4;
-        IdEx_pat_hist         <= IfId_pat_hist;
+        IdEx_pattern_hist     <= IfId_pattern_hist;
         IdEx_alu_ctrl         <= Id_alu_ctrl;
         IdEx_bru_ctrl         <= Id_bru_ctrl;
         IdEx_lsu_ctrl         <= Id_lsu_ctrl;
@@ -322,7 +326,7 @@ module cpu (
 //==============================================================================
 // MA Stage
 //------------------------------------------------------------------------------
-    always @(posedge clk_i) if (!Ma_stall) begin
+    always @(posedge clk_i) if (~Ma_stall) begin
         ExMa_mul_stall <= Ex_mul_stall;
         ExMa_div_stall <= Ex_div_stall;
         ExMa_stall     <= Ex_mul_stall | Ex_div_stall | Ex_cfu_stall;
@@ -331,7 +335,7 @@ module cpu (
         ExMa_pc            <= IdEx_pc;
         ExMa_ir            <= IdEx_ir;
         ExMa_pred_we       <= Ex_v & IdEx_bru_ctrl[`BRU_CTRL_IS_CTRL_TSFR];
-        ExMa_pattern_hist  <= IdEx_pat_hist;
+        ExMa_pattern_hist  <= IdEx_pattern_hist;
         ExMa_bru_misp      <= Ex_bru_misp;
         ExMa_bru_taken     <= Ex_bru_taken;
         ExMa_bru_taken_pc  <= Ex_bru_taken_pc;
@@ -359,7 +363,7 @@ module cpu (
 //==============================================================================
 // WB Stage
 //------------------------------------------------------------------------------
-    always @(posedge clk_i) if (!Wb_stall) begin
+    always @(posedge clk_i) if (~Wb_stall) begin
         MaWb_v     <= Ma_v;
         MaWb_pc    <= ExMa_pc;
         MaWb_ir    <= ExMa_ir;
@@ -369,41 +373,39 @@ module cpu (
     end
 endmodule  // cpu
 
-`define BTB_IDXW $clog2(`BTB_ENTRY)  // BTB index width
-`define BTB_OSTW 2     // BTB offset width
 /******************************************************************************/
 module bimodal (
-    input  wire             clk_i,
-    input  wire [     31:0] raddr_i,
-    input  wire             br_tkn_i,
-    input  wire [     31:0] waddr_i,
-    input  wire             we_i,
-    input  wire [      1:0] pat_hist_i,
-    output wire [      1:0] pat_hist_o,
-    output wire             br_pred_tkn_o,
-    output wire [     31:0] br_pred_pc_o,
-    input  wire [     31:0] br_tkn_pc_i
+    input  wire        clk_i,
+    input  wire        re_i,
+    input  wire [31:0] raddr_i,
+    input  wire        we_i,
+    input  wire [31:0] waddr_i,
+    input  wire  [1:0] pattern_hist_i,
+    input  wire        istaken_i,
+    input  wire [31:0] taken_pc_i,
+    output wire  [1:0] pattern_hist_o,
+    output wire        pred_istaken_o,
+    output wire [31:0] pred_pc_o
 );
-
+    // Init as weakly taken
     integer i;
     reg [31:0] btb [0:`BTB_ENTRY-1];
-    initial for (i = 0; i < `BTB_ENTRY; i = i + 1) btb[i] = 2'b01;  // Init as a weakly untaken
+    initial for (i = 0; i < `BTB_ENTRY; i = i + 1) btb[i] = 2'b01;  
 
-    wire [`BTB_IDXW-1:0] raddr = raddr_i[$clog2(`BTB_ENTRY)-1:2];
-    wire [`BTB_IDXW-1:0] waddr = waddr_i[$clog2(`BTB_ENTRY)-1:2];
-    wire [1:0] count = (br_tkn_i) ? pat_hist_i + (pat_hist_i != 2'b11) : pat_hist_i - (pat_hist_i != 2'b00);
+    wire [$clog2(`BTB_ENTRY)-1:0] raddr = raddr_i[$clog2(`BTB_ENTRY)+1:2];
+    wire [$clog2(`BTB_ENTRY)-1:0] waddr = waddr_i[$clog2(`BTB_ENTRY)+1:2];
+    wire [1:0] count = (istaken_i) ? pattern_hist_i + (pattern_hist_i != 2'b11)
+                                   : pattern_hist_i - (pattern_hist_i != 2'b00);
 
-    reg [31:0] rdata;
+    reg [31:0] rdata = 32'b01;
     always @(posedge clk_i) begin
-        rdata <= btb[raddr];
-        if (we_i) begin
-            btb[waddr] <= {br_tkn_pc_i[31:2], count};  // lower tow bits for counter
-        end
+        if (re_i) rdata <= btb[raddr];
+        if (we_i) btb[waddr] <= {taken_pc_i[31:2], count};
     end
 
-    assign pat_hist_o    = rdata[1:0];
-    assign br_pred_tkn_o = rdata[1];
-    assign br_pred_pc_o  = {rdata[31:2], 2'b0};
+    assign pattern_hist_o = rdata[1:0];
+    assign pred_istaken_o = rdata[1];
+    assign pred_pc_o      = {rdata[31:2], 2'b0};
 endmodule
 
 /******************************************************************************/

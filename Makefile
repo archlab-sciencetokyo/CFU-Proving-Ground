@@ -118,8 +118,8 @@ single-test:
 	mkdir -p build
 	make user_config
 	cp tests/rv32ui-p-$(TEST).elf build/main.elf
-	make imem_image dmem_image > /dev/null
-	make remove-junk > /dev/null
-	make sim > /dev/null
+	make imem_image dmem_image
+	make remove-junk
+	make sim
 	./obj_dir/top
 

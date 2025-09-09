@@ -3,8 +3,6 @@
 `default_nettype none
 `include "config.vh"
 /******************************************************************************/
-`define DBUS_OFFSET_W 2
-`define PC_W $clog2(`IMEM_ENTRIES)+2  // PC width
 `define ITYPE_W `INSTR_TYPE_WIDTH
 `define NOP 32'h00000013 // addi  x0, x0, 0
 
@@ -75,15 +73,10 @@ module cpu (
     reg [               31:0] ExMa_bru_taken_pc;
     reg                       ExMa_pred_we;
     reg [`LSU_CTRL_WIDTH-1:0] ExMa_lsu_ctrl;
-    reg [ `DBUS_OFFSET_W-1:0] ExMa_dbus_offset;
+    reg [                1:0] ExMa_dbus_offset;
     reg                       ExMa_rf_we;
     reg [                4:0] ExMa_rd;
     reg [               31:0] ExMa_rslt;
-    reg [               31:0] ExMa_mdc_rslt;  // mul_div_cfu_rslt
-    reg                       ExMa_j_b_insn;  // jump or branch insn
-    reg                       ExMa_mul_stall;
-    reg                       ExMa_div_stall;
-    reg                       ExMa_stall;
     reg                       ExMa_misp;
 
     // WB: Write Back
@@ -129,17 +122,17 @@ module cpu (
     wire        If_pred_taken;
     wire [31:0] If_pred_pc;
     bimodal bimodal (
-        .clk_i          (clk_i),                 // input  wire
-        .re_i           (~If_stall),             // input  wire
-        .raddr_i        (If_next_pc),            // input  wire [`XLEN-1:0]
-        .we_i           (ExMa_pred_we),          // input  wire                     
-        .waddr_i        (ExMa_pc),               // input  wire [`XLEN-1:0]
-        .pattern_hist_i (ExMa_pattern_hist),     // input  wire       [1:0]
-        .istaken_i      (ExMa_bru_taken),        // input  wire
-        .taken_pc_i     (ExMa_bru_taken_pc),     // input  wire [`XLEN-1:0]
-        .pattern_hist_o (If_pred_pattern_hist),  // output reg        [1:0]
-        .pred_istaken_o (If_pred_taken),         // output wire
-        .pred_pc_o      (If_pred_pc)             // output reg  [`XLEN-1:0]
+        .clk_i          (clk_i),
+        .re_i           (~If_stall),
+        .raddr_i        (If_next_pc),
+        .we_i           (ExMa_pred_we),
+        .waddr_i        (ExMa_pc),
+        .pattern_hist_i (ExMa_pattern_hist),
+        .istaken_i      (ExMa_bru_taken),
+        .taken_pc_i     (ExMa_bru_taken_pc),
+        .pattern_hist_o (If_pred_pattern_hist),
+        .pred_istaken_o (If_pred_taken),
+        .pred_pc_o      (If_pred_pc)
     );
     assign If_next_pc  = (ExMa_bru_misp) ? ExMa_bru_taken_pc :
                          (If_pred_taken) ? If_pred_pc : pc+4;
@@ -179,34 +172,34 @@ module cpu (
     wire [ `DIV_CTRL_WIDTH-1:0] Id_div_ctrl;
     wire [ `CFU_CTRL_WIDTH-1:0] Id_cfu_ctrl;
     decoder decoder (
-        .ir_i       (Id_ir),         // input  wire                 [31:0]
-        .src2_ctrl_o(Id_src2_ctrl),  // output wire [`SRC2_CTRL_WIDTH-1:0]
-        .alu_ctrl_o (Id_alu_ctrl),   // output wire  [`ALU_CTRL_WIDTH-1:0]
-        .bru_ctrl_o (Id_bru_ctrl),   // output wire  [`BRU_CTRL_WIDTH-1:0]
-        .lsu_ctrl_o (Id_lsu_ctrl),   // output wire  [`LSU_CTRL_WIDTH-1:0]
-        .mul_ctrl_o (Id_mul_ctrl),   // output wire  [`MUL_CTRL_WIDTH-1:0]
-        .div_ctrl_o (Id_div_ctrl),   // output wire  [`DIV_CTRL_WIDTH-1:0]
-        .cfu_ctrl_o (Id_cfu_ctrl)    // output wire  [`CFU_CTRL_WIDTH-1:0]
+        .ir_i       (Id_ir),
+        .src2_ctrl_o(Id_src2_ctrl),
+        .alu_ctrl_o (Id_alu_ctrl),
+        .bru_ctrl_o (Id_bru_ctrl),
+        .lsu_ctrl_o (Id_lsu_ctrl),
+        .mul_ctrl_o (Id_mul_ctrl),
+        .div_ctrl_o (Id_div_ctrl),
+        .cfu_ctrl_o (Id_cfu_ctrl)
     );
 
     wire [31:0] Id_imm;
     imm_gen imm_gen (
-        .ir_i        (Id_ir),       // input  wire         [31:0]
-        .instr_type_i(Id_ir_type),  // input  wire [`ITYPE_W-1;0]
-        .imm_o       (Id_imm)       // output wire    [`XLEN-1:0]
+        .ir_i        (Id_ir),
+        .instr_type_i(Id_ir_type),
+        .imm_o       (Id_imm)
     );
 
     wire [31:0] Id_xrs1;
     wire [31:0] Id_xrs2;
     regfile xreg (
-        .clk_i  (clk_i),       // input  wire
-        .rs1_i  (Id_rs1),      // input  wire       [4:0]
-        .rs2_i  (Id_rs2),      // input  wire       [4:0]
-        .xrs1_o (Id_xrs1),     // output wire [`XLEN-1:0]
-        .xrs2_o (Id_xrs2),     // output wire [`XLEN-1:0]
-        .we_i   (Wb_rf_we),    // input  wire
-        .rd_i   (MaWb_rd),     // input  wire       [4:0]
-        .wdata_i(MaWb_rslt)    // input  wire [`XLEN-1:0]
+        .clk_i  (clk_i),
+        .rs1_i  (Id_rs1),
+        .rs2_i  (Id_rs2),
+        .xrs1_o (Id_xrs1),
+        .xrs2_o (Id_xrs2),
+        .we_i   (Wb_rf_we),
+        .rd_i   (MaWb_rd),
+        .wdata_i(MaWb_rslt)
     );
 
     wire Id_rs1_fwd_Ma_to_Ex = IdEx_v && IdEx_rf_we && (IdEx_rd == Id_rs1);
@@ -252,7 +245,7 @@ module cpu (
         IdEx_imm              <= Id_imm;
         IdEx_rf_we            <= Id_rf_we;
         IdEx_rd               <= Id_rd;
-        IdEx_cfu_ctrl         <= Id_cfu_ctrl;  // Note
+        IdEx_cfu_ctrl         <= Id_cfu_ctrl;
     end
 
     wire [31:0] Ex_src1 = (IdEx_rs1_fwd_Ma_to_Ex & Ma_v) ? ExMa_rslt :
@@ -262,36 +255,36 @@ module cpu (
 
     wire [31:0] Ex_alu_rslt;
     alu alu (
-        .alu_ctrl_i(IdEx_alu_ctrl),  // input  wire [`ALU_CTRL_WIDTH-1:0]
-        .src1_i    (Ex_src1),        // input  wire           [`XLEN-1:0]
-        .src2_i    (Ex_src2),        // input  wire           [`XLEN-1:0]
-        .j_pc4_i   (IdEx_j_pc4),     // input  wire           [`XLEN-1:0]
-        .rslt_o    (Ex_alu_rslt)     // output wire           [`XLEN-1:0]
+        .alu_ctrl_i(IdEx_alu_ctrl),
+        .src1_i    (Ex_src1),
+        .src2_i    (Ex_src2),
+        .j_pc4_i   (IdEx_j_pc4),
+        .rslt_o    (Ex_alu_rslt)
     );
 
     wire        Ex_bru_taken;
     wire        Ex_bru_misp;
     wire [31:0] Ex_bru_taken_pc;
     bru bru (
-        .bru_ctrl_i     (IdEx_bru_ctrl),     // input  wire [`BRU_CTRL_WIDTH-1:0]
-        .valid_i        (Ex_v),               // input  wire
-        .src1_i         (Ex_src1),           // input  wire           [`XLEN-1:0]
-        .src2_i         (Ex_src2),           // input  wire           [`XLEN-1:0]
-        .imm_i          (IdEx_imm),          // input  wire           [`XLEN-1:0]
-        .Ex_pc_i        (IdEx_pc),           // input  wire           [`XLEN-1:0]
-        .Id_pc_i        (IfId_pc),           // input  wire           [`XLEN-1:0]
-        .bru_taken_o    (Ex_bru_taken),         // output wire
-        .bru_misp_o     (Ex_bru_misp),        // output wire
-        .bru_taken_pc_o (Ex_bru_taken_pc)       // output wire           [`XLEN-1:0]
+        .bru_ctrl_i     (IdEx_bru_ctrl),
+        .valid_i        (Ex_v),
+        .src1_i         (Ex_src1),
+        .src2_i         (Ex_src2),
+        .imm_i          (IdEx_imm),
+        .Ex_pc_i        (IdEx_pc),
+        .Id_pc_i        (IfId_pc),
+        .bru_taken_o    (Ex_bru_taken),
+        .bru_misp_o     (Ex_bru_misp),
+        .bru_taken_pc_o (Ex_bru_taken_pc)
     );
 
     wire [1:0] dbus_offset;
     store_unit store_unit (
-        .valid_i          (Ex_v),       // input  wire
-        .lsu_ctrl_i       (IdEx_lsu_ctrl),  // input  wire [`lsu_ctrl_width-1:0]
-        .src1_i           (Ex_src1),        // input  wire           [`xlen-1:0]
-        .src2_i           (Ex_src2),        // input  wire           [`xlen-1:0]
-        .imm_i            (IdEx_imm),       // input  wire           [`xlen-1:0]
+        .valid_i          (Ex_v),
+        .lsu_ctrl_i       (IdEx_lsu_ctrl),
+        .src1_i           (Ex_src1),
+        .src2_i           (Ex_src2),
+        .imm_i            (IdEx_imm),
         .dbus_cmd_addr_o  (dbus_cmd_addr_o),
         .dbus_cmd_we_o    (dbus_cmd_we_o),
         .dbus_cmd_valid_o (dbus_cmd_valid_o),
@@ -303,43 +296,43 @@ module cpu (
     wire        Ex_mul_stall;
     wire [31:0] Ex_mul_rslt;
     multiplier multiplier (
-        .clk_i     (clk_i),          // input  wire
-        .rst_i     (rst),            // input  wire // Note
-        .stall_i   (0),              // input  wire
-        .valid_i   (Ex_v),           // input  wire
-        .mul_ctrl_i(IdEx_mul_ctrl),  // input  wire [`MUL_CTRL_WIDTH-1:0]
-        .src1_i    (Ex_src1),        // input  wire           [`XLEN-1:0]
-        .src2_i    (Ex_src2),        // input  wire           [`XLEN-1:0]
-        .stall_o   (Ex_mul_stall),   // output wire
-        .rslt_o    (Ex_mul_rslt)     // output wire           [`XLEN-1:0]
+        .clk_i     (clk_i),
+        .rst_i     (rst),
+        .stall_i   (0),
+        .valid_i   (Ex_v),
+        .mul_ctrl_i(IdEx_mul_ctrl),
+        .src1_i    (Ex_src1),
+        .src2_i    (Ex_src2),
+        .stall_o   (Ex_mul_stall),
+        .rslt_o    (Ex_mul_rslt)
     );
 
     wire        Ex_div_stall;
     wire [31:0] Ex_div_rslt;
     divider divider (
-        .clk_i     (clk_i),          // input  wire
-        .rst_i     (rst),            // input  wire
-        .stall_i   (0),              // input  wire // Note
-        .valid_i   (Ex_v),           // input  wire
-        .div_ctrl_i(IdEx_div_ctrl),  // input  wire [`DIV_CTRL_WIDTH-1:0]
-        .src1_i    (Ex_src1),        // input  wire           [`XLEN-1:0]
-        .src2_i    (Ex_src2),        // input  wire           [`XLEN-1:0]
-        .stall_o   (Ex_div_stall),   // output wire
-        .rslt_o    (Ex_div_rslt)     // output wire           [`XLEN-1:0]
+        .clk_i     (clk_i),
+        .rst_i     (rst),
+        .stall_i   (0),
+        .valid_i   (Ex_v),
+        .div_ctrl_i(IdEx_div_ctrl),
+        .src1_i    (Ex_src1),
+        .src2_i    (Ex_src2),
+        .stall_o   (Ex_div_stall),
+        .rslt_o    (Ex_div_rslt)
     );
 
     wire        Ex_cfu_en = IdEx_cfu_ctrl[0] & Ex_v;
     wire        Ex_cfu_stall;
     wire [31:0] Ex_cfu_rslt;
     cfu cfu (
-        .clk_i   (clk_i),                // input  wire        
-        .en_i    (Ex_cfu_en),            // input  wire        
-        .funct3_i(IdEx_cfu_ctrl[3:1]),   // input  wire [ 2:0] 
-        .funct7_i(IdEx_cfu_ctrl[10:4]),  // input  wire [ 6:0] 
-        .src1_i  (Ex_src1),              // input  wire [31:0] 
-        .src2_i  (Ex_src2),              // input  wire [31:0] 
-        .stall_o (Ex_cfu_stall),         // output wire        
-        .rslt_o  (Ex_cfu_rslt)           // output wire [31:0] 
+        .clk_i   (clk_i),
+        .en_i    (Ex_cfu_en),
+        .funct3_i(IdEx_cfu_ctrl[3:1]),
+        .funct7_i(IdEx_cfu_ctrl[10:4]),
+        .src1_i  (Ex_src1),
+        .src2_i  (Ex_src2),
+        .stall_o (Ex_cfu_stall),
+        .rslt_o  (Ex_cfu_rslt)
     );
 
 //==============================================================================
@@ -347,10 +340,6 @@ module cpu (
 //------------------------------------------------------------------------------
     always @(posedge clk_i) if (~Ma_stall) begin
         ExMa_v             <= Ex_v;
-        ExMa_mul_stall     <= Ex_mul_stall;
-        ExMa_div_stall     <= Ex_div_stall;
-        ExMa_stall         <= Ex_mul_stall | Ex_div_stall | Ex_cfu_stall;
-        ExMa_mdc_rslt      <= Ex_mul_rslt | Ex_div_rslt | Ex_cfu_rslt;
         ExMa_pc            <= IdEx_pc;
         ExMa_ir            <= IdEx_ir;
         ExMa_pred_we       <= Ex_v & IdEx_bru_ctrl[`BRU_CTRL_IS_CTRL_TSFR];
@@ -363,21 +352,20 @@ module cpu (
         ExMa_rf_we         <= IdEx_rf_we;
         ExMa_rd            <= IdEx_rd;
         ExMa_rslt          <= Ex_alu_rslt | Ex_mul_rslt | Ex_div_rslt | Ex_cfu_rslt;
-        ExMa_j_b_insn      <= IdEx_bru_ctrl[0] & Ex_v;
         ExMa_misp          <= Ex_bru_misp;
     end
     // load unit
     wire [31:0] Ma_load_rslt;
     load_unit load_unit (
-        .lsu_ctrl_i   (ExMa_lsu_ctrl),     // input  wire [`LSU_CTRL_WIDTH-1:0]
-        .dbus_offset_i(ExMa_dbus_offset),  // input  wire    [OFFSET_WIDTH-1:0]
-        .dbus_read_data_i (dbus_read_data_i),      // input  wire           [`XLEN-1:0]
-        .dbus_cmd_ack_i(dbus_cmd_ack_i), // input  wire
-        .waiting_cmd_ack(), // input  wire
-        .rslt_o       (Ma_load_rslt)       // output wire           [`XLEN-1:0]
+        .lsu_ctrl_i       (ExMa_lsu_ctrl),
+        .dbus_offset_i    (ExMa_dbus_offset),
+        .dbus_read_data_i (dbus_read_data_i),
+        .dbus_cmd_ack_i   (dbus_cmd_ack_i),
+        .waiting_cmd_ack  (),
+        .rslt_o           (Ma_load_rslt)
     );
 
-    wire [31:0] Ma_rslt = ExMa_rslt | ExMa_mdc_rslt | Ma_load_rslt;
+    wire [31:0] Ma_rslt = ExMa_rslt | Ma_load_rslt;
 
 //==============================================================================
 // WB Stage

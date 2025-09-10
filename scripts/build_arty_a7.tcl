@@ -9,8 +9,8 @@ set src_dir $vivado_dir/../src
 set build_dir $vivado_dir/../build
 set proj_name main
 set part_name xc7a35tcsg324-1
-set src_files [list $src_dir/main.v $src_dir/proc.v $src_dir/cfu.v \
-$src_dir/config.vh $build_dir/imem_init.vh $build_dir/dmem_init.vh \
+set src_files [list $src_dir/main.v $src_dir/proc.v $src_dir/cfu.v $src_dir/uart.v \
+$src_dir/config.vh $build_dir/bootrom_init.vh $build_dir/sdram_init.vh \
 $build_dir/user_config.vh]
 set nproc [exec nproc]
 

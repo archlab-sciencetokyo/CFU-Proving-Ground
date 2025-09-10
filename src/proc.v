@@ -93,22 +93,26 @@ module cpu (
     reg  [31:0] pc = 0;
     reg rst; always @(posedge clk_i) rst <= rst_i;
 
-    wire If_stall = IdEx_loaduse | Ex_busy;
-    wire If_v     = ~IdEx_loaduse & ~If_stall;
-    wire Id_stall = IdEx_loaduse | Ex_busy;
-    wire Id_v     = IfId_v & ~ExMa_bru_misp & ~IdEx_loaduse & ~Ex_busy;
-    wire Ex_stall = IdEx_loaduse | Ex_busy;
-    wire Ex_v     = IdEx_v & ~ExMa_bru_misp & ~IdEx_loaduse;
-    wire Ma_stall = 0;
-    wire Ma_v     = ExMa_v;
+    wire If_stall = ExMa_loaduse | ExMa_wait_ex_result | ExMa_wait_cmd_ack;
+    wire If_v     = ~If_stall;
+    wire Id_stall = ExMa_loaduse | ExMa_wait_ex_result | ExMa_wait_cmd_ack;
+    wire Id_v     = ~ExMa_bru_misp & IfId_v & ~Id_stall;
+    wire Ex_stall = ExMa_loaduse | ExMa_wait_ex_result | ExMa_wait_cmd_ack;
+    wire Ex_v     = ~ExMa_bru_misp & IdEx_v & ~Ex_stall;
+    wire Ma_stall = ExMa_wait_ex_result | ExMa_wait_cmd_ack;
+    wire Ma_v     = ExMa_v & ~Ma_stall;
     wire Wb_stall = 0;
     wire Wb_v     = MaWb_v;
 
-    wire Id_loaduse = Id_v & Ex_v & IdEx_lsu_ctrl[`LSU_CTRL_IS_LOAD]
+    wire Ex_loaduse = Id_v & Ex_v & IdEx_lsu_ctrl[`LSU_CTRL_IS_LOAD]
                     & ((IdEx_rd == Id_rs1) | (IdEx_rd == Id_rs2));
     wire Ex_busy    = (Ex_mul_stall | Ex_div_stall | Ex_cfu_stall);
+    reg ExMa_wait_ex_result = 0;
+    reg ExMa_loaduse = 0;
+    reg ExMa_wait_cmd_ack   = 0;
     always @(posedge clk_i) begin
-        IdEx_loaduse <= Id_loaduse;
+        ExMa_wait_ex_result <= Ex_busy;
+        ExMa_wait_cmd_ack <= (~ExMa_wait_cmd_ack & dbus_cmd_valid_o) | (ExMa_wait_cmd_ack & ~dbus_cmd_ack_i);
     end
 
 //==============================================================================
@@ -342,6 +346,7 @@ module cpu (
         ExMa_v             <= Ex_v;
         ExMa_pc            <= IdEx_pc;
         ExMa_ir            <= IdEx_ir;
+        ExMa_loaduse       <= Ex_loaduse;
         ExMa_pred_we       <= Ex_v & IdEx_bru_ctrl[`BRU_CTRL_IS_CTRL_TSFR];
         ExMa_pattern_hist  <= IdEx_pattern_hist;
         ExMa_bru_misp      <= Ex_bru_misp;

@@ -43,7 +43,7 @@ module top;
 //------------------------------------------------------------------------------
     reg cpu_sim_fini = 0;
     always @(posedge clk) begin
-        if (cc >= 1500) begin
+        if (cc >= 2500) begin
             $write("\033[31mTEST FAILED: Timeout\033[0m\n");
             $fatal;
         end

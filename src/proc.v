@@ -76,6 +76,7 @@ module cpu (
     reg [                1:0] ExMa_dbus_offset;
     reg                       ExMa_rf_we;
     reg [                4:0] ExMa_rd;
+    reg [               31:0] ExMa_mul_rslt;
     reg [               31:0] ExMa_rslt;
     reg                       ExMa_misp;
 
@@ -93,25 +94,26 @@ module cpu (
     reg  [31:0] pc = 0;
     reg rst; always @(posedge clk_i) rst <= rst_i;
 
-    wire If_stall = ExMa_loaduse | ExMa_wait_ex_result | ExMa_wait_cmd_ack;
-    wire If_v     = ~If_stall;
-    wire Id_stall = ExMa_loaduse | ExMa_wait_ex_result | ExMa_wait_cmd_ack;
-    wire Id_v     = ~ExMa_bru_misp & IfId_v & ~Id_stall;
-    wire Ex_stall = ExMa_loaduse | ExMa_wait_ex_result | ExMa_wait_cmd_ack;
+    wire If_stall = ExMa_loaduse | (IdEx_wait_ex_result & ~Ex_rslt_v) | ExMa_wait_cmd_ack;
+    wire If_v     = ~If_stall & ~Ex_bru_misp;
+    wire Id_stall = ExMa_loaduse | (IdEx_wait_ex_result & ~Ex_rslt_v) | ExMa_wait_cmd_ack;
+    wire Id_v     = ~ExMa_bru_misp & IfId_v & ~Id_stall & ~Ex_bru_misp;
+    wire Ex_stall = ExMa_loaduse | (IdEx_wait_ex_result & ~Ex_rslt_v) | ExMa_wait_cmd_ack;
     wire Ex_v     = ~ExMa_bru_misp & IdEx_v & ~Ex_stall;
-    wire Ma_stall = ExMa_wait_ex_result | ExMa_wait_cmd_ack;
+    wire Ma_stall = ExMa_wait_cmd_ack;
     wire Ma_v     = ExMa_v & ~Ma_stall;
     wire Wb_stall = 0;
     wire Wb_v     = MaWb_v;
 
     wire Ex_loaduse = Id_v & Ex_v & IdEx_lsu_ctrl[`LSU_CTRL_IS_LOAD]
                     & ((IdEx_rd == Id_rs1) | (IdEx_rd == Id_rs2));
-    wire Ex_busy    = (Ex_mul_stall | Ex_div_stall | Ex_cfu_stall);
-    reg ExMa_wait_ex_result = 0;
+    wire Ex_rslt_v = Ex_mul_valid | Ex_div_valid;
+    reg IdEx_wait_ex_result = 0;
     reg ExMa_loaduse = 0;
     reg ExMa_wait_cmd_ack   = 0;
     always @(posedge clk_i) begin
-        ExMa_wait_ex_result <= Ex_busy;
+        IdEx_wait_ex_result <= (~IdEx_wait_ex_result & IdEx_v & (Id_mul_ctrl[`MUL_CTRL_IS_MUL] | Id_div_ctrl[`DIV_CTRL_IS_DIV]))
+                             | (IdEx_wait_ex_result & ~Ex_rslt_v);
         ExMa_wait_cmd_ack <= (~ExMa_wait_cmd_ack & dbus_cmd_valid_o) | (ExMa_wait_cmd_ack & ~dbus_cmd_ack_i);
     end
 
@@ -297,31 +299,31 @@ module cpu (
         .dbus_write_en_o  (dbus_write_en_o)
     );
 
-    wire        Ex_mul_stall;
+    wire        Ex_mul_valid;
     wire [31:0] Ex_mul_rslt;
     multiplier multiplier (
         .clk_i     (clk_i),
         .rst_i     (rst),
         .stall_i   (0),
-        .valid_i   (Ex_v),
+        .valid_i   (IdEx_v),
         .mul_ctrl_i(IdEx_mul_ctrl),
         .src1_i    (Ex_src1),
         .src2_i    (Ex_src2),
-        .stall_o   (Ex_mul_stall),
+        .valid_o   (Ex_mul_valid),
         .rslt_o    (Ex_mul_rslt)
     );
 
-    wire        Ex_div_stall;
+    wire        Ex_div_valid;
     wire [31:0] Ex_div_rslt;
     divider divider (
         .clk_i     (clk_i),
         .rst_i     (rst),
         .stall_i   (0),
-        .valid_i   (Ex_v),
+        .valid_i   (IdEx_v),
         .div_ctrl_i(IdEx_div_ctrl),
         .src1_i    (Ex_src1),
         .src2_i    (Ex_src2),
-        .stall_o   (Ex_div_stall),
+        .valid_o   (Ex_div_valid),
         .rslt_o    (Ex_div_rslt)
     );
 
@@ -559,12 +561,12 @@ module divider (
     input  wire  [2:0] div_ctrl_i ,
     input  wire [31:0] src1_i     ,
     input  wire [31:0] src2_i     ,
-    output wire        stall_o    ,
+    output wire        valid_o    ,
     output wire [31:0] rslt_o
 );
 
     reg [1:0] state = `DIV_IDLE;
-    assign stall_o = (w_state!=`DIV_IDLE);
+    assign valid_o = (state==`DIV_RET);
 
     reg        is_dividend_neg;
     reg        is_divisor_neg;
@@ -630,7 +632,7 @@ module multiplier (
     input  wire [ 3:0] mul_ctrl_i,
     input  wire [31:0] src1_i,
     input  wire [31:0] src2_i,
-    output wire        stall_o,
+    output wire        valid_o,
     output wire [31:0] rslt_o
 );
 
@@ -660,7 +662,7 @@ module multiplier (
             state <= w_state;
         end
     end
-    assign stall_o = (w_state != `MUL_IDLE);
+    assign valid_o = (state == `MUL_RET);
 endmodule
 
 /******************************************************************************/

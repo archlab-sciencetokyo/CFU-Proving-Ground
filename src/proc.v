@@ -254,10 +254,10 @@ module cpu (
         IdEx_cfu_ctrl         <= Id_cfu_ctrl;
     end
 
-    wire [31:0] Ex_src1 = (IdEx_rs1_fwd_Ma_to_Ex & Ma_v) ? ExMa_rslt :
-                          (IdEx_rs1_fwd_Wb_to_Ex & Wb_v) ? MaWb_rslt : IdEx_src1;
-    wire [31:0] Ex_src2 = (IdEx_rs2_fwd_Ma_to_Ex & Ma_v) ? ExMa_rslt :
-                          (IdEx_rs2_fwd_Wb_to_Ex & Wb_v) ? MaWb_rslt : IdEx_src2;
+    wire [31:0] Ex_src1 = (IdEx_rs1_fwd_Ma_to_Ex & ExMa_v) ? ExMa_rslt :
+                          (IdEx_rs1_fwd_Wb_to_Ex & MaWb_v) ? MaWb_rslt : IdEx_src1;
+    wire [31:0] Ex_src2 = (IdEx_rs2_fwd_Ma_to_Ex & ExMa_v) ? ExMa_rslt :
+                          (IdEx_rs2_fwd_Wb_to_Ex & MaWb_v) ? MaWb_rslt : IdEx_src2;
 
     wire [31:0] Ex_alu_rslt;
     alu alu (

@@ -266,7 +266,18 @@ module main (
         .litedram_ctrl_err_i   (litedram_ctrl_err),
         .litedram_ctrl_sel_o   (litedram_ctrl_sel),
         .litedram_ctrl_stb_o   (litedram_ctrl_stb),
-        .litedram_ctrl_we_o    (litedram_ctrl_we)
+        .litedram_ctrl_we_o    (litedram_ctrl_we),
+        .litedram_cmd_addr_o   (litedram_cmd_addr),
+        .litedram_cmd_ready_i  (litedram_cmd_ready),
+        .litedram_cmd_valid_o  (litedram_cmd_valid),
+        .litedram_cmd_we_o     (litedram_cmd_we),
+        .litedram_rdata_data_i (litedram_rdata_data),
+        .litedram_rdata_ready_o(litedram_rdata_ready),
+        .litedram_rdata_valid_i(litedram_rdata_valid),
+        .litedram_wdata_data_o (litedram_wdata_data),
+        .litedram_wdata_ready_i(litedram_wdata_ready),
+        .litedram_wdata_valid_o(litedram_wdata_valid),
+        .litedram_wdata_we_o   (litedram_wdata_we)
     );
 endmodule  // main
 
@@ -316,26 +327,58 @@ module mmu (
     input  wire                             litedram_ctrl_err_i,
     output wire                       [3:0] litedram_ctrl_sel_o,
     output wire                             litedram_ctrl_stb_o,
-    output wire                             litedram_ctrl_we_o
+    output wire                             litedram_ctrl_we_o,
+    // LiteDRAM Command Interface
+    output wire                      [23:0] litedram_cmd_addr_o,    // input  wire   [23:0]
+    input  wire                             litedram_cmd_ready_i,   // output wire
+    output wire                             litedram_cmd_valid_o,   // input  wire
+    output wire                             litedram_cmd_we_o,      // input  wire
+    input  wire                     [127:0] litedram_rdata_data_i,  // output wire  [127:0]
+    output wire                             litedram_rdata_ready_o, // input  wire
+    input  wire                             litedram_rdata_valid_i, // output wire
+    output wire                     [127:0] litedram_wdata_data_o,  // input  wire  [127:0]
+    input  wire                             litedram_wdata_ready_i, // output wire
+    output wire                             litedram_wdata_valid_o, // input  wire
+    output wire                             litedram_wdata_we_o     // input  wire   [15:0]
 );
     wire   sdram_access = (cpu_dbus_cmd_addr_i < 32'h0000_2000);
-    wire   uart_access  = (cpu_dbus_cmd_addr_i == 32'h1000_0000) |
-                          (cpu_dbus_cmd_addr_i == 32'h1000_0004);
-    wire   vmem_access  = (cpu_dbus_cmd_addr_i[31:28] == 4'h2);
+    //wire   uart_access  = (cpu_dbus_cmd_addr_i == 32'h1000_0000) |
+    //                      (cpu_dbus_cmd_addr_i == 32'h1000_0004);
+    //wire   vmem_access  = (cpu_dbus_cmd_addr_i[31:28] == 4'h2);
     wire   csr_access   = (cpu_dbus_cmd_addr_i[31:28] == 4'hF);
+    wire   litedram_access = (cpu_dbus_cmd_addr_i[31:28] == 4'h8);
 
 //==============================================================================
 // CPU Command Acknowledge and Read Data Bus
 //------------------------------------------------------------------------------
-    assign cpu_ibus_rdata_o = bootrom_rdata_i;
-    reg rdata_sel = 0;
+    reg [1:0] port_sel = 0;
+    localparam PORT_SDRAM    = 2'b00;
+    localparam PORT_CSR      = 2'b01;
+    localparam PORT_LITEDRAM = 2'b10;
     always @(posedge clk_i) if (cpu_dbus_cmd_valid_i) begin
-        rdata_sel <= sdram_access;
+        port_sel <= (sdram_access)    ? PORT_SDRAM :
+                    (csr_access)      ? PORT_CSR :
+                    (litedram_access) ? PORT_LITEDRAM :
+                                        2'b00 ;
     end
+    assign cpu_ibus_rdata_o     = bootrom_rdata_i;
+    assign cpu_dbus_cmd_ack_o   = (port_sel == PORT_SDRAM)    ? sdram_cmd_ack_i :
+                                  (port_sel == PORT_CSR)      ? litedram_ctrl_ack_i :
+                                  (port_sel == PORT_LITEDRAM) ? (litedram_state == SEND_ACK) : 1'b0 ;
 
-    assign cpu_dbus_read_data_o = (rdata_sel) ? sdram_rdata_i :
-                                                litedram_ctrl_dat_r_i;
-    assign cpu_dbus_cmd_ack_o   = (rdata_sel) ? sdram_cmd_ack_i : litedram_ctrl_ack_i;
+    assign cpu_dbus_read_data_o = (port_sel == PORT_SDRAM)    ? sdram_rdata_i :
+                                  (port_sel == PORT_CSR)      ? litedram_ctrl_dat_r_i :
+                                  (port_sel == PORT_LITEDRAM) ? litedram_rdata_data : 32'b0;
+//============================================================
+// Processor Command Acknowledge and Read Data
+//============================================================
+    assign cpu_dbus_cmd_ack_o   = (port_sel == PORT_SDRAM)     ? sdram_cmd_ack_i :
+                                  (port_sel == PORT_CSR)       ? litedram_ctrl_ack_i  :
+                                  (port_sel == PORT_LITEDRAM)  ? (litedram_state == SEND_ACK) : 1'b0;
+
+    assign cpu_dbus_read_data_o = (port_sel == PORT_SDRAM)     ? sdram_rdata_i :
+                                  (port_sel == PORT_CSR)       ? litedram_ctrl_dat_r_i  :
+                                  (port_sel == PORT_LITEDRAM)  ? litedram_rdata_data : 32'b0;
 
 //==============================================================================
 // Boot ROM Interface
@@ -360,6 +403,73 @@ module mmu (
     assign litedram_ctrl_sel_o   = cpu_dbus_write_en_i;
     assign litedram_ctrl_stb_o   = (csr_access) ? cpu_dbus_cmd_valid_i : 1'b0;
     assign litedram_ctrl_we_o    = (csr_access) ? cpu_dbus_cmd_we_i : 1'b0;
+
+//==============================================================================
+// LiteDRAM Command Interface
+//------------------------------------------------------------------------------
+    localparam IDLE             = 3'b000;
+    localparam WAIT_CMD_READY   = 3'b001;
+    localparam WAIT_WDATA_READY = 3'b010;
+    localparam WAIT_RDATA_VALID = 3'b011;
+    localparam SEND_ACK         = 3'b100;
+    reg [2:0]  litedram_state       = IDLE;
+    reg [25:0] litedram_cmd_addr    = 0;
+    reg        litedram_cmd_valid   = 0;
+    reg        litedram_cmd_we      = 0;
+    reg        litedram_rdata_ready = 0;
+    reg [31:0] litedram_rdata_data  = 0;
+    reg [31:0] litedram_wdata_data  = 0;
+    reg        litedram_wdata_valid = 0;
+    reg  [3:0] litedram_wdata_we    = 0;
+    always @(posedge clk_i) begin
+        case(litedram_state)
+            IDLE: begin
+                if (litedram_access & cpu_dbus_cmd_valid_i) begin
+                    litedram_cmd_addr <= cpu_dbus_cmd_addr_i[27:2];
+                    litedram_cmd_valid <= 1;
+                    litedram_cmd_we <= cpu_dbus_cmd_we_i;
+                    litedram_wdata_data <= cpu_dbus_write_data_i;
+                    litedram_wdata_we <= cpu_dbus_write_en_i;
+                    litedram_state <= WAIT_CMD_READY;
+                end
+            end
+            WAIT_CMD_READY: begin
+                if (litedram_cmd_ready_i) begin
+                    litedram_cmd_valid <= 0;
+                    if (litedram_cmd_we) begin
+                        litedram_wdata_valid <= 1;
+                        litedram_state <= WAIT_WDATA_READY;
+                    end else begin
+                        litedram_rdata_ready <= 1;
+                        litedram_state <= WAIT_RDATA_VALID;
+                    end
+                end
+            end
+            WAIT_WDATA_READY: begin
+                if (litedram_wdata_ready_i) begin
+                    litedram_wdata_valid <= 0;
+                    litedram_state <= SEND_ACK;
+                end
+            end
+            WAIT_RDATA_VALID: begin
+                if (litedram_rdata_valid_i) begin
+                    litedram_rdata_ready <= 0;
+                    litedram_state <= SEND_ACK;
+                    litedram_rdata_data <= litedram_rdata_data_i;
+                end
+            end
+            SEND_ACK: begin
+                litedram_state <= IDLE;
+            end
+        endcase
+    end
+    assign litedram_cmd_addr_o    = litedram_cmd_addr;
+    assign litedram_cmd_valid_o   = litedram_cmd_valid;
+    assign litedram_cmd_we_o      = litedram_cmd_we;
+    assign litedram_rdata_ready_o = litedram_rdata_ready;
+    assign litedram_wdata_data_o  = litedram_wdata_data;
+    assign litedram_wdata_valid_o = litedram_wdata_valid;
+    assign litedram_wdata_we_o    = litedram_wdata_we;
 endmodule  // mmu
 
 module imem (

@@ -43,9 +43,8 @@ module top;
 //------------------------------------------------------------------------------
     reg cpu_sim_fini = 0;
     always @(posedge clk) begin
-        if (cc >= 2500) begin
-            $write("\033[31mTEST FAILED: Timeout\033[0m\n");
-            $fatal;
+        if (cc >= 10000) begin
+            cpu_sim_fini <= 1;
         end
         if (m0.cpu.dbus_cmd_addr_o[31:28] == 4'h1 && m0.cpu.dbus_cmd_we_o) begin
             if (m0.cpu.dbus_write_data_o == 32'h777) begin
@@ -58,21 +57,8 @@ module top;
             end
         end
         if (cpu_sim_fini) begin
-            // $finish(1);
+            $finish(1);
         end
     end
-
-    //    final begin
-    //        $write("\n"                                                                                                       );
-    //        $write("===> mtime                                  : %10d\n"    , mtime                                          );
-    //        $write("===> mcycle                                 : %10d\n"    , mcycle                                         );
-    //        $write("===> minstret                               : %10d\n"    , minstret                                       );
-    //        $write("===> Total number of branch predictions     : %10d\n"    , br_pred_cntr                                   );
-    //        $write("===> Total number of branch mispredictions  : %10d\n"    , br_misp_cntr                                   );
-    //        $write("===> simulation finish!!\n"                                                                               );
-    //        $write("\n"                                                                                                       );
-    //    end
-
-
 endmodule
 

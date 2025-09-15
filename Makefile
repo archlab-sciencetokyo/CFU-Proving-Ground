@@ -16,7 +16,7 @@ TARGET := arty_a7
 USE_HLS ?= 0
 
 .PHONY: sim prog imem_image dmem_image remove-junk bit load run drun clean regressive-test
-all: user_config prog imem_image dmem_image remove-junk sim
+all: user_config prog boot_image remove-junk sim
 
 user_config:
 	mkdir -p build
@@ -122,4 +122,7 @@ single-test:
 	make remove-junk
 	make sim
 	./obj_dir/top
+
+vcd:
+	gtkwave build/sim.vcd -S scripts/vcd.tcl
 

@@ -2,10 +2,14 @@
 volatile int *dram = (volatile int *)0x80000000;
 volatile int *led = (volatile int *)0x10002000;
 
+volatile int *uart = (volatile int *)0x10000000;
+
 void boot()
 {
     if (sdram_init()) {
-        led[0] = 1;  // Write to LED 4;
+        *uart = 777;
+    } else {
+        *uart = 0;
     }
 
     //==========================================================================

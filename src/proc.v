@@ -17,9 +17,9 @@ module cpu (
     output wire        dbus_cmd_valid_o,
     output wire        dbus_cmd_we_o,
     input  wire        dbus_cmd_ack_i,
-    input  wire [31:0] dbus_read_data_i,
-    output wire [31:0] dbus_write_data_o,
-    output wire  [3:0] dbus_write_en_o
+    input  wire [31:0] dbus_rdata_data_i,
+    output wire [31:0] dbus_wdata_data_o,
+    output wire  [3:0] dbus_wdata_en_o
 );
 //==============================================================================
 // pipeline registers
@@ -295,8 +295,8 @@ module cpu (
         .dbus_cmd_we_o    (dbus_cmd_we_o),
         .dbus_cmd_valid_o (dbus_cmd_valid_o),
         .dbus_cmd_offset_o(dbus_offset),
-        .dbus_write_data_o(dbus_write_data_o),
-        .dbus_write_en_o  (dbus_write_en_o)
+        .dbus_wdata_data_o(dbus_wdata_data_o),
+        .dbus_wdata_en_o  (dbus_wdata_en_o)
     );
 
     wire        Ex_mul_valid;
@@ -366,7 +366,7 @@ module cpu (
     load_unit load_unit (
         .lsu_ctrl_i       (ExMa_lsu_ctrl),
         .dbus_offset_i    (ExMa_dbus_offset),
-        .dbus_read_data_i (dbus_read_data_i),
+        .dbus_rdata_data_i (dbus_rdata_data_i),
         .dbus_cmd_ack_i   (dbus_cmd_ack_i),
         .waiting_cmd_ack  (),
         .rslt_o           (Ma_load_rslt)
@@ -676,8 +676,8 @@ module store_unit (
     output wire        dbus_cmd_we_o,
     output wire        dbus_cmd_valid_o,
     output wire  [1:0] dbus_cmd_offset_o,
-    output wire [31:0] dbus_write_data_o,
-    output wire  [3:0] dbus_write_en_o
+    output wire [31:0] dbus_wdata_data_o,
+    output wire  [3:0] dbus_wdata_en_o
 );
 
     assign dbus_cmd_addr_o   = src1_i + imm_i;  // calculate address with adder
@@ -690,22 +690,22 @@ module store_unit (
     wire w_sh = lsu_ctrl_i[`LSU_CTRL_IS_HALFWORD];
     wire w_sw = lsu_ctrl_i[`LSU_CTRL_IS_WORD];
 
-    assign dbus_write_data_o[7:0]   = src2_i[7:0];
-    assign dbus_write_data_o[15:8]  = (w_sb) ? src2_i[7:0] : src2_i[15:8];
-    assign dbus_write_data_o[23:16] = (w_sw) ? src2_i[23:16] : src2_i[7:0];
-    assign dbus_write_data_o[31:24] = (w_sb) ? src2_i[7:0] : (w_sh) ? src2_i[15:8] : src2_i[31:24];
+    assign dbus_wdata_data_o[7:0]   = src2_i[7:0];
+    assign dbus_wdata_data_o[15:8]  = (w_sb) ? src2_i[7:0] : src2_i[15:8];
+    assign dbus_wdata_data_o[23:16] = (w_sw) ? src2_i[23:16] : src2_i[7:0];
+    assign dbus_wdata_data_o[31:24] = (w_sb) ? src2_i[7:0] : (w_sh) ? src2_i[15:8] : src2_i[31:24];
 
-    assign dbus_write_en_o[0] = (w_sb && dbus_cmd_offset_o==0) || (w_sh && dbus_cmd_offset_o[1]==0) || w_sw;
-    assign dbus_write_en_o[1] = (w_sb && dbus_cmd_offset_o==1) || (w_sh && dbus_cmd_offset_o[1]==0) || w_sw;
-    assign dbus_write_en_o[2] = (w_sb && dbus_cmd_offset_o==2) || (w_sh && dbus_cmd_offset_o[1]==1) || w_sw;
-    assign dbus_write_en_o[3] = (w_sb && dbus_cmd_offset_o==3) || (w_sh && dbus_cmd_offset_o[1]==1) || w_sw;
+    assign dbus_wdata_en_o[0] = (w_sb && dbus_cmd_offset_o==0) || (w_sh && dbus_cmd_offset_o[1]==0) || w_sw;
+    assign dbus_wdata_en_o[1] = (w_sb && dbus_cmd_offset_o==1) || (w_sh && dbus_cmd_offset_o[1]==0) || w_sw;
+    assign dbus_wdata_en_o[2] = (w_sb && dbus_cmd_offset_o==2) || (w_sh && dbus_cmd_offset_o[1]==1) || w_sw;
+    assign dbus_wdata_en_o[3] = (w_sb && dbus_cmd_offset_o==3) || (w_sh && dbus_cmd_offset_o[1]==1) || w_sw;
 endmodule
 
 /******************************************************************************/
 module load_unit (
     input  wire [ 5:0] lsu_ctrl_i,
     input  wire [ 1:0] dbus_offset_i,
-    input  wire [31:0] dbus_read_data_i,
+    input  wire [31:0] dbus_rdata_data_i,
     input  wire        dbus_cmd_ack_i,
     output wire        waiting_cmd_ack,
     output wire [31:0] rslt_o
@@ -718,7 +718,7 @@ module load_unit (
     wire        w_signed = lsu_ctrl_i[`LSU_CTRL_IS_SIGNED];
     wire        w_load   = lsu_ctrl_i[`LSU_CTRL_IS_LOAD];
     wire  [1:0] ost      = dbus_offset_i;  // offset
-    wire [31:0] d        = dbus_read_data_i;  // data
+    wire [31:0] d        = dbus_rdata_data_i;  // data
 
     wire w_lb_sign = w_lb & ((ost==0) ? d[7] : (ost==1) ? d[15] :(ost==2) ? d[23] : d[31]) & w_signed;
     wire w_lh_sign = w_lh & ((ost[1] == 0) ? d[15] : d[31]) & w_signed;

@@ -42,9 +42,9 @@ module main (
     wire                             dbus_cmd_we;
     wire                             dbus_cmd_valid;
     wire                             dbus_cmd_ack;
-    wire                      [31:0] dbus_read_data;
-    wire                      [31:0] dbus_write_data;
-    wire                       [3:0] dbus_write_en;
+    wire                      [31:0] dbus_rdata_data;
+    wire                      [31:0] dbus_wdata_data;
+    wire                       [3:0] dbus_wdata_en;
     cpu cpu (
         .clk_i             (sys_clk),         // input  wire
         .rst_i             (rst),         // input  wire
@@ -55,9 +55,9 @@ module main (
         .dbus_cmd_we_o     (dbus_cmd_we),
         .dbus_cmd_valid_o  (dbus_cmd_valid),
         .dbus_cmd_ack_i    (dbus_cmd_ack),
-        .dbus_read_data_i  (dbus_read_data),
-        .dbus_write_data_o (dbus_write_data),
-        .dbus_write_en_o   (dbus_write_en)
+        .dbus_rdata_data_i  (dbus_rdata_data),
+        .dbus_wdata_data_o (dbus_wdata_data),
+        .dbus_wdata_en_o   (dbus_wdata_en)
     );
 
 //==============================================================================
@@ -237,9 +237,9 @@ module main (
         .cpu_dbus_cmd_we_i     (dbus_cmd_we),
         .cpu_dbus_cmd_valid_i  (dbus_cmd_valid),
         .cpu_dbus_cmd_ack_o    (dbus_cmd_ack),
-        .cpu_dbus_read_data_o  (dbus_read_data),
-        .cpu_dbus_write_data_i (dbus_write_data),
-        .cpu_dbus_write_en_i   (dbus_write_en),
+        .cpu_dbus_rdata_data_o  (dbus_rdata_data),
+        .cpu_dbus_wdata_data_i (dbus_wdata_data),
+        .cpu_dbus_wdata_en_i   (dbus_wdata_en),
         .bootrom_raddr_o       (bootrom_raddr),  // output wire [ADDR
         .bootrom_rdata_i       (bootrom_rdata),  // input  wire [DATA_WIDTH
         .sdram_cmd_addr_o      (sdram_cmd_addr),
@@ -293,9 +293,9 @@ module mmu (
     input  wire                             cpu_dbus_cmd_we_i,
     input  wire                             cpu_dbus_cmd_valid_i,
     output wire                             cpu_dbus_cmd_ack_o,
-    output wire                      [31:0] cpu_dbus_read_data_o,
-    input  wire                      [31:0] cpu_dbus_write_data_i,
-    input  wire                       [3:0] cpu_dbus_write_en_i,
+    output wire                      [31:0] cpu_dbus_rdata_data_o,
+    input  wire                      [31:0] cpu_dbus_wdata_data_i,
+    input  wire                       [3:0] cpu_dbus_wdata_en_i,
     // bootrom
     output wire [$clog2(`IMEM_ENTRIES)-1:0] bootrom_raddr_o,
     input  wire                      [31:0] bootrom_rdata_i,
@@ -366,7 +366,7 @@ module mmu (
                                   (port_sel == PORT_CSR)      ? litedram_ctrl_ack_i :
                                   (port_sel == PORT_LITEDRAM) ? (litedram_state == SEND_ACK) : 1'b0 ;
 
-    assign cpu_dbus_read_data_o = (port_sel == PORT_SDRAM)    ? sdram_rdata_i :
+    assign cpu_dbus_rdata_data_o = (port_sel == PORT_SDRAM)    ? sdram_rdata_i :
                                   (port_sel == PORT_CSR)      ? litedram_ctrl_dat_r_i :
                                   (port_sel == PORT_LITEDRAM) ? litedram_rdata_data : 32'b0;
 //============================================================
@@ -376,7 +376,7 @@ module mmu (
                                   (port_sel == PORT_CSR)       ? litedram_ctrl_ack_i  :
                                   (port_sel == PORT_LITEDRAM)  ? (litedram_state == SEND_ACK) : 1'b0;
 
-    assign cpu_dbus_read_data_o = (port_sel == PORT_SDRAM)     ? sdram_rdata_i :
+    assign cpu_dbus_rdata_data_o = (port_sel == PORT_SDRAM)     ? sdram_rdata_i :
                                   (port_sel == PORT_CSR)       ? litedram_ctrl_dat_r_i  :
                                   (port_sel == PORT_LITEDRAM)  ? litedram_rdata_data : 32'b0;
 
@@ -391,16 +391,16 @@ module mmu (
     assign sdram_cmd_addr_o    = cpu_dbus_cmd_addr_i[15:2];
     assign sdram_cmd_valid_o   = cpu_dbus_cmd_valid_i & sdram_access;
     assign sdram_cmd_we_o      = cpu_dbus_cmd_we_i;
-    assign sdram_wen_o         = cpu_dbus_write_en_i;
-    assign sdram_wdata_o       = cpu_dbus_write_data_i;
+    assign sdram_wen_o         = cpu_dbus_wdata_en_i;
+    assign sdram_wdata_o       = cpu_dbus_wdata_data_i;
 
 //==============================================================================
 // LiteDRAM Wishbone Control Interface
 //------------------------------------------------------------------------------
     assign litedram_ctrl_adr_o   = cpu_dbus_cmd_addr_i[31:2];
     assign litedram_ctrl_cyc_o   = (csr_access) ? cpu_dbus_cmd_valid_i : 1'b0;
-    assign litedram_ctrl_dat_w_o = cpu_dbus_write_data_i;
-    assign litedram_ctrl_sel_o   = cpu_dbus_write_en_i;
+    assign litedram_ctrl_dat_w_o = cpu_dbus_wdata_data_i;
+    assign litedram_ctrl_sel_o   = cpu_dbus_wdata_en_i;
     assign litedram_ctrl_stb_o   = (csr_access) ? cpu_dbus_cmd_valid_i : 1'b0;
     assign litedram_ctrl_we_o    = (csr_access) ? cpu_dbus_cmd_we_i : 1'b0;
 
@@ -428,8 +428,8 @@ module mmu (
                     litedram_cmd_addr <= cpu_dbus_cmd_addr_i[27:2];
                     litedram_cmd_valid <= 1;
                     litedram_cmd_we <= cpu_dbus_cmd_we_i;
-                    litedram_wdata_data <= cpu_dbus_write_data_i;
-                    litedram_wdata_we <= cpu_dbus_write_en_i;
+                    litedram_wdata_data <= cpu_dbus_wdata_data_i;
+                    litedram_wdata_we <= cpu_dbus_wdata_en_i;
                     litedram_state <= WAIT_CMD_READY;
                 end
             end

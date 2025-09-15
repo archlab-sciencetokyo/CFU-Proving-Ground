@@ -16,7 +16,7 @@ TARGET := arty_a7
 USE_HLS ?= 0
 
 .PHONY: sim prog imem_image dmem_image remove-junk bit load run drun clean regressive-test
-all: user_config prog boot_image remove-junk sim
+all: user_config boot_image remove-junk sim
 
 user_config:
 	mkdir -p build
@@ -46,6 +46,23 @@ boot_image:
 		done < build/bootrom_init.32.hex; \
 		echo "end"; \
 	} > build/bootrom_init.vh
+	$(OBJCOPY) -O binary build/boot.elf --only-section=.data   \
+								        --only-section=.rodata \
+									    --only-section=.bss    \
+									    build/sdram_init.bin
+	dd if=build/sdram_init.bin of=build/sdram_init.img conv=sync bs=1KiB
+	hexdump -v -e '1/4 "%08x\n"' build/sdram_init.img > build/sdram_init.32.hex
+	{ \
+		cnt=0; \
+		echo "initial begin"; \
+		while read line; do \
+			echo "    ram[$$cnt] = 32'h$$line;"; \
+			cnt=$$((cnt + 1)); \
+		done < build/sdram_init.32.hex; \
+		echo "end"; \
+	} > build/sdram_init.vh
+
+
 
 imem_image:
 	$(OBJDUMP) -d build/main.elf > build/main.dump

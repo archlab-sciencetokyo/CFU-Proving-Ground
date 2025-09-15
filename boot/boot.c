@@ -7,7 +7,7 @@ volatile int *uart = (volatile int *)0x10000000;
 void boot()
 {
     if (sdram_init()) {
-        *uart = 777;
+        *uart = 0x777;
     } else {
         *uart = 0;
     }

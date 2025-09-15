@@ -327,6 +327,7 @@ module mmu (
 //==============================================================================
 // CPU Command Acknowledge and Read Data Bus
 //------------------------------------------------------------------------------
+    assign cpu_ibus_rdata_o = bootrom_rdata_i;
     reg rdata_sel = 0;
     always @(posedge clk_i) if (cpu_dbus_cmd_valid_i) begin
         rdata_sel <= sdram_access;
@@ -335,12 +336,15 @@ module mmu (
     assign cpu_dbus_read_data_o = (rdata_sel) ? sdram_rdata_i :
                                                 litedram_ctrl_dat_r_i;
     assign cpu_dbus_cmd_ack_o   = (rdata_sel) ? sdram_cmd_ack_i : litedram_ctrl_ack_i;
-    assign cpu_ibus_rdata_o = bootrom_rdata_i;
 
-    // CPU -> bootrom
+//==============================================================================
+// Boot ROM Interface
+//------------------------------------------------------------------------------
     assign bootrom_raddr_o  = cpu_ibus_raddr_i;
 
-    // CPU -> sdram
+//==============================================================================
+// SDRAM Control Interface
+//------------------------------------------------------------------------------
     assign sdram_cmd_addr_o    = cpu_dbus_cmd_addr_i[15:2];
     assign sdram_cmd_valid_o   = cpu_dbus_cmd_valid_i & sdram_access;
     assign sdram_cmd_we_o      = cpu_dbus_cmd_we_i;

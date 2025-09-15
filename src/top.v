@@ -47,11 +47,11 @@ module top;
         if (m0.cpu.dbus_cmd_addr_o[31:28] == 4'h1 && m0.cpu.dbus_cmd_we_o) begin
             if (m0.cpu.dbus_wdata_data_o == 32'h777) begin
                 $write("\033[32mTEST PASSED\033[0m\n");
-                $finish;
+                cpu_sim_fini <= 1;
             end
             else begin
                 $write("\033[31mTEST FAILED: %h\033[0m\n", m0.cpu.dbus_wdata_data_o);
-                $fatal;
+                cpu_sim_fini <= 1;
             end
         end
         if (cpu_sim_fini) begin

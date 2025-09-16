@@ -15,7 +15,7 @@ void boot()
 //------------------------------------------------------------------------------
     unsigned int write_sum = 0;
     unsigned int write_xor = 0;
-    for (unsigned int i = 0; i < 10; i++) {
+    for (unsigned int i = 0; i < (0x1000000 >> 2); i++) {
         int write_data = i * 17;
         dram[i] = write_data;
         write_sum += write_data;
@@ -27,7 +27,7 @@ void boot()
 //------------------------------------------------------------------------------
     unsigned int read_sum = 0;
     unsigned int read_xor = 0;
-    for (unsigned int i = 0; i < 10; i++) {
+    for (unsigned int i = 0; i < (0x1000000 >> 2); i++) {
         int read_data = dram[i];
         read_sum += read_data;
         read_xor ^= read_data;

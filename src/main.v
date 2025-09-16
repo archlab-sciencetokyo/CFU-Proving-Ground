@@ -35,7 +35,7 @@ module main (
 //==============================================================================
 // CPU
 //------------------------------------------------------------------------------
-    wire [$clog2(`IMEM_ENTRIES)-1:0] ibus_raddr;
+    wire                      [31:0] ibus_raddr;
     wire                      [31:0] ibus_rdata;
     wire                             ibus_re;
     wire                      [31:0] dbus_cmd_addr;
@@ -152,20 +152,22 @@ module main (
 //==============================================================================
 // 0x4000_0000 - 0x5000_0000 : IMEM
 //------------------------------------------------------------------------------
-    wire [$clog2(`IMEM_ENTRIES)-1:0] imem_raddr;
-    wire                      [31:0] imem_rdata;
-    wire                             imem_wvalid;
-    wire [$clog2(`IMEM_ENTRIES)-1:0] imem_waddr;
-    wire                       [3:0] imem_wen;
-    wire                      [31:0] imem_wdata;
+    wire [$clog2(`IMEM_ENTRIES)-1:0] imem_rdata_addr;
+    wire                      [31:0] imem_rdata_data;
+    wire                             imem_rdata_en;
+    wire [$clog2(`IMEM_ENTRIES)-1:0] imem_wdata_addr;
+    wire                      [31:0] imem_wdata_data;
+    wire                       [3:0] imem_wdata_en;
+    wire                             imem_wdata_ack;
     imem imem (
-        .clk_i    (sys_clk),       // input  wire
-        .raddr_i  (imem_raddr),    // input  wire [$clog2(`IMEM_ENTRIES)-1:0]
-        .rdata_o  (imem_rdata),    // output wire [31:0]
-        .wvalid_i (imem_wvalid),   // input  wire
-        .waddr_i  (imem_waddr),    // input  wire [$clog2(`IMEM_ENTRIES)-1:0]
-        .wen_i    (imem_wen),      // input  wire [3:0]
-        .wdata_i  (imem_wdata)     // input  wire [31:0]
+        .clk_i(clk_i),
+        .rdata_addr_i(imem_rdata_addr),
+        .rdata_data_o(imem_rdata_data),
+        .rdata_en_i(imem_rdata_en),
+        .wdata_addr_i(imem_wdata_addr),
+        .wdata_data_i(imem_wdata_data),
+        .wdata_en_i(imem_wdata_en),
+        .wdata_ack_o(imem_wdata_ack)
     );
 
 //==============================================================================
@@ -233,6 +235,7 @@ module main (
         .clk_i                 (sys_clk),        // input  wire
         .cpu_ibus_raddr_i      (ibus_raddr),     // input  wire [ADDR_WIDTH
         .cpu_ibus_rdata_o      (ibus_rdata),     // output wire [DATA_WIDTH
+        .cpu_ibus_rdata_en_i   (ibus_re),
         .cpu_dbus_cmd_addr_i   (dbus_cmd_addr),
         .cpu_dbus_cmd_we_i     (dbus_cmd_we),
         .cpu_dbus_cmd_valid_i  (dbus_cmd_valid),
@@ -240,8 +243,10 @@ module main (
         .cpu_dbus_rdata_data_o  (dbus_rdata_data),
         .cpu_dbus_wdata_data_i (dbus_wdata_data),
         .cpu_dbus_wdata_en_i   (dbus_wdata_en),
+
         .bootrom_raddr_o       (bootrom_raddr),  // output wire [ADDR
         .bootrom_rdata_i       (bootrom_rdata),  // input  wire [DATA_WIDTH
+
         .sdram_cmd_addr_o      (sdram_cmd_addr),
         .sdram_cmd_valid_o     (sdram_cmd_valid),
         .sdram_cmd_we_o        (sdram_cmd_we),
@@ -249,15 +254,26 @@ module main (
         .sdram_wen_o           (sdram_wen),
         .sdram_wdata_o         (sdram_wdata),
         .sdram_rdata_i         (sdram_rdata),
+
         .uart_wvalid_o         (uart_wvalid),    // output wire
         .uart_wready_i         (uart_wready),    // input  wire
         .uart_wdata_o          (uart_wdata),     // output wire [7:0]
         .uart_rvalid_i         (uart_rvalid),    // input  wire
         .uart_rready_o         (uart_rready),    // output wire
         .uart_rdata_i          (uart_rdata),     // input  wire [7:0]
+
+        .imem_rdata_addr_o(imem_rdata_addr),
+        .imem_rdata_data_i(imem_rdata_data),
+        .imem_rdata_en_o(imem_rdata_en),
+        .imem_wdata_addr_o(imem_wdata_addr),
+        .imem_wdata_data_o(imem_wdata_data),
+        .imem_wdata_en_o(imem_wdata_en),
+        .imem_wdata_ack_i(imem_wdata_ack),
+
         .vmem_we_o             (vmem_we),        // output wire
         .vmem_waddr_o          (vmem_waddr),     // output wire [15:0
         .vmem_wdata_o          (vmem_wdata),     // output wire [2:0]
+
         .litedram_ctrl_ack_i   (litedram_ctrl_ack),
         .litedram_ctrl_adr_o   (litedram_ctrl_adr),
         .litedram_ctrl_cyc_o   (litedram_ctrl_cyc),
@@ -286,9 +302,10 @@ endmodule  // main
 //------------------------------------------------------------------------------
 module mmu (
     input  wire                             clk_i,
-    // CPU
-    input  wire [$clog2(`IMEM_ENTRIES)-1:0] cpu_ibus_raddr_i,
+
+    input  wire                      [31:0] cpu_ibus_raddr_i,
     output wire                      [31:0] cpu_ibus_rdata_o,
+    input  wire                             cpu_ibus_rdata_en_i,
     input  wire                      [31:0] cpu_dbus_cmd_addr_i,
     input  wire                             cpu_dbus_cmd_we_i,
     input  wire                             cpu_dbus_cmd_valid_i,
@@ -296,10 +313,10 @@ module mmu (
     output wire                      [31:0] cpu_dbus_rdata_data_o,
     input  wire                      [31:0] cpu_dbus_wdata_data_i,
     input  wire                       [3:0] cpu_dbus_wdata_en_i,
-    // bootrom
-    output wire [$clog2(`IMEM_ENTRIES)-1:0] bootrom_raddr_o,
+
+    output wire                       [9:0] bootrom_raddr_o,
     input  wire                      [31:0] bootrom_rdata_i,
-    // sdram
+
     output wire [$clog2(`DMEM_ENTRIES)-1:0] sdram_cmd_addr_o,
     output wire                             sdram_cmd_valid_o,
     output wire                             sdram_cmd_we_o,
@@ -307,18 +324,26 @@ module mmu (
     output wire                       [3:0] sdram_wen_o,
     output wire                      [31:0] sdram_wdata_o,
     input  wire                      [31:0] sdram_rdata_i,
-    // UART
+
     output wire                             uart_wvalid_o,
     input  wire                             uart_wready_i,
     output wire                       [7:0] uart_wdata_o,
     input  wire                             uart_rvalid_i,
     output wire                             uart_rready_o,
     input  wire                       [7:0] uart_rdata_i,
-    // VMEM
+
+    output wire [$clog2(`IMEM_ENTRIES)-1:0] imem_rdata_addr_o,
+    input  wire                      [31:0] imem_rdata_data_i,
+    output wire                             imem_rdata_en_o,
+    output wire [$clog2(`IMEM_ENTRIES)-1:0] imem_wdata_addr_o,
+    output wire                      [31:0] imem_wdata_data_o,
+    output wire                       [3:0] imem_wdata_en_o,
+    input  wire                             imem_wdata_ack_i,
+
     output wire                             vmem_we_o,
     output wire                      [15:0] vmem_waddr_o,
     output wire                       [2:0] vmem_wdata_o,
-    // LiteDRAM Wishbone Control Interface
+
     input  wire                             litedram_ctrl_ack_i,
     output wire                      [29:0] litedram_ctrl_adr_o,
     output wire                             litedram_ctrl_cyc_o,
@@ -328,7 +353,7 @@ module mmu (
     output wire                       [3:0] litedram_ctrl_sel_o,
     output wire                             litedram_ctrl_stb_o,
     output wire                             litedram_ctrl_we_o,
-    // LiteDRAM Command Interface
+
     output wire                      [23:0] litedram_cmd_addr_o,    // input  wire   [23:0]
     input  wire                             litedram_cmd_ready_i,   // output wire
     output wire                             litedram_cmd_valid_o,   // input  wire
@@ -341,12 +366,17 @@ module mmu (
     output wire                             litedram_wdata_valid_o, // input  wire
     output wire                      [15:0] litedram_wdata_we_o     // input  wire   [15:0]
 );
-    wire   sdram_access = (cpu_dbus_cmd_addr_i < 32'h0000_2000);
-    //wire   uart_access  = (cpu_dbus_cmd_addr_i == 32'h1000_0000) |
-    //                      (cpu_dbus_cmd_addr_i == 32'h1000_0004);
-    //wire   vmem_access  = (cpu_dbus_cmd_addr_i[31:28] == 4'h2);
-    wire   csr_access   = (cpu_dbus_cmd_addr_i[31:28] == 4'hF);
+    wire   sdram_access    = (cpu_dbus_cmd_addr_i[31:28] == 4'h0);
+    wire   imem_access     = (cpu_dbus_cmd_addr_i[31:28] == 4'h4);
+    wire   csr_access      = (cpu_dbus_cmd_addr_i[31:28] == 4'hF);
     wire   litedram_access = (cpu_dbus_cmd_addr_i[31:28] == 4'h8);
+//==============================================================================
+// IBUS Interface
+//------------------------------------------------------------------------------
+    reg port_ibus = 0; always @(posedge clk_i) port_ibus <= (cpu_ibus_raddr_i[31:28] == 4'h4);
+    assign cpu_ibus_rdata_o  = (port_ibus) ? imem_rdata_data_i : bootrom_rdata_i;
+    assign bootrom_raddr_o   = cpu_ibus_raddr_i;
+    assign imem_rdata_addr_o = cpu_ibus_raddr_i;
 
 //==============================================================================
 // CPU Command Acknowledge and Read Data Bus
@@ -355,35 +385,23 @@ module mmu (
     localparam PORT_SDRAM    = 2'b00;
     localparam PORT_CSR      = 2'b01;
     localparam PORT_LITEDRAM = 2'b10;
+    localparam PORT_IMEM     = 2'b11;
     always @(posedge clk_i) if (cpu_dbus_cmd_valid_i) begin
         port_sel <= (sdram_access)    ? PORT_SDRAM :
                     (csr_access)      ? PORT_CSR :
                     (litedram_access) ? PORT_LITEDRAM :
+                    (imem_access)     ? PORT_IMEM :
                                         2'b00 ;
     end
-    assign cpu_ibus_rdata_o     = bootrom_rdata_i;
     assign cpu_dbus_cmd_ack_o   = (port_sel == PORT_SDRAM)    ? sdram_cmd_ack_i :
                                   (port_sel == PORT_CSR)      ? litedram_ctrl_ack_i :
-                                  (port_sel == PORT_LITEDRAM) ? (litedram_state == SEND_ACK) : 1'b0 ;
+                                  (port_sel == PORT_LITEDRAM) ? (litedram_state == SEND_ACK) :
+                                  (port_sel == PORT_IMEM)     ? imem_wdata_ack_i : 1'b0 ;
 
     assign cpu_dbus_rdata_data_o = (port_sel == PORT_SDRAM)    ? sdram_rdata_i :
-                                  (port_sel == PORT_CSR)      ? litedram_ctrl_dat_r_i :
-                                  (port_sel == PORT_LITEDRAM) ? litedram_rdata_data : 32'b0;
-//============================================================
-// Processor Command Acknowledge and Read Data
-//============================================================
-    assign cpu_dbus_cmd_ack_o   = (port_sel == PORT_SDRAM)     ? sdram_cmd_ack_i :
-                                  (port_sel == PORT_CSR)       ? litedram_ctrl_ack_i  :
-                                  (port_sel == PORT_LITEDRAM)  ? (litedram_state == SEND_ACK) : 1'b0;
-
-    assign cpu_dbus_rdata_data_o = (port_sel == PORT_SDRAM)     ? sdram_rdata_i :
-                                  (port_sel == PORT_CSR)       ? litedram_ctrl_dat_r_i  :
-                                  (port_sel == PORT_LITEDRAM)  ? litedram_rdata_data : 32'b0;
-
-//==============================================================================
-// Boot ROM Interface
-//------------------------------------------------------------------------------
-    assign bootrom_raddr_o  = cpu_ibus_raddr_i;
+                                   (port_sel == PORT_CSR)      ? litedram_ctrl_dat_r_i :
+                                   (port_sel == PORT_LITEDRAM) ? litedram_rdata_data :
+                                   (port_sel == PORT_IMEM)     ? imem_rdata_data_i : 32'b0;
 
 //==============================================================================
 // SDRAM Control Interface
@@ -393,6 +411,15 @@ module mmu (
     assign sdram_cmd_we_o      = cpu_dbus_cmd_we_i;
     assign sdram_wen_o         = cpu_dbus_wdata_en_i;
     assign sdram_wdata_o       = cpu_dbus_wdata_data_i;
+
+//==============================================================================
+// IMEM Control Interface
+//------------------------------------------------------------------------------
+    assign imem_rdata_addr_o = cpu_ibus_raddr_i;
+    assign imem_rdata_en_o   = cpu_ibus_rdata_en_i;
+    assign imem_wdata_addr_o = cpu_dbus_cmd_addr_i;
+    assign imem_wdata_data_o = cpu_dbus_wdata_data_i;
+    assign imem_wdata_en_o   = cpu_dbus_wdata_en_i & {4{imem_access}};
 
 //==============================================================================
 // LiteDRAM Wishbone Control Interface
@@ -480,27 +507,37 @@ endmodule  // mmu
 
 module imem (
     input  wire                             clk_i,
-    input  wire [$clog2(`IMEM_ENTRIES)-1:0] raddr_i,
-    output wire                      [31:0] rdata_o,
-    input  wire                             wvalid_i,
-    input  wire [$clog2(`IMEM_ENTRIES)-1:0] waddr_i,
-    input  wire                       [3:0] wen_i,
-    input  wire                      [31:0] wdata_i
+    input  wire [$clog2(`IMEM_ENTRIES)-1:0] rdata_addr_i,
+    output wire                      [31:0] rdata_data_o,
+    input  wire                             rdata_en_i,
+    input  wire [$clog2(`IMEM_ENTRIES)-1:0] wdata_addr_i,
+    input  wire                      [31:0] wdata_data_i,
+    input  wire                       [3:0] wdata_en_i,
+    output wire                             wdata_ack_o
 );
-    reg [31:0] rdata = 0;
     reg [31:0] imem [0:`IMEM_ENTRIES-1];
+    `include "imem_init.vh"
+
+    reg [31:0] rdata     = 0;
+    reg        wdata_ack = 0;
+
+    assign rdata_data_o = rdata;
+    assign wdata_ack_o  = wdata_ack;
 
     always @(posedge clk_i) begin
-        rdata <= imem[raddr_i];
-        if (wvalid_i) begin
-            if (wen_i[0]) imem[waddr_i][7:0]   <= wdata_i[7:0];
-            if (wen_i[1]) imem[waddr_i][15:8]  <= wdata_i[15:8];
-            if (wen_i[2]) imem[waddr_i][23:16] <= wdata_i[23:16];
-            if (wen_i[3]) imem[waddr_i][31:24] <= wdata_i[31:24];
+        if (rdata_en_i) rdata <= imem[rdata_addr_i];
+        if (wdata_en_i) begin
+            wdata_ack <= 1;
+            if (wdata_en_i[0]) imem[wdata_addr_i][7:0]   <= wdata_data_i[7:0];
+            if (wdata_en_i[1]) imem[wdata_addr_i][15:8]  <= wdata_data_i[15:8];
+            if (wdata_en_i[2]) imem[wdata_addr_i][23:16] <= wdata_data_i[23:16];
+            if (wdata_en_i[3]) imem[wdata_addr_i][31:24] <= wdata_data_i[31:24];
+        end else begin
+            wdata_ack <= 0;
         end
     end
-    assign rdata_o = rdata;
 endmodule
+
 
 module bootrom (
     input  wire        clk_i,

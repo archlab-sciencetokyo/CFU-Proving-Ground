@@ -38,7 +38,5 @@ _start:
     li      x31, 0
     la      sp, _esdram
     jal     boot
-    j       finish
-
-finish:
-1:  j       1b
+    li      t0, 0x40000000
+    jr      t0

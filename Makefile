@@ -16,7 +16,7 @@ TARGET := arty_a7
 USE_HLS ?= 0
 
 .PHONY: sim prog imem_image dmem_image remove-junk bit load run drun clean regressive-test
-all: user_config boot_image remove-junk sim
+all: user_config boot_image prog imem_image dmem_image remove-junk sim
 
 user_config:
 	mkdir -p build
@@ -64,39 +64,41 @@ boot_image:
 
 imem_image:
 	$(OBJDUMP) -d build/main.elf > build/main.dump
-	$(OBJCOPY) -O binary --only-section=.text build/main.elf build/bootrom_init.bin
-	dd if=build/bootrom_init.bin of=build/bootrom_init.img conv=sync bs=1KiB
-	hexdump -v -e '1/4 "%08x\n"' build/bootrom_init.img > build/bootrom_init.32.hex
+	$(OBJCOPY) -O binary --only-section=.text build/main.elf build/imem_init.bin
+	dd if=build/imem_init.bin of=build/imem_init.img conv=sync bs=1KiB
+	hexdump -v -e '1/4 "%08x\n"' build/imem_init.img > build/imem_init.32.hex
 	{ \
 		cnt=0; \
 		echo "initial begin"; \
 		while read line; do \
-			echo "    rom[$$cnt] = 32'h$$line;"; \
+			echo "    imem[$$cnt] = 32'h$$line;"; \
 			cnt=$$((cnt + 1)); \
-		done < build/bootrom_init.32.hex; \
+		done < build/imem_init.32.hex; \
 		echo "end"; \
-	} > build/bootrom_init.vh
+	} > build/imem_init.vh
 
 dmem_image:
 	$(OBJCOPY) -O binary build/main.elf --only-section=.data   \
 								     --only-section=.rodata \
 									 --only-section=.bss    \
-									 build/sdram_init.bin
-	dd if=build/sdram_init.bin of=build/sdram_init.img bs=1k conv=sync
-	hexdump -v -e '1/4 "%08x\n"' build/sdram_init.img > build/sdram_init.32.hex
+									 build/dram_init.bin
+	dd if=build/dram_init.bin of=build/dram_init.img bs=1k conv=sync
+	hexdump -v -e '1/4 "%08x\n"' build/dram_init.img > build/dram_init.32.hex
 	{ \
 		cnt=0; \
 		echo "initial begin"; \
 		while read line; do \
-			echo "    ram[$$cnt] = 32'h$$line;"; \
+			echo "    dram[$$cnt] = 32'h$$line;"; \
 			cnt=$$((cnt + 1)); \
-		done < build/sdram_init.32.hex; \
+		done < build/dram_init.32.hex; \
 		echo "end"; \
-	} > build/sdram_init.vh
+	} > build/dram_init.vh
 
 remove-junk:
 	rm -f build/bootrom_init.bin build/bootrom_init.img build/bootrom_init.32.hex
 	rm -f build/sdram_init.bin build/sdram_init.img build/sdram_init.32.hex
+	rm -f build/dram_init.bin build/dram_init.img build/dram_init.32.hex
+	rm -f build/imem_init.bin build/imem_init.img build/imem_init.32.hex
 
 bit:
 	mkdir -p vivado

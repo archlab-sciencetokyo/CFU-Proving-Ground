@@ -7,6 +7,11 @@
 `define NOP 32'h00000013 // addi  x0, x0, 0
 
 /******************************************************************************/
+//==============================================================================
+// This processor isn't completed yet.
+// It doesn't work correctly when using store instruction following mul/div
+// instruction.
+//------------------------------------------------------------------------------
 module cpu (
     input  wire        clk_i,
     input  wire        rst_i,

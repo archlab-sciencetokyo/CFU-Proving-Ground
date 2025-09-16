@@ -95,9 +95,9 @@ module cpu (
     reg rst; always @(posedge clk_i) rst <= rst_i;
 
     wire If_stall = ExMa_loaduse | (IdEx_wait_ex_result & ~Ex_rslt_v) | ExMa_wait_cmd_ack;
-    wire If_v     = ~If_stall & ~Ex_bru_misp;
+    wire If_v     = ~If_stall;
     wire Id_stall = ExMa_loaduse | (IdEx_wait_ex_result & ~Ex_rslt_v) | ExMa_wait_cmd_ack;
-    wire Id_v     = ~ExMa_bru_misp & IfId_v & ~Id_stall & ~Ex_bru_misp;
+    wire Id_v     = ~ExMa_bru_misp & IfId_v & ~Id_stall;
     wire Ex_stall = ExMa_loaduse | (IdEx_wait_ex_result & ~Ex_rslt_v) | ExMa_wait_cmd_ack;
     wire Ex_v     = ~ExMa_bru_misp & IdEx_v & ~Ex_stall;
     wire Ma_stall = ExMa_wait_cmd_ack;
@@ -112,7 +112,7 @@ module cpu (
     reg ExMa_loaduse = 0;
     reg ExMa_wait_cmd_ack   = 0;
     always @(posedge clk_i) begin
-        IdEx_wait_ex_result <= (~IdEx_wait_ex_result & IdEx_v & (Id_mul_ctrl[`MUL_CTRL_IS_MUL] | Id_div_ctrl[`DIV_CTRL_IS_DIV]))
+        IdEx_wait_ex_result <= (~IdEx_wait_ex_result & IfId_v & (Id_mul_ctrl[`MUL_CTRL_IS_MUL] | Id_div_ctrl[`DIV_CTRL_IS_DIV]))
                              | (IdEx_wait_ex_result & ~Ex_rslt_v);
         ExMa_wait_cmd_ack <= (~ExMa_wait_cmd_ack & dbus_cmd_valid_o) | (ExMa_wait_cmd_ack & ~dbus_cmd_ack_i);
     end

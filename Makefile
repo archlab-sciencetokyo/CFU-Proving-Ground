@@ -62,8 +62,6 @@ boot_image:
 		echo "end"; \
 	} > build/sdram_init.vh
 
-
-
 imem_image:
 	$(OBJDUMP) -d build/main.elf > build/main.dump
 	$(OBJCOPY) -O binary --only-section=.text build/main.elf build/bootrom_init.bin
@@ -130,7 +128,7 @@ regression-test:
 		./obj_dir/top; \
 	done
 
-TEST ?= rv32um-p-div
+TEST ?= rv32um-p-mul
 single-test:
 	mkdir -p build
 	make user_config

@@ -15,14 +15,12 @@ module main (
 //==============================================================================
 // Clock and Reset
 //------------------------------------------------------------------------------
-    reg  rst_ni = 1;
     wire clk;
     wire locked;
-    wire rst;
 `ifdef SYNTHESIS
     clk_wiz_0 clk_wiz_0 (
         .clk_out1 (clk),      // output clk_out1
-        .reset    (!rst_ni),  // input reset
+        .reset    (0),        // input reset
         .locked   (locked),   // output locked
         .clk_in1  (clk_i)     // input clk_in1
     );
@@ -30,7 +28,7 @@ module main (
     assign clk    = clk_i;
     assign locked = 1'b1;
 `endif
-    assign rst    = ~rst_ni | ~locked;
+    wire rst = ~locked;
 
 //==============================================================================
 // CPU
@@ -46,7 +44,7 @@ module main (
     wire                      [31:0] dbus_wdata_data;
     wire                       [3:0] dbus_wdata_en;
     cpu cpu (
-        .clk_i             (sys_clk),         // input  wire
+        .clk_i             (sys_clk),     // input  wire
         .rst_i             (rst),         // input  wire
         .ibus_addr_o       (ibus_raddr),  // output wire [`IBUS_ADDR_WIDTH-1:0]
         .ibus_data_i       (ibus_rdata),  // input  wire [`IBUS_DATA_WIDTH-1:0]
@@ -55,7 +53,7 @@ module main (
         .dbus_cmd_we_o     (dbus_cmd_we),
         .dbus_cmd_valid_o  (dbus_cmd_valid),
         .dbus_cmd_ack_i    (dbus_cmd_ack),
-        .dbus_rdata_data_i  (dbus_rdata_data),
+        .dbus_rdata_data_i (dbus_rdata_data),
         .dbus_wdata_data_o (dbus_wdata_data),
         .dbus_wdata_en_o   (dbus_wdata_en)
     );
@@ -97,14 +95,14 @@ module main (
 // 0x1000_0000 : UART TX
 // 0x1000_0004 : UART RX
 //------------------------------------------------------------------------------
-    wire uart_txd;
-    wire uart_rxd;
-    wire uart_wvalid;
-    wire uart_wready;
-    wire uart_wdata;
-    wire uart_rvalid;
-    wire uart_rready;
-    wire uart_rdata;
+    wire       uart_txd;
+    wire       uart_rxd;
+    wire       uart_wvalid;
+    wire       uart_wready;
+    wire [7:0] uart_wdata;
+    wire       uart_rvalid;
+    wire       uart_rready;
+    wire [7:0] uart_rdata;
     uart uart (
         .clk_i    (sys_clk),
         .rst_i    (rst),
@@ -117,6 +115,8 @@ module main (
         .rready_i (uart_rready),
         .rdata_o  (uart_rdata)
     );
+    assign txd_o    = uart_txd;
+    assign uart_rxd = rxd_i;
 
 //==============================================================================
 // 0x2000_0000 - 0x2007_0800 : VMEM
@@ -255,20 +255,20 @@ module main (
         .sdram_wdata_o         (sdram_wdata),
         .sdram_rdata_i         (sdram_rdata),
 
-        .uart_wvalid_o         (uart_wvalid),    // output wire
-        .uart_wready_i         (uart_wready),    // input  wire
-        .uart_wdata_o          (uart_wdata),     // output wire [7:0]
-        .uart_rvalid_i         (uart_rvalid),    // input  wire
-        .uart_rready_o         (uart_rready),    // output wire
-        .uart_rdata_i          (uart_rdata),     // input  wire [7:0]
+        .uart_wdata_valid_o    (uart_wvalid),    // output wire
+        .uart_wdata_ready_i    (uart_wready),    // input  wire
+        .uart_wdata_data_o     (uart_wdata),     // output wire [7:0]
+        .uart_rdata_valid_i    (uart_rvalid),    // input  wire
+        .uart_rdata_ready_o    (uart_rready),    // output wire
+        .uart_rdata_data_i     (uart_rdata),     // input  wire [7:0]
 
-        .imem_rdata_addr_o(imem_rdata_addr),
-        .imem_rdata_data_i(imem_rdata_data),
-        .imem_rdata_en_o(imem_rdata_en),
-        .imem_wdata_addr_o(imem_wdata_addr),
-        .imem_wdata_data_o(imem_wdata_data),
-        .imem_wdata_en_o(imem_wdata_en),
-        .imem_wdata_ack_i(imem_wdata_ack),
+        .imem_rdata_addr_o     (imem_rdata_addr),
+        .imem_rdata_data_i     (imem_rdata_data),
+        .imem_rdata_en_o       (imem_rdata_en),
+        .imem_wdata_addr_o     (imem_wdata_addr),
+        .imem_wdata_data_o     (imem_wdata_data),
+        .imem_wdata_en_o       (imem_wdata_en),
+        .imem_wdata_ack_i      (imem_wdata_ack),
 
         .vmem_we_o             (vmem_we),        // output wire
         .vmem_waddr_o          (vmem_waddr),     // output wire [15:0
@@ -325,12 +325,12 @@ module mmu (
     output wire                      [31:0] sdram_wdata_o,
     input  wire                      [31:0] sdram_rdata_i,
 
-    output wire                             uart_wvalid_o,
-    input  wire                             uart_wready_i,
-    output wire                       [7:0] uart_wdata_o,
-    input  wire                             uart_rvalid_i,
-    output wire                             uart_rready_o,
-    input  wire                       [7:0] uart_rdata_i,
+    output wire                             uart_wdata_valid_o,
+    input  wire                             uart_wdata_ready_i,
+    output wire                       [7:0] uart_wdata_data_o,
+    input  wire                             uart_rdata_valid_i,
+    output wire                             uart_rdata_ready_o,
+    input  wire                       [7:0] uart_rdata_data_i,
 
     output wire [$clog2(`IMEM_ENTRIES)-1:0] imem_rdata_addr_o,
     input  wire                      [31:0] imem_rdata_data_i,
@@ -367,6 +367,7 @@ module mmu (
     output wire                      [15:0] litedram_wdata_we_o     // input  wire   [15:0]
 );
     wire   sdram_access    = (cpu_dbus_cmd_addr_i[31:28] == 4'h0);
+    wire   uart_access     = (cpu_dbus_cmd_addr_i[31:28] == 4'h1);
     wire   imem_access     = (cpu_dbus_cmd_addr_i[31:28] == 4'h4);
     wire   csr_access      = (cpu_dbus_cmd_addr_i[31:28] == 4'hF);
     wire   litedram_access = (cpu_dbus_cmd_addr_i[31:28] == 4'h8);
@@ -375,33 +376,34 @@ module mmu (
 //------------------------------------------------------------------------------
     reg port_ibus = 0; always @(posedge clk_i) port_ibus <= (cpu_ibus_raddr_i[31:28] == 4'h4);
     assign cpu_ibus_rdata_o  = (port_ibus) ? imem_rdata_data_i : bootrom_rdata_i;
-    assign bootrom_raddr_o   = cpu_ibus_raddr_i;
-    assign imem_rdata_addr_o = cpu_ibus_raddr_i;
+    assign bootrom_raddr_o   = cpu_ibus_raddr_i[31:2];
+    assign imem_rdata_addr_o = cpu_ibus_raddr_i[31:2];
 
 //==============================================================================
 // CPU Command Acknowledge and Read Data Bus
 //------------------------------------------------------------------------------
-    reg [1:0] port_sel = 0;
-    localparam PORT_SDRAM    = 2'b00;
-    localparam PORT_CSR      = 2'b01;
-    localparam PORT_LITEDRAM = 2'b10;
-    localparam PORT_IMEM     = 2'b11;
+    reg [2:0] port_sel = 0;
+    localparam PORT_SDRAM    = 3'b000;
+    localparam PORT_CSR      = 3'b001;
+    localparam PORT_LITEDRAM = 3'b010;
+    localparam PORT_IMEM     = 3'b011;
+    localparam PORT_UART     = 3'b100;
     always @(posedge clk_i) if (cpu_dbus_cmd_valid_i) begin
         port_sel <= (sdram_access)    ? PORT_SDRAM :
                     (csr_access)      ? PORT_CSR :
                     (litedram_access) ? PORT_LITEDRAM :
                     (imem_access)     ? PORT_IMEM :
-                                        2'b00 ;
+                                        PORT_UART ;
     end
     assign cpu_dbus_cmd_ack_o   = (port_sel == PORT_SDRAM)    ? sdram_cmd_ack_i :
                                   (port_sel == PORT_CSR)      ? litedram_ctrl_ack_i :
                                   (port_sel == PORT_LITEDRAM) ? (litedram_state == SEND_ACK) :
-                                  (port_sel == PORT_IMEM)     ? imem_wdata_ack_i : 1'b0 ;
+                                  (port_sel == PORT_IMEM)     ? imem_wdata_ack_i : uart_ack;
 
     assign cpu_dbus_rdata_data_o = (port_sel == PORT_SDRAM)    ? sdram_rdata_i :
                                    (port_sel == PORT_CSR)      ? litedram_ctrl_dat_r_i :
                                    (port_sel == PORT_LITEDRAM) ? litedram_rdata_data :
-                                   (port_sel == PORT_IMEM)     ? imem_rdata_data_i : 32'b0;
+                                   (port_sel == PORT_IMEM)     ? imem_rdata_data_i : uart_rdata_data_i;
 
 //==============================================================================
 // SDRAM Control Interface
@@ -413,11 +415,51 @@ module mmu (
     assign sdram_wdata_o       = cpu_dbus_wdata_data_i;
 
 //==============================================================================
+// UART Control Interface
+//------------------------------------------------------------------------------
+    localparam UART_IDLE = 2'b00;
+    localparam UART_TX   = 2'b01;
+    localparam UART_RX   = 2'b10;
+    localparam UART_ACK  = 2'b11;
+
+    reg [1:0] uart_state = UART_IDLE;
+    reg [7:0] uart_send  = 0;
+    wire      uart_ack   = (uart_state == UART_ACK);
+
+    assign uart_rdata_ready_o = (uart_state == UART_RX);
+    assign uart_wdata_valid_o = (uart_state == UART_TX);
+    assign uart_wdata_data_o  = uart_send;
+
+    always @(posedge clk_i) begin
+        case(uart_state)
+            UART_IDLE: begin
+                if (uart_access & cpu_dbus_cmd_valid_i) begin
+                    uart_state <= (cpu_dbus_cmd_addr_i[2]) ? UART_RX : UART_TX;
+                    uart_send  <= cpu_dbus_wdata_data_i[7:0];
+                end
+            end
+            UART_RX: begin
+                if (uart_rdata_valid_i) begin
+                    uart_state <= UART_ACK;
+                end
+            end
+            UART_TX: begin
+                if (uart_wdata_ready_i) begin
+                    uart_state <= UART_ACK;
+                end
+            end
+            UART_ACK: begin
+                uart_state <= UART_IDLE;
+            end
+        endcase
+    end
+
+//==============================================================================
 // IMEM Control Interface
 //------------------------------------------------------------------------------
     assign imem_rdata_addr_o = cpu_ibus_raddr_i;
     assign imem_rdata_en_o   = cpu_ibus_rdata_en_i;
-    assign imem_wdata_addr_o = cpu_dbus_cmd_addr_i;
+    assign imem_wdata_addr_o = cpu_dbus_cmd_addr_i[31:2];
     assign imem_wdata_data_o = cpu_dbus_wdata_data_i;
     assign imem_wdata_en_o   = cpu_dbus_wdata_en_i & {4{imem_access}};
 

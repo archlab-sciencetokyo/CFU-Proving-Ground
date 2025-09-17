@@ -9,6 +9,7 @@ set signal_list [list \
     top.m0.cpu.ExMa_v \
     top.m0.cpu.MaWb_pc \
     top.m0.cpu.MaWb_v \
+    top.p
 ]
 
 gtkwave::addSignalsFromList $signal_list

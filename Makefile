@@ -130,16 +130,16 @@ regression-test:
 		./obj_dir/top; \
 	done
 
-TEST ?= rv32um-p-mul
+TEST ?= rv32ui-p-add
 single-test:
 	mkdir -p build
 	make user_config
+	make boot_image
 	cp tests/$(TEST).elf build/main.elf
-	make imem_image dmem_image
-	make remove-junk
+	make imem_image dmem_image remove-junk
 	make sim
 	./obj_dir/top
 
 vcd:
-	gtkwave build/sim.vcd -S scripts/vcd.tcl
+	gtkwave -o build/sim.vcd -S scripts/vcd.tcl
 

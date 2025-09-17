@@ -110,16 +110,16 @@ module cpu (
     wire Wb_stall = 0;
     wire Wb_v     = MaWb_v;
 
-    wire Ex_loaduse = Id_v & Ex_v & IdEx_lsu_ctrl[`LSU_CTRL_IS_LOAD]
-                    & ((IdEx_rd == Id_rs1) | (IdEx_rd == Id_rs2));
-    wire Ex_rslt_v = Ex_mul_valid | Ex_div_valid;
-    reg IdEx_wait_ex_result = 0;
-    reg ExMa_loaduse = 0;
-    reg ExMa_wait_cmd_ack   = 0;
+    wire Ex_loaduse          = Id_v & Ex_v & IdEx_lsu_ctrl[`LSU_CTRL_IS_LOAD]
+                             & ((IdEx_rd == Id_rs1) | (IdEx_rd == Id_rs2));
+    wire Ex_rslt_v           = Ex_mul_valid | Ex_div_valid;
+    reg  IdEx_wait_ex_result = 0;
+    reg  ExMa_loaduse        = 0;
+    reg  ExMa_wait_cmd_ack   = 0;
     always @(posedge clk_i) begin
         IdEx_wait_ex_result <= (~IdEx_wait_ex_result & IfId_v & (Id_mul_ctrl[`MUL_CTRL_IS_MUL] | Id_div_ctrl[`DIV_CTRL_IS_DIV]))
                              | (IdEx_wait_ex_result & ~Ex_rslt_v);
-        ExMa_wait_cmd_ack <= (~ExMa_wait_cmd_ack & dbus_cmd_valid_o) | (ExMa_wait_cmd_ack & ~dbus_cmd_ack_i);
+        ExMa_wait_cmd_ack   <= (~ExMa_wait_cmd_ack & dbus_cmd_valid_o) | (ExMa_wait_cmd_ack & ~dbus_cmd_ack_i);
     end
 
 //==============================================================================
@@ -147,7 +147,7 @@ module cpu (
     );
     assign If_next_pc  = (ExMa_bru_misp) ? ExMa_bru_taken_pc :
                          (If_pred_taken) ? If_pred_pc : pc+4;
-    assign ibus_addr_o = If_next_pc[31:2];
+    assign ibus_addr_o = If_next_pc;
 
 //==============================================================================
 // ID Stage
@@ -542,11 +542,15 @@ module bru (
                                  (bru_ctrl_i[`BRU_CTRL_IS_BLT] &  w_lt) |
                                  (bru_ctrl_i[`BRU_CTRL_IS_BGE] & ~w_lt) );
     wire [31:0] taken_pc = ((bru_ctrl_i[`BRU_CTRL_IS_JALR]) ? src1_i : Ex_pc_i) + imm_i;
-    // Note: I can't think of the situation that predicted `pc (Id_pc)` is correct
-    //       but predicted `taken` is wrong. Even if the situation exists, I think
-    //       it can be considered as successful.
-    wire misp_taken   = (valid_i & istsfr) && (Id_pc_i != taken_pc);
-    wire misp_untaken = (valid_i & istsfr) && (Id_pc_i != Ex_pc_i+4);
+// Note: I can't think of the situation that predicted `pc (Id_pc)` is correct
+//       but predicted `taken` is wrong. Even if the situation exists, I think
+//       it can be considered as successful. 
+
+// Note: I found that even if a instruction isn't TSFR, misp has to be
+//       considered. For example, when 0xbc is TSFR and 0x400000bc isn't.
+//       In this case, if 0x400000bc is predicted taken, it is mispredicted.
+    wire misp_taken   = valid_i && (Id_pc_i != taken_pc);
+    wire misp_untaken = valid_i && (Id_pc_i != Ex_pc_i+4);
 
     assign bru_taken_o    = istaken;
     assign bru_taken_pc_o = (istaken) ? taken_pc   : Ex_pc_i + 4;

@@ -14,30 +14,54 @@ module top;
 //==============================================================================
 // Simulated UART
 //------------------------------------------------------------------------------
-    wire txd;
-    reg  rxd = 1;
-    reg [31:0] dram [0:64*1024*1024];
-    //`include "dram_init.vh"
-    reg index = 0;
-    wire uart_wdata = dram[index];
-    wire uart_wready;
-    wire uart_wvalid = uart_wready;
+    wire       uart_txd;
+    wire       uart_rxd;
+    reg        uart_wvalid;
+    wire       uart_wready;
+    reg  [7:0] uart_wdata;
+    wire       uart_rvalid;
+    wire       uart_rready;
+    wire [7:0] uart_rdata;
+    //uart uart (
+    //    .clk_i    (clk),
+    //    .rst_i    (0),
+    //    .txd_o    (uart_txd),
+    //    .rxd_i    (uart_rxd),
+    //    .wvalid_i (uart_wvalid),
+    //    .wready_o (uart_wready),
+    //    .wdata_i  (uart_wdata),
+    //    .rvalid_o (uart_rvalid),
+    //    .rready_i (uart_rready),
+    //    .rdata_o  (uart_rdata)
+    //);
+    uart_tx #(
+        .CLK_FREQ_MHZ   (`CLK_FREQ_MHZ   ),
+        .BAUD_RATE      (`UART_BAUDRATE )
+    ) uart_tx (
+        .clk_i          (clk         ),
+        .rst_i          (0           ),
+        .txd_o          (uart_txd    ),
+        .wvalid_i       (uart_wvalid ),
+        .wready_o       (uart_wready ),
+        .wdata_i        (uart_wdata  )
+    );
+
+    reg  [31:0] imem [0:`IMEM_ENTRIES-1];
+    `include "imem_init.vh"
+    reg  [31:0] p      = 0;
+    wire  [1:0] offset = p & 3;
+    wire [31:2] addr   = p >> 2;
     always @(posedge clk) begin
-        if (uart_wvalid && uart_wready) begin
-            index <= index + 1;
+        if (cc >= 190000) begin
+            if (uart_wready & ~uart_wvalid) begin
+                uart_wvalid <= 1;
+                uart_wdata  <= imem[addr][8*offset +: 8];
+                p           <= p+1;
+            end else begin
+                uart_wvalid <= 0;
+            end
         end
     end
-    //uart_tx #(
-    //    .CLK_FREQ_MHZ   (100_000_000),
-    //    .BAUD_RATE      (  1_000_000)
-    //) uart_tx (
-    //    .clk_i          (clk_i),
-    //    .rst_i          (0),
-    //    .txd_o          (txd),
-    //    .wvalid_i       (uart_wvalid),
-    //    .wready_o       (uart_wready),
-    //    .wdata_i        (uart_wdata)
-    //);
 
 //==============================================================================
 // DUT
@@ -52,8 +76,8 @@ module top;
         .st7789_SCL(scl),
         .st7789_DC (dc),
         .st7789_RES(res),
-        .rxd_i    (rxd),
-        .txd_o    (txd)
+        .rxd_i     (uart_txd),
+        .txd_o     (uart_rxd)
     );
 
 //==============================================================================
@@ -69,14 +93,14 @@ module top;
 //------------------------------------------------------------------------------
     reg cpu_sim_fini = 0;
     always @(posedge clk) begin
-        if (cc >= 1_000_000) cpu_sim_fini <= 1;
-        if (m0.cpu.dbus_cmd_addr_o[31:28] == 4'h1 && m0.cpu.dbus_cmd_we_o) begin
+        if (cc > 8000000) cpu_sim_fini <= 1;
+        if (m0.cpu.dbus_cmd_addr_o == 32'h1000_0000 && m0.cpu.dbus_cmd_we_o) begin
             if (m0.cpu.dbus_wdata_data_o == 32'h777) begin
-                $write("\033[32mTEST PASSED\033[0m\n");
+                $write("\033[32mCC %08d: TEST PASSED\033[0m\n", cc);
                 cpu_sim_fini <= 1;
             end
             else begin
-                $write("\033[31mTEST FAILED: %h\033[0m\n", m0.cpu.dbus_wdata_data_o);
+                $write("\033[31mCC %08d: TEST FAILED: %h\033[0m\n", cc, m0.cpu.dbus_wdata_data_o);
                 cpu_sim_fini <= 1;
             end
         end

@@ -1,8 +1,6 @@
 /* CFU Proving Ground since 2025-02    Copyright(c) 2025 Archlab. Science Tokyo /
 / Released under the MIT license https://opensource.org/licenses/mit           */
 
-    .equ CMD_FINISH, 0x00020000
-    .equ VMEM_BASE, 0x10000000
     .align 4
     .section .text.init
     .globl _start
@@ -42,11 +40,5 @@ _start:
     jal     main
     j       finish
 
-    .align 4
-    .text
-    .globl finish
 finish:
-    la      t0, _tohost
-    li      t1, CMD_FINISH
-    sw      t1, 0(t0)
 1:  j       1b

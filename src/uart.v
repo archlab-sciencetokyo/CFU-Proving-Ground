@@ -76,12 +76,12 @@ module fifo #(
 
     reg [DATA_WIDTH-1:0] ram [0:FIFO_DEPTH-1];
 
-    reg                            full_nq  , full_nd   ;
-    reg                            empty_nq , empty_nd  ;
-    reg   [$clog2(FIFO_DEPTH)-1:0] waddr_q  , waddr_d   ;
-    reg   [$clog2(FIFO_DEPTH)-1:0] raddr_q  , raddr_d   ;
-    reg [$clog2(FIFO_DEPTH+1)-1:0] count_q  , count_d   ;
-    reg                            rvalid_q , rvalid_d  ;
+    reg                            full_nq  = 1, full_nd   ;
+    reg                            empty_nq = 0, empty_nd  ;
+    reg   [$clog2(FIFO_DEPTH)-1:0] waddr_q  = 0, waddr_d   ;
+    reg   [$clog2(FIFO_DEPTH)-1:0] raddr_q  = 0, raddr_d   ;
+    reg [$clog2(FIFO_DEPTH+1)-1:0] count_q  = 0, count_d   ;
+    reg                            rvalid_q = 0, rvalid_d  ;
 
     assign wready_o = full_nq   ;
     assign rvalid_o = rvalid_q  ;
@@ -257,7 +257,7 @@ module uart_tx #(
     localparam IDLE = 1'b0;
     localparam RUN  = 1'b1;
 
-    reg                          wready_q       , wready_d      ;
+    reg                          wready_q=1     , wready_d      ;
     reg                    [8:0] buf_q = 9'h1   , buf_d         ;
     reg                    [3:0] bit_cntr_q     , bit_cntr_d    ;
     reg [$clog2(WAIT_COUNT)-1:0] wait_cntr_q    , wait_cntr_d   ;
@@ -303,17 +303,11 @@ module uart_tx #(
     end
 
     always @(posedge clk_i) begin
-        if (rst_i) begin
-            wready_q    <= 1'b1         ;
-            buf_q       <= 9'h1         ; // txd_o <= 1'b1;
-            state_q     <= IDLE         ;
-        end else begin
-            wready_q    <= wready_d     ;
-            buf_q       <= buf_d        ;
-            bit_cntr_q  <= bit_cntr_d   ;
-            wait_cntr_q <= wait_cntr_d  ;
-            state_q     <= state_d      ;
-        end
+        wready_q    <= wready_d     ;
+        buf_q       <= buf_d        ;
+        bit_cntr_q  <= bit_cntr_d   ;
+        wait_cntr_q <= wait_cntr_d  ;
+        state_q     <= state_d      ;
     end
 
 endmodule  // uart_tx

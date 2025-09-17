@@ -1,16 +1,26 @@
+#include "user_config.h"
 #include "sdram.h"
+
+void imem_init()
+{
+    volatile char *uart_rx = (volatile  char *)0x10000004;
+    for (int i = 0; i < IMEM_ENTRIES; i++) {
+        *((volatile char*)(0x40000000 + i)) = *uart_rx;
+    }
+}
 
 void boot()
 {
-    volatile char *uart = (volatile  char *)0x10000000;
+    volatile char *uart_tx = (volatile  char *)0x10000000;
     volatile int  *led  = (volatile  int *)0x10002000;
     volatile int  *imem = (volatile  int *)0x40000000;
     volatile int  *dram = (volatile  int *)0x80000000;
-
+    
+#ifdef TMP
 //==============================================================================
 // LiteX Init (Error Code: 0xa)
 //------------------------------------------------------------------------------
-    if (!sdram_init()) *uart = 0xa;
+    if (!sdram_init()) *uart_tx = 0xa;
     
 //==============================================================================
 // Write Test
@@ -38,12 +48,11 @@ void boot()
 //==============================================================================
 // Checksum (Error Code: 0xb)
 //------------------------------------------------------------------------------
-    if (write_sum != read_sum || write_xor != read_xor) *uart = 0xb;
-    else *uart = 0x04;
-
+    if (write_sum != read_sum || write_xor != read_xor) *uart_tx = 0xb;
+#endif
+    
 //==============================================================================
-// ECHO Test
+// IMEM Init
 //------------------------------------------------------------------------------
-    char c = *uart;
-    *uart = c;
+    imem_init();
 }

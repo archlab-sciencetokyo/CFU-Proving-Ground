@@ -4,7 +4,7 @@
 void imem_init()
 {
     volatile char *uart_rx = (volatile  char *)0x10000004;
-    for (int i = 0; i < IMEM_ENTRIES; i++) {
+    for (int i = 0; i < (IMEM_ENTRIES << 2); i++) {
         *((volatile char*)(0x40000000 + i)) = *uart_rx;
     }
 }
@@ -12,7 +12,7 @@ void imem_init()
 void dmem_init()
 {
     volatile char *uart_rx = (volatile  char *)0x10000004;
-    for (int i = 0; i < DMEM_ENTRIES; i++) {
+    for (int i = 0; i < (DMEM_ENTRIES << 2); i++) {
         *((volatile char*)(0x80000000 + i)) = *uart_rx;
     }
 }

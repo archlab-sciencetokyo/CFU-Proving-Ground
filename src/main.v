@@ -493,15 +493,13 @@ module mmu (
     reg [127:0] litedram_wdata_data  = 0;
     reg         litedram_wdata_valid = 0;
     reg  [15:0] litedram_wdata_we    = 0;
-    reg   [3:0] offset = 0;
-    reg   [6:0] shamt = 0;
+    reg   [6:0] offset = 0;
     always @(posedge clk_i) begin
         case(litedram_state)
             IDLE: begin
                 if (litedram_access & cpu_dbus_cmd_valid_i) begin
                     litedram_cmd_addr   <= cpu_dbus_cmd_addr_i[27:4];
-                    offset              <= cpu_dbus_cmd_addr_i[3:0];
-                    shamt               <= {cpu_dbus_cmd_addr_i[3:0], 3'b000};
+                    offset              <= cpu_dbus_cmd_addr_i[3:2];
                     litedram_cmd_valid  <= 1;
                     litedram_cmd_we     <= cpu_dbus_cmd_we_i;
                     litedram_wdata_data <= cpu_dbus_wdata_data_i;
@@ -514,8 +512,8 @@ module mmu (
                     litedram_cmd_valid <= 0;
                     if (litedram_cmd_we) begin
                         litedram_wdata_valid <= 1;
-                        litedram_wdata_data  <= litedram_wdata_data << shamt;
-                        litedram_wdata_we    <= litedram_wdata_we << offset;
+                        litedram_wdata_data  <= litedram_wdata_data << (offset << 5);
+                        litedram_wdata_we    <= litedram_wdata_we << (offset << 2);
                         litedram_state       <= WAIT_WDATA_READY;
                     end else begin
                         litedram_rdata_ready <= 1;
@@ -533,7 +531,7 @@ module mmu (
                 if (litedram_rdata_valid_i) begin
                     litedram_rdata_ready <= 0;
                     litedram_state <= SEND_ACK;
-                    litedram_rdata_data <= (litedram_rdata_data_i >> shamt) & 32'hFFFF_FFFF;
+                    litedram_rdata_data <= (litedram_rdata_data_i >> (offset << 5)) & 32'hFFFF_FFFF;
                 end
             end
             SEND_ACK: begin

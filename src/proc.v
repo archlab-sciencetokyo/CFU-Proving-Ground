@@ -261,7 +261,7 @@ module cpu (
     wire [31:0] Ex_src1 = (IdEx_rs1_fwd_Ma_to_Ex & ExMa_v) ? ExMa_rslt :
                           ((IdEx_rs1 == MaWb_rd) & (MaWb_rd != 0) & MaWb_v) ? MaWb_rslt : IdEx_src1;
     wire [31:0] Ex_src2 = (IdEx_rs2_fwd_Ma_to_Ex & ExMa_v) ? ExMa_rslt :
-                          (IdEx_rs2_fwd_Wb_to_Ex & MaWb_v) ? MaWb_rslt : IdEx_src2;
+                          ((IdEx_rs2 == MaWb_rd) & (MaWb_rd != 0) & MaWb_v) ? MaWb_rslt : IdEx_src2;
 
     wire [31:0] Ex_alu_rslt;
     alu alu (

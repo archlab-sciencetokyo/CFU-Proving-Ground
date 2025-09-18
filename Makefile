@@ -123,6 +123,8 @@ clean:
 ELF_FILES := $(wildcard tests/*.elf)
 regression-test:
 	for f in $(ELF_FILES); do \
+		make user_config > /dev/null; \
+		make boot_image > /dev/null; \
 		cp $${f} build/main.elf; \
 		make imem_image dmem_image > /dev/null; \
 		make sim > /dev/null; \
@@ -130,7 +132,7 @@ regression-test:
 		./obj_dir/top; \
 	done
 
-TEST ?= rv32ui-p-lh
+TEST ?= rv32ui-p-st_ld
 single-test:
 	mkdir -p build
 	make user_config

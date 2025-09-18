@@ -542,8 +542,7 @@ module bru (
                                  (bru_ctrl_i[`BRU_CTRL_IS_BNE] & ~w_eq) |
                                  (bru_ctrl_i[`BRU_CTRL_IS_BLT] &  w_lt) |
                                  (bru_ctrl_i[`BRU_CTRL_IS_BGE] & ~w_lt) );
-    wire [31:0] taken_pc = (bru_ctrl_i[`BRU_CTRL_IS_JALR]) ? src1_i
-                                                           : Ex_pc_i + imm_i;
+    wire [31:0] taken_pc = ((bru_ctrl_i[`BRU_CTRL_IS_JALR]) ? src1_i : Ex_pc_i) + imm_i;
 // Note: I can't think of the situation that predicted `pc (Id_pc)` is correct
 //       but predicted `taken` is wrong. Even if the situation exists, I think
 //       it can be considered as successful. 

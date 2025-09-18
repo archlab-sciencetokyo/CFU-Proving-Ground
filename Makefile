@@ -130,7 +130,7 @@ regression-test:
 		./obj_dir/top; \
 	done
 
-TEST ?= rv32ui-p-sw
+TEST ?= rv32ui-p-jalr
 single-test:
 	mkdir -p build
 	make user_config

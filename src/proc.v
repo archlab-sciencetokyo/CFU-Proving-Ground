@@ -58,8 +58,8 @@ module cpu (
     reg                       IdEx_rs1_fwd_Wb_to_Ex = 0;
     reg                       IdEx_rs2_fwd_Wb_to_Ex = 0;
     reg                       IdEx_loaduse = 0;
-    reg                       IdEx_rs1;
-    reg                       IdEx_rs2;
+    reg                 [4:0] IdEx_rs1;
+    reg                 [4:0] IdEx_rs2;
     reg [               31:0] IdEx_src1;
     reg [               31:0] IdEx_src2;
     reg [               31:0] IdEx_imm;
@@ -259,7 +259,7 @@ module cpu (
     end
 
     wire [31:0] Ex_src1 = (IdEx_rs1_fwd_Ma_to_Ex & ExMa_v) ? ExMa_rslt :
-                          (IdEx_rs1_fwd_Wb_to_Ex & MaWb_v) ? MaWb_rslt : IdEx_src1;
+                          ((IdEx_rs1 == MaWb_rd) & (MaWb_rd != 0) & MaWb_v) ? MaWb_rslt : IdEx_src1;
     wire [31:0] Ex_src2 = (IdEx_rs2_fwd_Ma_to_Ex & ExMa_v) ? ExMa_rslt :
                           (IdEx_rs2_fwd_Wb_to_Ex & MaWb_v) ? MaWb_rslt : IdEx_src2;
 

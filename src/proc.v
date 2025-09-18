@@ -17,7 +17,7 @@ module cpu (
     input  wire        rst_i,
     output wire [31:0] ibus_addr_o,
     input  wire [31:0] ibus_data_i,
-    output wire        ibus_re_o,
+    output wire        ibus_rdata_en_o,
     output wire [31:0] dbus_cmd_addr_o,
     output wire        dbus_cmd_valid_o,
     output wire        dbus_cmd_we_o,
@@ -32,7 +32,6 @@ module cpu (
     // ID: Instruction Decode
     reg                       IfId_v;
     reg [               31:0] IfId_pc;
-    reg [               31:0] IfId_ir;
     reg                       IfId_br_pred_tkn;
     reg [                1:0] IfId_pattern_hist;
     reg                       IfId_load_muldiv_use;
@@ -164,7 +163,7 @@ module cpu (
     wire          [4:0] Id_rd;
     wire          [4:0] Id_rs1;
     wire          [4:0] Id_rs2;
-    assign ibus_re_o = ~Id_stall;
+    assign ibus_rdata_en_o = ~Id_stall;
     assign Id_ir     = ibus_data_i;
     pre_decoder pre_decoder (
         .ir_i        (Id_ir),
@@ -529,8 +528,10 @@ module bru (
     output wire                       bru_misp_o,
     output wire                [31:0] bru_taken_pc_o
 );
-    wire signed [32:0] sext_src1 = {bru_ctrl_i[`BRU_CTRL_IS_SIGNED] && src1_i[31], src1_i};
-    wire signed [32:0] sext_src2 = {bru_ctrl_i[`BRU_CTRL_IS_SIGNED] && src2_i[31], src2_i};
+    wire signed [32:0] sext_src1 = {bru_ctrl_i[`BRU_CTRL_IS_SIGNED] &&
+                                    src1_i[31], src1_i};
+    wire signed [32:0] sext_src2 = {bru_ctrl_i[`BRU_CTRL_IS_SIGNED] &&
+                                    src2_i[31], src2_i};
 
     wire w_eq = (src1_i == src2_i);       // equal
     wire w_lt = (sext_src1 < sext_src2);  // less than
@@ -541,15 +542,17 @@ module bru (
                                  (bru_ctrl_i[`BRU_CTRL_IS_BNE] & ~w_eq) |
                                  (bru_ctrl_i[`BRU_CTRL_IS_BLT] &  w_lt) |
                                  (bru_ctrl_i[`BRU_CTRL_IS_BGE] & ~w_lt) );
-    wire [31:0] taken_pc = ((bru_ctrl_i[`BRU_CTRL_IS_JALR]) ? src1_i : Ex_pc_i) + imm_i;
+    wire [31:0] taken_pc = (bru_ctrl_i[`BRU_CTRL_IS_JALR]) ? src1_i
+                                                           : Ex_pc_i + imm_i;
 // Note: I can't think of the situation that predicted `pc (Id_pc)` is correct
 //       but predicted `taken` is wrong. Even if the situation exists, I think
 //       it can be considered as successful. 
 
-// Note: I found that even if a instruction isn't TSFR, misp has to be
+// Note: I found that even if a instruction isn't TSFR, misp_taken has to be
 //       considered. For example, when 0xbc is TSFR and 0x400000bc isn't.
-//       In this case, if 0x400000bc is predicted taken, it is mispredicted.
-    wire misp_taken   = valid_i && (Id_pc_i != taken_pc);
+//       In this case, even if 0x400000bc is mispredicted as taken, the
+//       pipeline cannot be flushed.
+    wire misp_taken   = (valid_i & istsfr) && (Id_pc_i != taken_pc);
     wire misp_untaken = valid_i && (Id_pc_i != Ex_pc_i+4);
 
     assign bru_taken_o    = istaken;

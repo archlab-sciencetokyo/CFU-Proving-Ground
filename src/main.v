@@ -35,7 +35,7 @@ module main (
 //------------------------------------------------------------------------------
     wire                      [31:0] ibus_raddr;
     wire                      [31:0] ibus_rdata;
-    wire                             ibus_re;
+    wire                             ibus_rdata_en;
     wire                      [31:0] dbus_cmd_addr;
     wire                             dbus_cmd_we;
     wire                             dbus_cmd_valid;
@@ -48,7 +48,7 @@ module main (
         .rst_i             (rst),         // input  wire
         .ibus_addr_o       (ibus_raddr),  // output wire [`IBUS_ADDR_WIDTH-1:0]
         .ibus_data_i       (ibus_rdata),  // input  wire [`IBUS_DATA_WIDTH-1:0]
-        .ibus_re_o         (ibus_re),
+        .ibus_rdata_en_o   (ibus_rdata_en),
         .dbus_cmd_addr_o   (dbus_cmd_addr),
         .dbus_cmd_we_o     (dbus_cmd_we),
         .dbus_cmd_valid_o  (dbus_cmd_valid),
@@ -67,7 +67,7 @@ module main (
         .clk_i   (sys_clk),        // input  wire
         .raddr_i (bootrom_raddr),  // input  wire [ADDR_WIDTH-1:0]
         .rdata_o (bootrom_rdata),  //
-        .re_i    (ibus_re)
+        .re_i    (ibus_rdata_en)
     );
 
 //==============================================================================
@@ -235,7 +235,7 @@ module main (
         .clk_i                 (sys_clk),        // input  wire
         .cpu_ibus_raddr_i      (ibus_raddr),     // input  wire [ADDR_WIDTH
         .cpu_ibus_rdata_o      (ibus_rdata),     // output wire [DATA_WIDTH
-        .cpu_ibus_rdata_en_i   (ibus_re),
+        .cpu_ibus_rdata_en_i   (ibus_rdata_en),
         .cpu_dbus_cmd_addr_i   (dbus_cmd_addr),
         .cpu_dbus_cmd_we_i     (dbus_cmd_we),
         .cpu_dbus_cmd_valid_i  (dbus_cmd_valid),
@@ -374,7 +374,10 @@ module mmu (
 //==============================================================================
 // IBUS Interface
 //------------------------------------------------------------------------------
-    reg port_ibus = 0; always @(posedge clk_i) port_ibus <= (cpu_ibus_raddr_i[31:28] == 4'h4);
+    reg port_ibus = 0;
+    always @(posedge clk_i) if (cpu_ibus_rdata_en_i) begin
+        port_ibus <= (cpu_ibus_raddr_i[31:28] == 4'h4);
+    end
     assign cpu_ibus_rdata_o  = (port_ibus) ? imem_rdata_data_i : bootrom_rdata_i;
     assign bootrom_raddr_o   = cpu_ibus_raddr_i[31:2];
     assign imem_rdata_addr_o = cpu_ibus_raddr_i[31:2];

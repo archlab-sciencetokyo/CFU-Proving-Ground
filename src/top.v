@@ -48,19 +48,54 @@ module top;
 
     reg  [31:0] imem [0:`IMEM_ENTRIES-1];
     `include "imem_init.vh"
+    reg  [31:0] dram [0:`DMEM_ENTRIES-1];
+    `include "dram_init.vh"
     reg  [31:0] p      = 0;
     wire  [1:0] offset = p & 3;
     wire [31:2] addr   = p >> 2;
+    localparam WAITING_CARIB = 0;
+    localparam INIT_IMEM = 1;
+    localparam INIT_DMEM = 2;
+    localparam DONE = 3;
+    reg [1:0] init_state = WAITING_CARIB;
     always @(posedge clk) begin
-        if (cc >= 190000) begin
-            if (uart_wready & ~uart_wvalid) begin
-                uart_wvalid <= 1;
-                uart_wdata  <= imem[addr][8*offset +: 8];
-                p           <= p+1;
-            end else begin
+        case(init_state)
+            WAITING_CARIB: begin
+                if (cc > 190000) init_state <= INIT_IMEM;
+            end
+
+            INIT_IMEM: begin
+                if (uart_wready & ~uart_wvalid) begin
+                    uart_wvalid <= 1;
+                    uart_wdata  <= imem[addr][8*offset +: 8];
+                    p           <= p+1;
+                end else begin
+                    uart_wvalid <= 0;
+                    if (p[31:2] == `IMEM_ENTRIES) begin
+                        p          <= 0;
+                        init_state <= INIT_DMEM;
+                    end
+                end
+            end
+
+            INIT_DMEM: begin
+                if (uart_wready & ~uart_wvalid) begin
+                    uart_wvalid <= 1;
+                    uart_wdata  <= dram[addr][8*offset +: 8];
+                    p           <= p+1;
+                end else begin
+                    uart_wvalid <= 0;
+                    if (p[31:2] == `DMEM_ENTRIES) begin
+                        p          <= 0;
+                        init_state <= DONE;
+                    end
+                end
+            end
+
+            DONE: begin
                 uart_wvalid <= 0;
             end
-        end
+        endcase
     end
 
 //==============================================================================
@@ -83,10 +118,10 @@ module top;
 //==============================================================================
 // Dump 
 //------------------------------------------------------------------------------
-    initial begin
-        $dumpfile("build/sim.vcd");
-        $dumpvars(0, top);
-    end
+    //initial begin
+    //    $dumpfile("build/sim.vcd");
+    //    $dumpvars(0, top);
+    //end
 
 //==============================================================================
 // Condition for simulation to end

@@ -98,11 +98,11 @@ module cpu (
     reg  [31:0] pc = 0;
     reg rst; always @(posedge clk_i) rst <= rst_i;
 
-    wire If_stall = ExMa_loaduse | (IdEx_wait_ex_result & ~Ex_rslt_v) | ExMa_wait_cmd_ack;
+    wire If_stall = Id_stall;
     wire If_v     = ~If_stall;
-    wire Id_stall = ExMa_loaduse | (IdEx_wait_ex_result & ~Ex_rslt_v) | ExMa_wait_cmd_ack;
+    wire Id_stall = Ex_stall;
     wire Id_v     = ~ExMa_bru_misp & IfId_v & ~Id_stall;
-    wire Ex_stall = ExMa_loaduse | (IdEx_wait_ex_result & ~Ex_rslt_v) | ExMa_wait_cmd_ack;
+    wire Ex_stall = Ma_stall | ExMa_loaduse | (IdEx_wait_ex_result & ~Ex_rslt_v);
     wire Ex_v     = ~ExMa_bru_misp & IdEx_v & ~Ex_stall;
     wire Ma_stall = ExMa_wait_cmd_ack;
     wire Ma_v     = ExMa_v & ~Ma_stall;

@@ -132,7 +132,7 @@ regression-test:
 		./obj_dir/top; \
 	done
 
-TEST ?= rv32um-p-div
+TEST ?= rv32um-p-rem
 single-test:
 	mkdir -p build
 	make user_config

@@ -589,8 +589,7 @@ module divider (
     reg        is_div_rslt_neg;
     reg        is_rem_rslt_neg;
     reg        is_rem;
-    reg  [5:0] cntr = 0;
-    reg [31:0] rslt;
+    reg  [4:0] cntr = 0;
 
     wire [31:0] uintx_remainder = (is_dividend_neg) ? ~remainder+1 : remainder;
     wire [31:0] uintx_divisor   = (is_divisor_neg ) ? ~divisor+1   : divisor;
@@ -627,12 +626,11 @@ module divider (
             end
 
             DIV_STATE_CHECK: begin
-                cntr <= 32;
+                cntr <= 31;
                 if(divisor == 0) begin
                     is_div_rslt_neg <= 0;
                     is_rem_rslt_neg <= 0;
                     {remainder, quotient} <= {remainder, {32{1'b1}}};
-                    rslt <= 32'hFFFFFFFF;
                     state <= DIV_STATE_RET;
                 end else begin
                     divisor <= uintx_divisor;
@@ -646,8 +644,6 @@ module divider (
                                                {remainder[30:0], quotient, 1'b0};
                 cntr <= cntr - 1;
                 if (cntr == 0) begin 
-                    rslt <= (is_rem) ? ((is_rem_rslt_neg) ? ~remainder+1 : remainder) :
-                                       ((is_div_rslt_neg) ? ~quotient+1  : quotient ) ;
                     state <= DIV_STATE_RET;
                 end
             end
@@ -676,7 +672,9 @@ module divider (
         // cntr <= (state==`DIV_CHECK) ? 31 : (state==`DIV_EXEC) ?  cntr-1 : cntr;
         // state <= w_state;
     end
-    assign rsp_rslt_o  = (state!=DIV_STATE_RET) ? 0 : rslt;
+    assign rsp_rslt_o = (state!=DIV_STATE_RET) ? 0 : 
+                    (is_rem) ? ((is_rem_rslt_neg) ? ~remainder+1 : remainder) :
+                    ((is_div_rslt_neg) ? ~quotient+1  : quotient ) ;
     assign rsp_valid_o = (state==DIV_STATE_RET);
 endmodule
 

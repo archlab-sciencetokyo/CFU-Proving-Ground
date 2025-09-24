@@ -20,9 +20,9 @@ void dmem_init()
 void boot()
 {
     volatile char *uart_tx = (volatile  char *)0x10000000;
-    volatile int  *led  = (volatile  int *)0x10002000;
-    volatile int  *imem = (volatile  int *)0x40000000;
-    volatile int  *dram = (volatile  int *)0x80000000;
+    volatile int  *led     = (volatile  int *)0x10002000;
+    volatile int  *imem    = (volatile  int *)0x40000000;
+    volatile int  *dram    = (volatile  int *)0x80000000;
     
 //==============================================================================
 // LiteX Init (Error Code: 0xa)

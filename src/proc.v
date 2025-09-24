@@ -116,8 +116,10 @@ module cpu (
     reg  ExMa_loaduse        = 0;
     reg  ExMa_wait_cmd_ack   = 0;
     always @(posedge clk_i) begin
+        if (!Ma_stall) begin
         IdEx_wait_ex_result <= (~IdEx_wait_ex_result & IfId_v & (Id_mul_ctrl[`MUL_CTRL_IS_MUL] | Id_div_ctrl[`DIV_CTRL_IS_DIV]))
                              | (IdEx_wait_ex_result & ~Ex_rslt_v);
+        end
         ExMa_wait_cmd_ack   <= (~ExMa_wait_cmd_ack & dbus_cmd_valid_o) | (ExMa_wait_cmd_ack & ~dbus_cmd_ack_i);
     end
 
@@ -125,16 +127,16 @@ module cpu (
 // IF Stage
 //------------------------------------------------------------------------------
     always @(posedge clk_i) if (~If_stall) begin
-        pc <= If_next_pc;
+        pc <= If_pc;
     end
-    wire [31:0] If_next_pc;
+    wire [31:0] If_pc;
     wire  [1:0] If_pred_pattern_hist;
     wire        If_pred_taken;
     wire [31:0] If_pred_pc;
     bimodal bimodal (
         .clk_i          (clk_i),
         .re_i           (~If_stall),
-        .raddr_i        (If_next_pc),
+        .raddr_i        (If_pc),
         .we_i           (ExMa_pred_we),
         .waddr_i        (ExMa_pc),
         .pattern_hist_i (ExMa_pattern_hist),
@@ -144,16 +146,16 @@ module cpu (
         .pred_istaken_o (If_pred_taken),
         .pred_pc_o      (If_pred_pc)
     );
-    assign If_next_pc  = (ExMa_bru_misp) ? ExMa_bru_taken_pc :
+    assign If_pc  = (ExMa_bru_misp) ? ExMa_bru_taken_pc :
                          (If_pred_taken) ? If_pred_pc : pc+4;
-    assign ibus_addr_o = If_next_pc;
+    assign ibus_addr_o = If_pc;
 
 //==============================================================================
 // ID Stage
 //------------------------------------------------------------------------------
     always @(posedge clk_i) if (~Id_stall) begin
         IfId_v            <= If_v;
-        IfId_pc           <= If_next_pc;
+        IfId_pc           <= If_pc;
         IfId_pattern_hist <= If_pred_pattern_hist;
     end
 
@@ -306,29 +308,32 @@ module cpu (
     wire        Ex_mul_valid;
     wire [31:0] Ex_mul_rslt;
     multiplier multiplier (
-        .clk_i     (clk_i),
-        .rst_i     (rst),
-        .stall_i   (0),
-        .valid_i   (IdEx_v),
-        .mul_ctrl_i(IdEx_mul_ctrl),
-        .src1_i    (Ex_src1),
-        .src2_i    (Ex_src2),
-        .valid_o   (Ex_mul_valid),
-        .rslt_o    (Ex_mul_rslt)
+        .clk_i(clk_i),
+        .rst_i(rst),
+        .cmd_valid_i(IdEx_v),
+        .cmd_ready_o(),
+        .cmd_ctrl_i(IdEx_mul_ctrl),
+        .cmd_src1_i(Ex_src1),
+        .cmd_src2_i(Ex_src2),
+        .rsp_valid_o(Ex_mul_valid),
+        .rsp_ready_i(~Ma_stall),
+        .rsp_rslt_o(Ex_mul_rslt)
     );
 
+
+    
     wire        Ex_div_valid;
     wire [31:0] Ex_div_rslt;
     divider divider (
-        .clk_i     (clk_i),
-        .rst_i     (rst),
-        .stall_i   (0),
-        .valid_i   (IdEx_v),
-        .div_ctrl_i(IdEx_div_ctrl),
-        .src1_i    (Ex_src1),
-        .src2_i    (Ex_src2),
-        .valid_o   (Ex_div_valid),
-        .rslt_o    (Ex_div_rslt)
+        .clk_i(clk_i),
+        .rst_i(rst),
+        .cmd_valid_i(IdEx_v),
+        .cmd_ctrl_i(IdEx_div_ctrl),
+        .cmd_src1_i(Ex_src1),
+        .cmd_src2_i(Ex_src2),
+        .rsp_valid_o(Ex_div_valid),
+        .rsp_ready_i(~Ma_stall),
+        .rsp_rslt_o(Ex_div_rslt)
     );
 
     wire        Ex_cfu_en = IdEx_cfu_ctrl[0] & Ex_v;
@@ -565,19 +570,16 @@ endmodule
 `define DIV_RET   3
 /******************************************************************************/
 module divider (
-    input  wire        clk_i      ,
-    input  wire        rst_i      ,
-    input  wire        stall_i    ,
-    input  wire        valid_i    ,
-    input  wire  [2:0] div_ctrl_i ,
-    input  wire [31:0] src1_i     ,
-    input  wire [31:0] src2_i     ,
-    output wire        valid_o    ,
-    output wire [31:0] rslt_o
+    input  wire        clk_i,
+    input  wire        rst_i,
+    input  wire        cmd_valid_i,
+    input  wire  [2:0] cmd_ctrl_i,
+    input  wire [31:0] cmd_src1_i,
+    input  wire [31:0] cmd_src2_i,
+    output wire        rsp_valid_o,
+    input  wire        rsp_ready_i,
+    output wire [31:0] rsp_rslt_o
 );
-
-    reg [1:0] state = `DIV_IDLE;
-    assign valid_o = (state==`DIV_RET);
 
     reg        is_dividend_neg;
     reg        is_divisor_neg;
@@ -587,48 +589,95 @@ module divider (
     reg        is_div_rslt_neg;
     reg        is_rem_rslt_neg;
     reg        is_rem;
-    reg  [4:0] cntr;
+    reg  [5:0] cntr = 0;
+    reg [31:0] rslt;
 
     wire [31:0] uintx_remainder = (is_dividend_neg) ? ~remainder+1 : remainder;
     wire [31:0] uintx_divisor   = (is_divisor_neg ) ? ~divisor+1   : divisor;
     wire [32:0] difference      = {remainder[30:0], quotient[31]} - divisor;
     wire        q               = !difference[32];
 
-    assign rslt_o = (state!=`DIV_RET) ? 0 : 
-                    (is_rem) ? ((is_rem_rslt_neg) ? ~remainder+1 : remainder) :
-                    ((is_div_rslt_neg) ? ~quotient+1  : quotient ) ;
     
-    wire w_div    = div_ctrl_i[`DIV_CTRL_IS_DIV];
-    wire w_signed = div_ctrl_i[`DIV_CTRL_IS_SIGNED];
-    wire [1:0] w_state = (w_init) ? `DIV_CHECK :
-                         (state==`DIV_CHECK && divisor==0) ? `DIV_RET : // Note
-                         (state==`DIV_CHECK && divisor!=0) ? `DIV_EXEC :
-                         (state==`DIV_EXEC  && cntr==0) ? `DIV_RET :
-                         (state==`DIV_EXEC  && cntr!=0) ? `DIV_EXEC : `DIV_IDLE;
-    
-    wire w_init = (state==`DIV_IDLE && valid_i && w_div);
-    always @(posedge clk_i) if (!stall_i) begin
-        is_rem            <= (w_init) ? div_ctrl_i[`DIV_CTRL_IS_REM] : is_rem;
-        is_dividend_neg   <= (w_init) ? w_signed && src1_i[31] : is_dividend_neg;
-        is_divisor_neg    <= (w_init) ? w_signed && src2_i[31] : is_divisor_neg;
-        is_div_rslt_neg   <= (w_init) ? w_signed && (src1_i[31] ^ src2_i[31]) :
-                             (state==`DIV_CHECK && divisor==0) ? 0 : is_div_rslt_neg;
-        is_rem_rslt_neg   <= (w_init) ? w_signed &&  src1_i[31] : 
-                             (state==`DIV_CHECK && divisor==0) ? 0 : is_rem_rslt_neg;
+    wire w_div    = cmd_ctrl_i[`DIV_CTRL_IS_DIV];
+    wire w_signed = cmd_ctrl_i[`DIV_CTRL_IS_SIGNED];
+    //wire [1:0] w_state = (w_init) ? `DIV_CHECK :
+    //                     (state==`DIV_CHECK && divisor==0) ? `DIV_RET : // Note
+    //                     (state==`DIV_CHECK && divisor!=0) ? `DIV_EXEC :
+    //                     (state==`DIV_EXEC  && cntr==0) ? `DIV_RET :
+    //                     (state==`DIV_EXEC  && cntr!=0) ? `DIV_EXEC : `DIV_IDLE;
+    //
+    // wire w_init = (state==`DIV_IDLE && valid_i && w_div);
+
+    localparam DIV_STATE_IDLE  = 0;
+    localparam DIV_STATE_CHECK = 1;
+    localparam DIV_STATE_EXEC  = 2;
+    localparam DIV_STATE_RET   = 3;
+    reg [1:0] state = DIV_STATE_IDLE;
+    always @(posedge clk_i) begin
+        case(state)
+            DIV_STATE_IDLE: if (cmd_valid_i & w_div) begin
+                is_rem          <= cmd_ctrl_i[`DIV_CTRL_IS_REM];
+                is_dividend_neg <= w_signed & cmd_src1_i[31];
+                is_divisor_neg  <= w_signed & cmd_src2_i[31];
+                is_div_rslt_neg <= w_signed & (cmd_src1_i[31] ^ cmd_src2_i[31]);
+                is_rem_rslt_neg <= w_signed & cmd_src1_i[31];
+                divisor         <= cmd_src2_i;
+                {remainder, quotient} <= {cmd_src1_i, 32'd0};
+                state           <= DIV_STATE_CHECK;
+            end
+
+            DIV_STATE_CHECK: begin
+                cntr <= 32;
+                if(divisor == 0) begin
+                    is_div_rslt_neg <= 0;
+                    is_rem_rslt_neg <= 0;
+                    {remainder, quotient} <= {remainder, {32{1'b1}}};
+                    rslt <= 32'hFFFFFFFF;
+                    state <= DIV_STATE_RET;
+                end else begin
+                    divisor <= uintx_divisor;
+                    {remainder, quotient} <= {32'd0, uintx_remainder};
+                    state <= DIV_STATE_EXEC;
+                end
+            end
+
+            DIV_STATE_EXEC: begin
+                {remainder, quotient} <= (q) ? {difference[31:0], quotient[30:0], 1'b1} :
+                                               {remainder[30:0], quotient, 1'b0};
+                cntr <= cntr - 1;
+                if (cntr == 0) begin 
+                    rslt <= (is_rem) ? ((is_rem_rslt_neg) ? ~remainder+1 : remainder) :
+                                       ((is_div_rslt_neg) ? ~quotient+1  : quotient ) ;
+                    state <= DIV_STATE_RET;
+                end
+            end
+
+            DIV_STATE_RET: if (rsp_ready_i) begin
+                state <= DIV_STATE_IDLE;
+            end
+        endcase
+        // is_rem            <= (w_init) ? div_ctrl_i[`DIV_CTRL_IS_REM] : is_rem;
+        // is_dividend_neg   <= (w_init) ? w_signed && src1_i[31] : is_dividend_neg;
+        // is_divisor_neg    <= (w_init) ? w_signed && src2_i[31] : is_divisor_neg;
+        // is_div_rslt_neg   <= (w_init) ? w_signed && (src1_i[31] ^ src2_i[31]) :
+        //                     (state==`DIV_CHECK && divisor==0) ? 0 : is_div_rslt_neg;
+        // is_rem_rslt_neg   <= (w_init) ? w_signed &&  src1_i[31] : 
+        //                     (state==`DIV_CHECK && divisor==0) ? 0 : is_rem_rslt_neg;
         
-        divisor <= (w_init) ? src2_i :
-                   (state==`DIV_CHECK && divisor!=0) ? uintx_divisor : divisor;
+        // divisor <= (w_init) ? src2_i :
+        //           (state==`DIV_CHECK && divisor!=0) ? uintx_divisor : divisor;
 
-        {remainder, quotient} <= (w_init) ? {src1_i, 32'd0} :
-                   (state==`DIV_CHECK && divisor==0) ? {remainder, {32{1'b1}}} :
-                   (state==`DIV_CHECK && divisor!=0) ? {32'd0, uintx_remainder} :
-                   (state==`DIV_EXEC) ? ((q) ? {difference[31:0], quotient[30:0], 1'b1} :
-                                               {remainder[30:0], quotient, 1'b0}) :
-                   {remainder, quotient};
-
-        cntr <= (state==`DIV_CHECK) ? 31 : (state==`DIV_EXEC) ?  cntr-1 : cntr;
-        state <= w_state;
+        // {remainder, quotient} <= (w_init) ? {src1_i, 32'd0} :
+        //           (state==`DIV_CHECK && divisor==0) ? {remainder, {32{1'b1}}} :
+        //           (state==`DIV_CHECK && divisor!=0) ? {32'd0, uintx_remainder} :
+        //           (state==`DIV_EXEC) ? ((q) ? {difference[31:0], quotient[30:0], 1'b1} :
+        //                                       {remainder[30:0], quotient, 1'b0}) :
+        //           {remainder, quotient};
+        // cntr <= (state==`DIV_CHECK) ? 31 : (state==`DIV_EXEC) ?  cntr-1 : cntr;
+        // state <= w_state;
     end
+    assign rsp_rslt_o  = (state!=DIV_STATE_RET) ? 0 : rslt;
+    assign rsp_valid_o = (state==DIV_STATE_RET);
 endmodule
 
 `define MUL_IDLE 0
@@ -638,42 +687,58 @@ endmodule
 module multiplier (
     input  wire        clk_i,
     input  wire        rst_i,
-    input  wire        stall_i,
-    input  wire        valid_i,
-    input  wire [ 3:0] mul_ctrl_i,
-    input  wire [31:0] src1_i,
-    input  wire [31:0] src2_i,
-    output wire        valid_o,
-    output wire [31:0] rslt_o
+    input  wire        cmd_valid_i,
+    output wire        cmd_ready_o,
+    input  wire [ 3:0] cmd_ctrl_i,
+    input  wire [31:0] cmd_src1_i,
+    input  wire [31:0] cmd_src2_i,
+    output wire        rsp_valid_o,
+    input  wire        rsp_ready_i,
+    output wire [31:0] rsp_rslt_o
 );
-
-    reg        [ 1:0] state = `MUL_IDLE;
     reg signed [32:0] r_multiplicand;
     reg signed [32:0] r_multiplier;
     reg        [63:0] product;
     reg               is_high;
 
-    assign rslt_o = (state != `MUL_RET) ? 0 : (is_high) ? product[63:32] : product[31:0];
+    wire w_mul         = cmd_ctrl_i[`MUL_CTRL_IS_MUL];
+    wire w_src1_signed = cmd_ctrl_i[`MUL_CTRL_IS_SRC1_SIGNED];
+    wire w_src2_signed = cmd_ctrl_i[`MUL_CTRL_IS_SRC2_SIGNED];
+    wire w_is_high     = cmd_ctrl_i[`MUL_CTRL_IS_HIGH];
+    //wire [1:0] w_state = (state==`MUL_IDLE && valid_i && w_mul) ? `MUL_EXEC :
+    //                     (state==`MUL_EXEC) ? `MUL_RET : `MUL_IDLE;
 
-    wire w_mul = mul_ctrl_i[`MUL_CTRL_IS_MUL];
-    wire w_src1_signed = mul_ctrl_i[`MUL_CTRL_IS_SRC1_SIGNED];
-    wire w_src2_signed = mul_ctrl_i[`MUL_CTRL_IS_SRC2_SIGNED];
-    wire w_is_high = mul_ctrl_i[`MUL_CTRL_IS_HIGH];
-    wire [1:0] w_state = (state==`MUL_IDLE && valid_i && w_mul) ? `MUL_EXEC :
-                         (state==`MUL_EXEC) ? `MUL_RET : `MUL_IDLE;
-
+    localparam MUL_STATE_IDLE = 0;
+    localparam MUL_STATE_EXEC = 1;
+    localparam MUL_STATE_RET  = 2;
+    reg [ 1:0] state = MUL_STATE_IDLE;
     always @(posedge clk_i) begin
-        if (rst_i) begin
-            state <= `MUL_IDLE;
-        end else if (!stall_i) begin
-            if (state == `MUL_IDLE) r_multiplicand <= {w_src1_signed && src1_i[31], src1_i};
-            if (state == `MUL_IDLE) r_multiplier <= {w_src2_signed && src2_i[31], src2_i};
-            if (state == `MUL_IDLE) is_high <= w_is_high;
-            if (state == `MUL_EXEC) product <= r_multiplicand * r_multiplier;
-            state <= w_state;
-        end
+        case(state)
+            MUL_STATE_IDLE: if (cmd_valid_i & w_mul) begin
+                r_multiplicand <= {w_src1_signed && cmd_src1_i[31], cmd_src1_i};
+                r_multiplier   <= {w_src2_signed && cmd_src2_i[31], cmd_src2_i};
+                is_high        <= w_is_high;
+                product        <= 0;
+                state          <= MUL_STATE_EXEC;
+            end
+
+            MUL_STATE_EXEC: begin
+                product <= r_multiplicand * r_multiplier;
+                state   <= MUL_STATE_RET;
+            end
+
+            MUL_STATE_RET: if (rsp_ready_i) begin
+                state <= MUL_STATE_IDLE;
+            end
+        endcase
+        //if (state == `MUL_IDLE) r_multiplicand <= {w_src1_signed && src1_i[31], src1_i};
+        //if (state == `MUL_IDLE) r_multiplier <= {w_src2_signed && src2_i[31], src2_i};
+        //if (state == `MUL_IDLE) is_high <= w_is_high;
+        //if (state == `MUL_EXEC) product <= r_multiplicand * r_multiplier;
     end
-    assign valid_o = (state == `MUL_RET);
+    assign rsp_valid_o = (state == `MUL_RET);
+    assign rsp_rslt_o  = (state != `MUL_RET) ? 0 :
+                         (is_high) ? product[63:32] : product[31:0];
 endmodule
 
 /******************************************************************************/

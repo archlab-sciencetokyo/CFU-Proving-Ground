@@ -1,0 +1,24 @@
+#-----------------------------------------------------------
+# Vivado v2024.1 (64-bit)
+# SW Build 5076996 on Wed May 22 18:36:09 MDT 2024
+# IP Build 5075265 on Wed May 22 21:45:21 MDT 2024
+# SharedData Build 5076995 on Wed May 22 18:29:18 MDT 2024
+# Start of session at: Thu Sep 25 19:51:14 2025
+# Process ID: 1415331
+# Current directory: /home/fujino/Projects/CFU-Proving-Ground
+# Command line: vivado -mode batch -source scripts/load.tcl
+# Log file: /home/fujino/Projects/CFU-Proving-Ground/vivado.log
+# Journal file: /home/fujino/Projects/CFU-Proving-Ground/vivado.jou
+# Running On        :rserv5
+# Platform          :Ubuntu
+# Operating System  :Ubuntu 22.04.5 LTS
+# Processor Detail  :Intel(R) Core(TM) i9-14900
+# CPU Frequency     :4099.997 MHz
+# CPU Physical cores:24
+# CPU Logical cores :32
+# Host memory       :134813 MB
+# Swap memory       :8589 MB
+# Total Virtual     :143403 MB
+# Available Virtual :125941 MB
+#-----------------------------------------------------------
+source scripts/load.tcl

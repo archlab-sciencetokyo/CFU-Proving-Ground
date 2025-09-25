@@ -751,7 +751,7 @@ module multiplier (
         //if (state == `MUL_EXEC) product <= r_multiplicand * r_multiplier;
     end
     assign rsp_valid_o = (state == `MUL_RET);
-    assign rsp_rslt_o  = (state != `MUL_RET) ? 0 : product[31:0];
+    assign rsp_rslt_o  = (state != `MUL_RET) ? 0 : (is_high) ? product[63:32] : product[31:0];
 endmodule
 
 /******************************************************************************/

@@ -57,7 +57,6 @@ module cpu (
     reg                       IdEx_rs2_fwd_Ma_to_Ex;
     reg                       IdEx_rs1_fwd_Wb_to_Ex = 0;
     reg                       IdEx_rs2_fwd_Wb_to_Ex = 0;
-    reg                       IdEx_loaduse = 0;
     reg                 [4:0] IdEx_rs1;
     reg                 [4:0] IdEx_rs2;
     reg [               31:0] IdEx_src1;
@@ -95,31 +94,46 @@ module cpu (
 //==============================================================================
 // Pipeline Control Signals
 //------------------------------------------------------------------------------
-    reg  [31:0] pc = 0;
-    reg rst; always @(posedge clk_i) rst <= rst_i;
-
     wire If_stall = Id_stall;
     wire Id_stall = Ex_stall;
-    wire Ex_stall = Ma_stall | ExMa_loaduse | (IdEx_wait_ex_result & ~Ex_rslt_v);
-    wire Ma_stall = ExMa_wait_cmd_ack;
+    wire Ex_stall = Ma_stall | IdEx_loaduse | (IdEx_wait_ex_result & ~Ex_rslt_v);
+    wire Ma_stall = Wb_stall | ExMa_wait_cmd_ack;
     wire Wb_stall = 0;
 
     wire If_v     = ~If_stall;
-    wire Id_v     = ~ExMa_bru_misp & IfId_v & ~Id_stall;
-    wire Ex_v     = ~ExMa_bru_misp & IdEx_v & ~Ex_stall;
-    wire Ma_v     = ExMa_v & ~Ma_stall;
-    wire Wb_v     = MaWb_v;
+    wire Id_v     = ~Id_stall & IfId_v & ~ExMa_bru_misp;
+    wire Ex_v     = ~Ex_stall & IdEx_v & ~ExMa_bru_misp;
+    wire Ma_v     = ~Ma_stall & ExMa_v;
+    wire Wb_v     = ~Wb_stall & MaWb_v;
 
-    wire Ex_loaduse          = Id_v & Ex_v & IdEx_lsu_ctrl[`LSU_CTRL_IS_LOAD]
-                             & ((IdEx_rd == Id_rs1) | (IdEx_rd == Id_rs2));
-    wire Ex_rslt_v           = Ex_mul_valid | Ex_div_valid;
+    wire Ex_rslt_v  = Ex_mul_valid | Ex_div_valid;
+    wire Ex_handshake = Ex_rslt_v & ~Ma_stall;
+    wire Id_loaduse = (IfId_v & IdEx_v & IdEx_lsu_ctrl[`LSU_CTRL_IS_LOAD])
+                    & ((IdEx_rd == Id_rs1) | (IdEx_rd == Id_rs2));
     reg  IdEx_wait_ex_result = 0;
-    reg  ExMa_loaduse        = 0;
+    reg  IdEx_loaduse        = 0;
     reg  ExMa_wait_cmd_ack   = 0;
+// Note: ExMa_wait_cmd_ackがアサートしている場合は，以前のステージをストールさせるだけでいい
+//       問題はId_loaduseとId_waitが隣接，あるいは同時にくる場合である．
+//       すべてのパータンを考察する．
+//
+//       1. Id_wait = 1, IdEx_loaduse = 1の場合
+//          lw -> addi -> mulのような実行順序で発生する．
+//          IdEx_loaduseが0になるまで，IdEx_waitの更新を禁止する．
+//       2. Id_loaduse = 1, IdEx_wait = 1の場合
+//          この状態は存在しない．これはId_loaduseが1となる必要条件は,ExステージにLOAD命令が
+//          存在するときであり，ExステージにLOAD命令が存在するとき，IdEx_waitは0である．
+//       3. Id_loaduse = 1, Id_wait = 1の場合
+//          MULが直前のLOAD命令の結果を使う場合に発生する．この場合，IdEx_loaduseが0になるまで，
+//          演算を開始させてはいけない．
+//
     always @(posedge clk_i) begin
         if (!Ma_stall) begin
-        IdEx_wait_ex_result <= (~IdEx_wait_ex_result & IfId_v & (Id_mul_ctrl[`MUL_CTRL_IS_MUL] | Id_div_ctrl[`DIV_CTRL_IS_DIV]))
-                             | (IdEx_wait_ex_result & ~Ex_rslt_v);
+            IdEx_loaduse <= ~IdEx_loaduse & Id_loaduse;
+            if (!IdEx_loaduse) begin
+                IdEx_wait_ex_result <= ~IdEx_wait_ex_result & IfId_v & (Id_mul_ctrl[`MUL_CTRL_IS_MUL] | Id_div_ctrl[`DIV_CTRL_IS_DIV])
+                                     | (IdEx_wait_ex_result & ~Ex_rslt_v);
+            end
         end
         ExMa_wait_cmd_ack   <= (~ExMa_wait_cmd_ack & dbus_cmd_valid_o) | (ExMa_wait_cmd_ack & ~dbus_cmd_ack_i);
     end
@@ -127,6 +141,8 @@ module cpu (
 //==============================================================================
 // IF Stage
 //------------------------------------------------------------------------------
+    reg  [31:0] pc = 0;
+    reg rst; always @(posedge clk_i) rst <= rst_i;
     always @(posedge clk_i) if (~If_stall) begin
         pc <= If_pc;
     end
@@ -311,7 +327,7 @@ module cpu (
     multiplier multiplier (
         .clk_i(clk_i),
         .rst_i(rst),
-        .cmd_valid_i(IdEx_v),
+        .cmd_valid_i(IdEx_v & ~IdEx_loaduse),
         .cmd_ready_o(),
         .cmd_ctrl_i(IdEx_mul_ctrl),
         .cmd_src1_i(Ex_src1),
@@ -328,7 +344,7 @@ module cpu (
     divider divider (
         .clk_i(clk_i),
         .rst_i(rst),
-        .cmd_valid_i(IdEx_v),
+        .cmd_valid_i(IdEx_v & ~IdEx_loaduse),
         .cmd_ctrl_i(IdEx_div_ctrl),
         .cmd_src1_i(Ex_src1),
         .cmd_src2_i(Ex_src2),
@@ -358,7 +374,6 @@ module cpu (
         ExMa_v             <= Ex_v;
         ExMa_pc            <= IdEx_pc;
         ExMa_ir            <= IdEx_ir;
-        ExMa_loaduse       <= Ex_loaduse;
         ExMa_pred_we       <= Ex_v & IdEx_bru_ctrl[`BRU_CTRL_IS_CTRL_TSFR];
         ExMa_pattern_hist  <= IdEx_pattern_hist;
         ExMa_bru_misp      <= Ex_bru_misp;

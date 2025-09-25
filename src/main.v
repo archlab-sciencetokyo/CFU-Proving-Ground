@@ -432,9 +432,10 @@ module mmu (
 );
     wire   sdram_access    = (cpu_dbus_cmd_addr_i[31:28] == 4'h0);
     wire   uart_access     = (cpu_dbus_cmd_addr_i[31:28] == 4'h1);
+    wire   vmem_access     = (cpu_dbus_cmd_addr_i[31:28] == 4'h2);
     wire   imem_access     = (cpu_dbus_cmd_addr_i[31:28] == 4'h4);
-    wire   csr_access      = (cpu_dbus_cmd_addr_i[31:28] == 4'hF);
     wire   litedram_access = (cpu_dbus_cmd_addr_i[31:28] == 4'h8);
+    wire   csr_access      = (cpu_dbus_cmd_addr_i[31:28] == 4'hF);
 //==============================================================================
 // IBUS Interface
 //------------------------------------------------------------------------------
@@ -448,28 +449,34 @@ module mmu (
 //==============================================================================
 // CPU Command Acknowledge and Read Data Bus
 //------------------------------------------------------------------------------
-    reg [2:0] port_sel = 0;
-    localparam PORT_SDRAM    = 3'b000;
-    localparam PORT_CSR      = 3'b001;
-    localparam PORT_LITEDRAM = 3'b010;
-    localparam PORT_IMEM     = 3'b011;
-    localparam PORT_UART     = 3'b100;
+    localparam PORT_SEL_SDRAM    = 3'b000;
+    localparam PORT_SEL_UART     = 3'b001;
+    localparam PORT_SEL_VMEM     = 3'b010;
+    localparam PORT_SEL_IMEM     = 3'b011;
+    localparam PORT_SEL_LITEDRAM = 3'b100;
+    localparam PORT_SEL_CSR      = 3'b101;
+    reg [2:0] port_sel = PORT_SEL_SDRAM;
     always @(posedge clk_i) if (cpu_dbus_cmd_valid_i) begin
-        port_sel <= (sdram_access)    ? PORT_SDRAM :
-                    (csr_access)      ? PORT_CSR :
-                    (litedram_access) ? PORT_LITEDRAM :
-                    (imem_access)     ? PORT_IMEM :
-                                        PORT_UART ;
+        port_sel <= (sdram_access)    ? PORT_SEL_SDRAM :
+                    (csr_access)      ? PORT_SEL_CSR :
+                    (litedram_access) ? PORT_SEL_LITEDRAM :
+                    (imem_access)     ? PORT_SEL_IMEM :
+                    (vmem_access)     ? PORT_SEL_VMEM :
+                                        PORT_SEL_UART ;
     end
-    assign cpu_dbus_cmd_ack_o   = (port_sel == PORT_SDRAM)    ? sdram_cmd_ack_i :
-                                  (port_sel == PORT_CSR)      ? litedram_ctrl_ack_i :
-                                  (port_sel == PORT_LITEDRAM) ? (litedram_state == SEND_ACK) :
-                                  (port_sel == PORT_IMEM)     ? imem_wdata_ack_i : uart_ack;
+    assign cpu_dbus_cmd_ack_o   = (port_sel == PORT_SEL_SDRAM)    ? sdram_cmd_ack_i
+                                : (port_sel == PORT_SEL_CSR)      ? litedram_ctrl_ack_i
+                                : (port_sel == PORT_SEL_LITEDRAM) ? (litedram_state == LITEDRAM_STATE_SEND_ACK)
+                                : (port_sel == PORT_SEL_IMEM)     ? imem_wdata_ack_i
+                                : (port_sel == PORT_SEL_UART)     ? uart_ack
+                                : 1;
 
-    assign cpu_dbus_rdata_data_o = (port_sel == PORT_SDRAM)    ? sdram_rdata_i :
-                                   (port_sel == PORT_CSR)      ? litedram_ctrl_dat_r_i :
-                                   (port_sel == PORT_LITEDRAM) ? litedram_rdata_data :
-                                   (port_sel == PORT_IMEM)     ? imem_rdata_data_i : uart_rdata_data_i;
+    assign cpu_dbus_rdata_data_o = (port_sel == PORT_SEL_SDRAM)    ? sdram_rdata_i
+                                 : (port_sel == PORT_SEL_CSR)      ? litedram_ctrl_dat_r_i
+                                 : (port_sel == PORT_SEL_LITEDRAM) ? litedram_rdata_data
+                                 : (port_sel == PORT_SEL_IMEM)     ? imem_rdata_data_i
+                                 : (port_sel == PORT_SEL_UART)     ? uart_rdata_data_i
+                                 : 0;
 
 //==============================================================================
 // SDRAM Control Interface
@@ -483,47 +490,42 @@ module mmu (
 //==============================================================================
 // UART Control Interface
 //------------------------------------------------------------------------------
-    localparam UART_IDLE = 2'b00;
-    localparam UART_TX   = 2'b01;
-    localparam UART_RX   = 2'b10;
-    localparam UART_ACK  = 2'b11;
-
-    reg [1:0] uart_state = UART_IDLE;
     reg [7:0] uart_send  = 0;
-    wire      uart_ack   = (uart_state == UART_ACK);
+    wire      uart_ack   = (uart_state == UART_STATE_ACK);
 
-    assign uart_rdata_ready_o = (uart_state == UART_RX);
-    assign uart_wdata_valid_o = (uart_state == UART_TX);
-    assign uart_wdata_data_o  = uart_send;
-
+    localparam UART_STATE_IDLE = 2'b00;
+    localparam UART_STATE_TX   = 2'b01;
+    localparam UART_STATE_RX   = 2'b10;
+    localparam UART_STATE_ACK  = 2'b11;
+    reg [1:0] uart_state = UART_STATE_IDLE;
     always @(posedge clk_i) begin
         case(uart_state)
-            UART_IDLE: begin
-                if (uart_access & cpu_dbus_cmd_valid_i) begin
-                    uart_state <= (cpu_dbus_cmd_addr_i[2]) ? UART_RX : UART_TX;
-                    uart_send  <= cpu_dbus_wdata_data_i[7:0];
-                end
+            UART_STATE_IDLE: if (uart_access & cpu_dbus_cmd_valid_i) begin
+                uart_state <= (cpu_dbus_cmd_addr_i[2]) ? UART_STATE_RX : UART_STATE_TX;
+                uart_send  <= cpu_dbus_wdata_data_i[7:0];
             end
-            UART_RX: begin
-                if (uart_rdata_valid_i) begin
-                    uart_state <= UART_ACK;
-                end
+
+            UART_STATE_RX: if (uart_rdata_valid_i) begin
+                uart_state <= UART_STATE_ACK;
             end
-            UART_TX: begin
-                if (uart_wdata_ready_i) begin
-                    uart_state <= UART_ACK;
-                end
+
+            UART_STATE_TX: if (uart_wdata_ready_i) begin
+                uart_state <= UART_STATE_ACK;
             end
-            UART_ACK: begin
-                uart_state <= UART_IDLE;
+
+            UART_STATE_ACK: begin
+                uart_state <= UART_STATE_IDLE;
             end
         endcase
     end
 
+    assign uart_rdata_ready_o = (uart_state == UART_STATE_RX);
+    assign uart_wdata_valid_o = (uart_state == UART_STATE_TX);
+    assign uart_wdata_data_o  = uart_send;
 //==============================================================================
 // VMEM Control Interface
 //------------------------------------------------------------------------------
-    assign vmem_we_o    = (cpu_dbus_cmd_valid_i & cpu_dbus_cmd_we_i & (cpu_dbus_cmd_addr_i[31:28] == 4'h2));
+    assign vmem_we_o    = (cpu_dbus_cmd_valid_i & cpu_dbus_cmd_we_i & vmem_access);
     assign vmem_waddr_o = cpu_dbus_cmd_addr_i;
     assign vmem_wdata_o = cpu_dbus_wdata_data_i[7:0];
 
@@ -549,12 +551,12 @@ module mmu (
 //==============================================================================
 // LiteDRAM Command Interface
 //------------------------------------------------------------------------------
-    localparam IDLE             = 3'b000;
-    localparam WAIT_CMD_READY   = 3'b001;
-    localparam WAIT_WDATA_READY = 3'b010;
-    localparam WAIT_RDATA_VALID = 3'b011;
-    localparam SEND_ACK         = 3'b100;
-    reg   [2:0] litedram_state       = IDLE;
+    localparam LITEDRAM_STATE_IDLE             = 3'b000;
+    localparam LITEDRAM_STATE_WAIT_CMD_READY   = 3'b001;
+    localparam LITEDRAM_STATE_WAIT_WDATA_READY = 3'b010;
+    localparam LITEDRAM_STATE_WAIT_RDATA_VALID = 3'b011;
+    localparam LITEDRAM_STATE_SEND_ACK         = 3'b100;
+    reg   [2:0] litedram_state       = LITEDRAM_STATE_IDLE;
     reg  [23:0] litedram_cmd_addr    = 0;
     reg         litedram_cmd_valid   = 0;
     reg         litedram_cmd_we      = 0;
@@ -566,7 +568,7 @@ module mmu (
     reg   [6:0] offset = 0;
     always @(posedge clk_i) begin
         case(litedram_state)
-            IDLE: begin
+            LITEDRAM_STATE_IDLE: begin
                 if (litedram_access & cpu_dbus_cmd_valid_i) begin
                     litedram_cmd_addr   <= cpu_dbus_cmd_addr_i[27:4];
                     offset              <= cpu_dbus_cmd_addr_i[3:2];
@@ -574,38 +576,38 @@ module mmu (
                     litedram_cmd_we     <= cpu_dbus_cmd_we_i;
                     litedram_wdata_data <= cpu_dbus_wdata_data_i;
                     litedram_wdata_we   <= cpu_dbus_wdata_en_i;
-                    litedram_state      <= WAIT_CMD_READY;
+                    litedram_state      <= LITEDRAM_STATE_WAIT_CMD_READY;
                 end
             end
-            WAIT_CMD_READY: begin
+            LITEDRAM_STATE_WAIT_CMD_READY: begin
                 if (litedram_cmd_ready_i) begin
                     litedram_cmd_valid <= 0;
                     if (litedram_cmd_we) begin
                         litedram_wdata_valid <= 1;
                         litedram_wdata_data  <= litedram_wdata_data << (offset << 5);
                         litedram_wdata_we    <= litedram_wdata_we << (offset << 2);
-                        litedram_state       <= WAIT_WDATA_READY;
+                        litedram_state       <= LITEDRAM_STATE_WAIT_WDATA_READY;
                     end else begin
                         litedram_rdata_ready <= 1;
-                        litedram_state <= WAIT_RDATA_VALID;
+                        litedram_state       <= LITEDRAM_STATE_WAIT_RDATA_VALID;
                     end
                 end
             end
-            WAIT_WDATA_READY: begin
+            LITEDRAM_STATE_WAIT_WDATA_READY: begin
                 if (litedram_wdata_ready_i) begin
                     litedram_wdata_valid <= 0;
-                    litedram_state <= SEND_ACK;
+                    litedram_state       <= LITEDRAM_STATE_SEND_ACK;
                 end
             end
-            WAIT_RDATA_VALID: begin
+            LITEDRAM_STATE_WAIT_RDATA_VALID: begin
                 if (litedram_rdata_valid_i) begin
                     litedram_rdata_ready <= 0;
-                    litedram_state <= SEND_ACK;
-                    litedram_rdata_data <= (litedram_rdata_data_i >> (offset << 5)) & 32'hFFFF_FFFF;
+                    litedram_state       <= LITEDRAM_STATE_SEND_ACK;
+                    litedram_rdata_data  <= (litedram_rdata_data_i >> (offset << 5)) & 32'hFFFF_FFFF;
                 end
             end
-            SEND_ACK: begin
-                litedram_state <= IDLE;
+            LITEDRAM_STATE_SEND_ACK: begin
+                litedram_state <= LITEDRAM_STATE_IDLE;
             end
         endcase
     end
@@ -697,44 +699,45 @@ module sdram (
     reg [31:0] ram [0:1023];
     `include "sdram_init.vh"
 
-    localparam IDLE  = 2'b00;
-    localparam WRITE = 2'b01;
-    localparam READ  = 2'b10;
-    localparam ACK   = 2'b11;
-    reg  [1:0] sdram_state = IDLE;
     reg  [9:0] cmd_addr    = 0;
     reg [31:0] write_data  = 0;
     reg  [3:0] write_en    = 0;
     reg [31:0] read_data   = 0;
+
+    localparam SDRAM_STATE_IDLE  = 2'b00;
+    localparam SDRAM_STATE_WRITE = 2'b01;
+    localparam SDRAM_STATE_READ  = 2'b10;
+    localparam SDRAM_STATE_ACK   = 2'b11;
+    reg  [1:0] sdram_state = SDRAM_STATE_IDLE;
     always @(posedge clk_i) begin
         case(sdram_state)
-            IDLE: begin
+            SDRAM_STATE_IDLE: begin
                 if (cmd_valid_i) begin
                     cmd_addr    <= cmd_addr_i;
                     write_data  <= write_data_i;
                     write_en    <= write_en_i;
-                    sdram_state <= (cmd_we_i) ? WRITE : READ;
+                    sdram_state <= (cmd_we_i) ? SDRAM_STATE_WRITE : SDRAM_STATE_READ;
                 end
             end
-            WRITE: begin
+            SDRAM_STATE_WRITE: begin
                 if (write_en[0]) ram[cmd_addr][7:0]   <= write_data[7:0];
                 if (write_en[1]) ram[cmd_addr][15:8]  <= write_data[15:8];
                 if (write_en[2]) ram[cmd_addr][23:16] <= write_data[23:16];
                 if (write_en[3]) ram[cmd_addr][31:24] <= write_data[31:24];
-                sdram_state <= ACK;
+                sdram_state <= SDRAM_STATE_ACK;
             end
-            READ: begin
+            SDRAM_STATE_READ: begin
                 read_data <= ram[cmd_addr];
-                sdram_state <= ACK;
+                sdram_state <= SDRAM_STATE_ACK;
             end
-            ACK: begin
-                sdram_state <= IDLE;
+            SDRAM_STATE_ACK: begin
+                sdram_state <= SDRAM_STATE_IDLE;
             end
         endcase
     end
 
     assign read_data_o = read_data;
-    assign cmd_ack_o  = (sdram_state == ACK);
+    assign cmd_ack_o  = (sdram_state == SDRAM_STATE_ACK);
 endmodule
 
 module vmem (

@@ -2,25 +2,23 @@
 / Released under the MIT license https://opensource.org/licenses/mit           */
 
 #include <stdlib.h>
-
 #include "st7789.h"
-#include "perf.h"
-#include "util.h"
 
 void RandomChar() {
-    int count = 0;
+ //   int count = 0;
     while (1) {
-        count++;
+ //       count++;
         char c = 'A' + rand() % 26;
         pg_lcd_draw_char(rand() % 240, rand() % 240, c, rand() & 0x7, 1);
-        pg_lcd_set_pos(0, 14);
-        pg_lcd_prints("steps :");
-        pg_lcd_printd(count);
+        //pg_lcd_set_pos(0, 14);
+        //pg_lcd_prints("steps :");
+        //pg_lcd_printd(count);
     }
 }
 
 int main () {
-    pg_lcd_reset();
+//    pg_lcd_reset();
+    pg_lcd_draw_char(10, 10, 'A', 3, 1);
     RandomChar();
     return 0;
 }

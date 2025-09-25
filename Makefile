@@ -117,9 +117,9 @@ drun:
 clean:
 	rm -rf build/ obj_dir/ vivado/ 
 
-#================
+#===============================================================================
 # Remove when regression test is done
-#================
+#-------------------------------------------------------------------------------
 ELF_FILES := $(wildcard tests/*.elf)
 regression-test:
 	for f in $(ELF_FILES); do \

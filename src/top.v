@@ -38,8 +38,8 @@ module top;
 // Init Sequence
 //------------------------------------------------------------------------------
     reg  [31:0] imem [0:`IMEM_ENTRIES-1];
-    `include "imem_init.vh"
     reg  [31:0] dram [0:`DMEM_ENTRIES-1];
+    `include "imem_init.vh"
     `include "dram_init.vh"
     reg  [31:0] p      = 0;
     wire  [1:0] offset = p & 3;
@@ -53,7 +53,7 @@ module top;
     always @(posedge clk) begin
         case(init_state)
             INIT_STATE_IDLE: begin
-                if (cc > 190000) init_state <= INIT_STATE_IMEM;
+                if (cc > 400000) init_state <= INIT_STATE_IMEM;
             end
 
             INIT_STATE_IMEM: begin
@@ -80,6 +80,7 @@ module top;
                     if (p[31:2] == `DMEM_ENTRIES) begin
                         p          <= 0;
                         init_state <= INIT_STATE_DONE;
+                        $write("init done\n");
                     end
                 end
             end
@@ -121,17 +122,17 @@ module top;
 //==============================================================================
 // Dump 
 //------------------------------------------------------------------------------
-    initial begin
-        $dumpfile("build/sim.vcd");
-        $dumpvars(0, top);
-    end
+    //initial begin
+    //    $dumpfile("build/sim.vcd");
+    //    $dumpvars(0, top);
+    //end
 
 //==============================================================================
 // Condition for simulation to end
 //------------------------------------------------------------------------------
     reg cpu_sim_fini = 0;
     always @(posedge clk) begin
-        if (cc > 8000000) cpu_sim_fini <= 1;
+        // if (cc > 15000000) cpu_sim_fini <= 1; // timeout
         if (m0.cpu.dbus_cmd_addr_o == 32'h1000_0000 && m0.cpu.dbus_cmd_we_o) begin
             if (m0.cpu.dbus_wdata_data_o == 32'h777) begin
                 $write("\033[32mCC %08d: TEST PASSED\033[0m\n", cc);

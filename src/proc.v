@@ -147,7 +147,7 @@ module cpu (
         .pred_pc_o      (If_pred_pc)
     );
     assign If_pc  = (ExMa_bru_misp) ? ExMa_bru_taken_pc :
-                         (If_pred_taken) ? If_pred_pc : pc+4;
+                    (If_pred_taken) ? If_pred_pc : pc+4;
     assign ibus_addr_o = If_pc;
 
 //==============================================================================
@@ -735,8 +735,7 @@ module multiplier (
         //if (state == `MUL_EXEC) product <= r_multiplicand * r_multiplier;
     end
     assign rsp_valid_o = (state == `MUL_RET);
-    assign rsp_rslt_o  = (state != `MUL_RET) ? 0 :
-                         (is_high) ? product[63:32] : product[31:0];
+    assign rsp_rslt_o  = (state != `MUL_RET) ? 0 : product[31:0];
 endmodule
 
 /******************************************************************************/

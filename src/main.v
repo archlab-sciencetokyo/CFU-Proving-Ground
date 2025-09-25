@@ -4,13 +4,28 @@
 `include "config.vh"
 
 module main (
-    input  wire clk_i,
-    output wire st7789_SDA,
-    output wire st7789_SCL,
-    output wire st7789_DC,
-    output wire st7789_RES,
-    input  wire rxd_i,
-    output wire txd_o
+    input  wire          clk_i,
+    output wire   [13:0] ddram_a,
+    output wire    [2:0] ddram_ba,
+    output wire          ddram_cas_n,
+    output wire          ddram_cke,
+    output wire          ddram_clk_n,
+    output wire          ddram_clk_p,
+    output wire          ddram_cs_n,
+    output wire    [1:0] ddram_dm,
+    inout  wire   [15:0] ddram_dq,
+    inout  wire    [1:0] ddram_dqs_n,
+    inout  wire    [1:0] ddram_dqs_p,
+    output wire          ddram_odt,
+    output wire          ddram_ras_n,
+    output wire          ddram_reset_n,
+    output wire          ddram_we_n,
+    output wire          st7789_SDA,
+    output wire          st7789_SCL,
+    output wire          st7789_DC,
+    output wire          st7789_RES,
+    input  wire          rxd_i,
+    output wire          txd_o
 );
 //==============================================================================
 // Clock and Reset
@@ -160,14 +175,14 @@ module main (
     wire                       [3:0] imem_wdata_en;
     wire                             imem_wdata_ack;
     imem imem (
-        .clk_i(clk_i),
-        .rdata_addr_i(imem_rdata_addr),
-        .rdata_data_o(imem_rdata_data),
-        .rdata_en_i(imem_rdata_en),
-        .wdata_addr_i(imem_wdata_addr),
-        .wdata_data_i(imem_wdata_data),
-        .wdata_en_i(imem_wdata_en),
-        .wdata_ack_o(imem_wdata_ack)
+        .clk_i        (sys_clk),
+        .rdata_addr_i (imem_rdata_addr),
+        .rdata_data_o (imem_rdata_data),
+        .rdata_en_i   (imem_rdata_en),
+        .wdata_addr_i (imem_wdata_addr),
+        .wdata_data_i (imem_wdata_data),
+        .wdata_en_i   (imem_wdata_en),
+        .wdata_ack_o  (imem_wdata_ack)
     );
 
 //==============================================================================
@@ -197,6 +212,54 @@ module main (
     wire    [3:0] litedram_ctrl_sel;
     wire          litedram_ctrl_stb;
     wire          litedram_ctrl_we;
+`ifdef SYNTHESIS
+    litedram litedram(
+        .clk                          (clk_i),
+        .ddram_a                      (ddram_a),
+        .ddram_ba                     (ddram_ba),
+        .ddram_cas_n                  (ddram_cas_n),
+        .ddram_cke                    (ddram_cke),
+        .ddram_clk_n                  (ddram_clk_n),
+        .ddram_clk_p                  (ddram_clk_p),
+        .ddram_cs_n                   (ddram_cs_n),
+        .ddram_dm                     (ddram_dm),
+        .ddram_dq                     (ddram_dq),
+        .ddram_dqs_n                  (ddram_dqs_n),
+        .ddram_dqs_p                  (ddram_dqs_p),
+        .ddram_odt                    (ddram_odt),
+        .ddram_ras_n                  (ddram_ras_n),
+        .ddram_reset_n                (ddram_reset_n),
+        .ddram_we_n                   (ddram_we_n),
+        .init_done                    (litedram_init_done),
+        .init_error                   (litedram_init_error),
+        .pll_locked                   (),
+        .rst                          (0),
+        .user_clk                     (sys_clk),
+        .user_port_native_cmd_addr    (litedram_cmd_addr),
+        .user_port_native_cmd_ready   (litedram_cmd_ready),
+        .user_port_native_cmd_valid   (litedram_cmd_valid),
+        .user_port_native_cmd_we      (litedram_cmd_we),
+        .user_port_native_rdata_data  (litedram_rdata_data),
+        .user_port_native_rdata_ready (litedram_rdata_ready),
+        .user_port_native_rdata_valid (litedram_rdata_valid),
+        .user_port_native_wdata_data  (litedram_wdata_data),
+        .user_port_native_wdata_ready (litedram_wdata_ready),
+        .user_port_native_wdata_valid (litedram_wdata_valid),
+        .user_port_native_wdata_we    (litedram_wdata_we),
+        .user_rst                     (sys_rst),
+        .wb_ctrl_ack                  (litedram_ctrl_ack),
+        .wb_ctrl_adr                  (litedram_ctrl_adr),
+        .wb_ctrl_bte                  (0),
+        .wb_ctrl_cti                  (0),
+        .wb_ctrl_cyc                  (litedram_ctrl_cyc),
+        .wb_ctrl_dat_r                (litedram_ctrl_dat_r),
+        .wb_ctrl_dat_w                (litedram_ctrl_dat_w),
+        .wb_ctrl_err                  (litedram_ctrl_err),
+        .wb_ctrl_sel                  (litedram_ctrl_sel),
+        .wb_ctrl_stb                  (litedram_ctrl_stb),
+        .wb_ctrl_we                   (litedram_ctrl_we)
+    );
+`else
     litedram_core litedram (
         .clk                          (clk),                  // input  wire
         .init_done                    (litedram_init_done),   // output wire
@@ -227,6 +290,7 @@ module main (
         .wb_ctrl_stb                  (litedram_ctrl_stb),    // input  wire           
         .wb_ctrl_we                   (litedram_ctrl_we)      // input  wire           
     );
+`endif
 
 //==============================================================================
 // Memory Management Unit
@@ -380,7 +444,6 @@ module mmu (
     end
     assign cpu_ibus_rdata_o  = (port_ibus) ? imem_rdata_data_i : bootrom_rdata_i;
     assign bootrom_raddr_o   = cpu_ibus_raddr_i[31:2];
-    assign imem_rdata_addr_o = cpu_ibus_raddr_i[31:2];
 
 //==============================================================================
 // CPU Command Acknowledge and Read Data Bus
@@ -561,24 +624,40 @@ module imem (
     reg [31:0] imem [0:`IMEM_ENTRIES-1];
     `include "imem_init.vh"
 
-    reg [31:0] rdata     = 0;
-    reg        wdata_ack = 0;
+    reg                      [31:0] rdata      = 0;
+    reg [$clog2(`IMEM_ENTRIES)-1:0] wdata_addr = 0;
+    reg                      [31:0] wdata_data = 0;
+    reg                       [3:0] wdata_en   = 0;
 
-    assign rdata_data_o = rdata;
-    assign wdata_ack_o  = wdata_ack;
-
+    localparam IMEM_STATE_IDLE  = 2'b00;
+    localparam IMEM_STATE_WRITE = 2'b01;
+    localparam IMEM_STATE_ACK   = 2'b10;
+    reg [1:0] state;
     always @(posedge clk_i) begin
         if (rdata_en_i) rdata <= imem[rdata_addr_i];
-        if (wdata_en_i) begin
-            wdata_ack <= 1;
-            if (wdata_en_i[0]) imem[wdata_addr_i][7:0]   <= wdata_data_i[7:0];
-            if (wdata_en_i[1]) imem[wdata_addr_i][15:8]  <= wdata_data_i[15:8];
-            if (wdata_en_i[2]) imem[wdata_addr_i][23:16] <= wdata_data_i[23:16];
-            if (wdata_en_i[3]) imem[wdata_addr_i][31:24] <= wdata_data_i[31:24];
-        end else begin
-            wdata_ack <= 0;
-        end
+        case(state)
+            IMEM_STATE_IDLE: begin
+                wdata_addr <= wdata_addr_i;
+                wdata_data <= wdata_data_i;
+                wdata_en   <= wdata_en_i;
+                if (|wdata_en_i) state <= IMEM_STATE_WRITE;
+            end
+
+            IMEM_STATE_WRITE: begin
+                if (wdata_en[0]) imem[wdata_addr][7:0]   <= wdata_data[7:0];
+                if (wdata_en[1]) imem[wdata_addr][15:8]  <= wdata_data[15:8];
+                if (wdata_en[2]) imem[wdata_addr][23:16] <= wdata_data[23:16];
+                if (wdata_en[3]) imem[wdata_addr][31:24] <= wdata_data[31:24];
+                state <= IMEM_STATE_ACK;
+            end
+
+            IMEM_STATE_ACK: begin
+                state <= IMEM_STATE_IDLE;
+            end
+        endcase
     end
+    assign wdata_ack_o = (state == IMEM_STATE_ACK);
+    assign rdata_data_o = rdata;
 endmodule
 
 

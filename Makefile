@@ -23,7 +23,7 @@ user_config:
 	python3 scripts/user_config.py
 
 sim:
-	$(RTLSIM) --lint-only --trace --top-module top -Ibuild -Isrc \
+	$(RTLSIM) --binary --trace --top-module top -Ibuild -Isrc \
 	--Wno-WIDTHTRUNC --Wno-WIDTHEXPAND --Wno-COMBDLY --Wno-CASEINCOMPLETE \
 	-o top src/*.v
 	gcc -O2 dispemu/dispemu.c -o build/dispemu -lcairo -lX11

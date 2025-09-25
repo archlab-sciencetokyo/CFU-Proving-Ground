@@ -134,20 +134,20 @@ module main (
     assign uart_rxd = rxd_i;
 
 //==============================================================================
-// 0x2000_0000 - 0x2007_0800 : VMEM
+// 0x2000_0000 - 0x2001_0000 : VMEM
 //------------------------------------------------------------------------------
     wire        vmem_we;
     wire [15:0] vmem_waddr;
     wire  [2:0] vmem_wdata;
     wire [15:0] vmem_raddr;
-    wire [15:0] vmem_rdata;
+    wire  [2:0] vmem_rdata;
     vmem vmem (
-        .clk_i   (sys_clk),          // input wire
+        .clk_i   (sys_clk),      // input wire
         .we_i    (vmem_we),      // input wire
-        .waddr_i (vmem_waddr),    // input wire [15:0]
+        .waddr_i (vmem_waddr),   // input wire [15:0]
         .wdata_i (vmem_wdata),   // input wire [15:0]
         .raddr_i (vmem_raddr),   // input wire [15:0]
-        .rdata_o (vmem_rdata)  // output wire [15:0]
+        .rdata_o (vmem_rdata)    // output wire [15:0]
     );
 
     wire [15:0] color_data;
@@ -260,7 +260,7 @@ module main (
         .wb_ctrl_we                   (litedram_ctrl_we)
     );
 `else
-    litedram_core litedram (
+    litedram_sim litedram (
         .clk                          (clk),                  // input  wire
         .init_done                    (litedram_init_done),   // output wire
         .init_error                   (litedram_init_error),  // output wire
@@ -521,9 +521,16 @@ module mmu (
     end
 
 //==============================================================================
+// VMEM Control Interface
+//------------------------------------------------------------------------------
+    assign vmem_we_o    = (cpu_dbus_cmd_valid_i & cpu_dbus_cmd_we_i & (cpu_dbus_cmd_addr_i[31:28] == 4'h2));
+    assign vmem_waddr_o = cpu_dbus_cmd_addr_i;
+    assign vmem_wdata_o = cpu_dbus_wdata_data_i[7:0];
+
+//==============================================================================
 // IMEM Control Interface
 //------------------------------------------------------------------------------
-    assign imem_rdata_addr_o = cpu_ibus_raddr_i;
+    assign imem_rdata_addr_o = cpu_ibus_raddr_i[31:2];
     assign imem_rdata_en_o   = cpu_ibus_rdata_en_i;
     assign imem_wdata_addr_o = cpu_dbus_cmd_addr_i[31:2];
     assign imem_wdata_data_o = cpu_dbus_wdata_data_i;
@@ -656,7 +663,7 @@ module imem (
             end
         endcase
     end
-    assign wdata_ack_o = (state == IMEM_STATE_ACK);
+    assign wdata_ack_o  = (state == IMEM_STATE_ACK);
     assign rdata_data_o = rdata;
 endmodule
 

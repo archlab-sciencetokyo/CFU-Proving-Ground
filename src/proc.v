@@ -99,14 +99,15 @@ module cpu (
     reg rst; always @(posedge clk_i) rst <= rst_i;
 
     wire If_stall = Id_stall;
-    wire If_v     = ~If_stall;
     wire Id_stall = Ex_stall;
-    wire Id_v     = ~ExMa_bru_misp & IfId_v & ~Id_stall;
     wire Ex_stall = Ma_stall | ExMa_loaduse | (IdEx_wait_ex_result & ~Ex_rslt_v);
-    wire Ex_v     = ~ExMa_bru_misp & IdEx_v & ~Ex_stall;
     wire Ma_stall = ExMa_wait_cmd_ack;
-    wire Ma_v     = ExMa_v & ~Ma_stall;
     wire Wb_stall = 0;
+
+    wire If_v     = ~If_stall;
+    wire Id_v     = ~ExMa_bru_misp & IfId_v & ~Id_stall;
+    wire Ex_v     = ~ExMa_bru_misp & IdEx_v & ~Ex_stall;
+    wire Ma_v     = ExMa_v & ~Ma_stall;
     wire Wb_v     = MaWb_v;
 
     wire Ex_loaduse          = Id_v & Ex_v & IdEx_lsu_ctrl[`LSU_CTRL_IS_LOAD]

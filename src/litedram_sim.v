@@ -6,7 +6,7 @@
 //                     Build your hardware, easily!
 //                   https://github.com/enjoy-digital/litex
 //
-// Filename   : litedram_core.v
+// Filename   : litedram_sim.v
 // Device     : 
 // LiteX sha1 : 759469664
 // Date       : 2025-09-07 16:34:21
@@ -16,7 +16,7 @@
 // Module
 //------------------------------------------------------------------------------
 
-module litedram_core (
+module litedram_sim (
     input  wire          clk,
     output wire          init_done,
     output wire          init_error,

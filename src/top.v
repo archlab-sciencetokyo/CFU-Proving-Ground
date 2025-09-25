@@ -22,18 +22,6 @@ module top;
     wire       uart_rvalid;
     wire       uart_rready;
     wire [7:0] uart_rdata;
-    //uart uart (
-    //    .clk_i    (clk),
-    //    .rst_i    (0),
-    //    .txd_o    (uart_txd),
-    //    .rxd_i    (uart_rxd),
-    //    .wvalid_i (uart_wvalid),
-    //    .wready_o (uart_wready),
-    //    .wdata_i  (uart_wdata),
-    //    .rvalid_o (uart_rvalid),
-    //    .rready_i (uart_rready),
-    //    .rdata_o  (uart_rdata)
-    //);
     uart_tx #(
         .CLK_FREQ_MHZ   (`CLK_FREQ_MHZ   ),
         .BAUD_RATE      (`UART_BAUDRATE )
@@ -46,6 +34,9 @@ module top;
         .wdata_i        (uart_wdata  )
     );
 
+//==============================================================================
+// Init Sequence
+//------------------------------------------------------------------------------
     reg  [31:0] imem [0:`IMEM_ENTRIES-1];
     `include "imem_init.vh"
     reg  [31:0] dram [0:`DMEM_ENTRIES-1];
@@ -53,18 +44,19 @@ module top;
     reg  [31:0] p      = 0;
     wire  [1:0] offset = p & 3;
     wire [31:2] addr   = p >> 2;
-    localparam WAITING_CARIB = 0;
-    localparam INIT_IMEM = 1;
-    localparam INIT_DMEM = 2;
-    localparam DONE = 3;
-    reg [1:0] init_state = WAITING_CARIB;
+
+    localparam INIT_STATE_IDLE = 0;
+    localparam INIT_STATE_IMEM = 1;
+    localparam INIT_STATE_DMEM = 2;
+    localparam INIT_STATE_DONE = 3;
+    reg [1:0] init_state = INIT_STATE_IDLE;
     always @(posedge clk) begin
         case(init_state)
-            WAITING_CARIB: begin
-                if (cc > 190000) init_state <= INIT_IMEM;
+            INIT_STATE_IDLE: begin
+                if (cc > 190000) init_state <= INIT_STATE_IMEM;
             end
 
-            INIT_IMEM: begin
+            INIT_STATE_IMEM: begin
                 if (uart_wready & ~uart_wvalid) begin
                     uart_wvalid <= 1;
                     uart_wdata  <= imem[addr][8*offset +: 8];
@@ -73,12 +65,12 @@ module top;
                     uart_wvalid <= 0;
                     if (p[31:2] == `IMEM_ENTRIES) begin
                         p          <= 0;
-                        init_state <= INIT_DMEM;
+                        init_state <= INIT_STATE_DMEM;
                     end
                 end
             end
 
-            INIT_DMEM: begin
+            INIT_STATE_DMEM: begin
                 if (uart_wready & ~uart_wvalid) begin
                     uart_wvalid <= 1;
                     uart_wdata  <= dram[addr][8*offset +: 8];
@@ -87,12 +79,12 @@ module top;
                     uart_wvalid <= 0;
                     if (p[31:2] == `DMEM_ENTRIES) begin
                         p          <= 0;
-                        init_state <= DONE;
+                        init_state <= INIT_STATE_DONE;
                     end
                 end
             end
 
-            DONE: begin
+            INIT_STATE_DONE: begin
                 uart_wvalid <= 0;
             end
         endcase
@@ -101,27 +93,38 @@ module top;
 //==============================================================================
 // DUT
 //------------------------------------------------------------------------------
-    wire sda;
-    wire scl;
-    wire dc;
-    wire res;
     main m0 (
-        .clk_i     (clk),
-        .st7789_SDA(sda),
-        .st7789_SCL(scl),
-        .st7789_DC (dc),
-        .st7789_RES(res),
-        .rxd_i     (uart_txd),
-        .txd_o     (uart_rxd)
+        .clk_i         (clk),
+        .ddram_a       (),
+        .ddram_ba      (),
+        .ddram_cas_n   (),
+        .ddram_cke     (),
+        .ddram_clk_n   (),
+        .ddram_clk_p   (),
+        .ddram_cs_n    (),
+        .ddram_dm      (),
+        .ddram_dq      (),
+        .ddram_dqs_n   (),
+        .ddram_dqs_p   (),
+        .ddram_odt     (),
+        .ddram_ras_n   (),
+        .ddram_reset_n (),
+        .ddram_we_n    (),
+        .st7789_SDA    (),
+        .st7789_SCL    (),
+        .st7789_DC     (),
+        .st7789_RES    (),
+        .rxd_i         (uart_txd),
+        .txd_o         (uart_rxd)
     );
 
 //==============================================================================
 // Dump 
 //------------------------------------------------------------------------------
-    //initial begin
-    //    $dumpfile("build/sim.vcd");
-    //    $dumpvars(0, top);
-    //end
+    initial begin
+        $dumpfile("build/sim.vcd");
+        $dumpvars(0, top);
+    end
 
 //==============================================================================
 // Condition for simulation to end

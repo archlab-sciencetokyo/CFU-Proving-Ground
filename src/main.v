@@ -25,7 +25,11 @@ module main (
     output wire          st7789_DC,
     output wire          st7789_RES,
     input  wire          rxd_i,
-    output wire          txd_o
+    output wire          txd_o,
+    output wire          user_led0,
+    output wire          user_led1,
+    output wire          user_led2,
+    output wire          user_led3
 );
 //==============================================================================
 // Clock and Reset
@@ -133,6 +137,25 @@ module main (
     assign txd_o    = uart_txd;
     assign uart_rxd = rxd_i;
 
+//==============================================================================
+// user_led0: 0x1000_2000
+// user_led1: 0x1000_2004
+// user_led2: 0x1000_2008
+// user_led3: 0x1000_200c
+//------------------------------------------------------------------------------
+    reg [3:0] user_leds = 0;
+    always @(posedge sys_clk) if (dbus_cmd_valid) begin
+        case (dbus_cmd_addr)
+            32'h1000_2000: user_leds[0] <= 1;
+            32'h1000_2004: user_leds[1] <= 1;
+            32'h1000_2008: user_leds[2] <= 1;
+            32'h1000_200c: user_leds[3] <= 1;
+        endcase
+    end
+    assign user_led0 = user_leds[0];
+    assign user_led1 = user_leds[1];
+    assign user_led2 = user_leds[2];
+    assign user_led3 = user_leds[3];
 //==============================================================================
 // 0x2000_0000 - 0x2001_0000 : VMEM
 //------------------------------------------------------------------------------

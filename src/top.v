@@ -116,23 +116,27 @@ module top;
         .st7789_DC     (),
         .st7789_RES    (),
         .rxd_i         (uart_txd),
-        .txd_o         (uart_rxd)
+        .txd_o         (uart_rxd),
+        .user_led0     (),
+        .user_led1     (),
+        .user_led2     (),
+        .user_led3     ()
     );
 
 //==============================================================================
 // Dump 
 //------------------------------------------------------------------------------
-    //initial begin
-    //    $dumpfile("build/sim.vcd");
-    //    $dumpvars(0, top);
-    //end
+    initial begin
+        $dumpfile("build/sim.vcd");
+        $dumpvars(0, top);
+    end
 
 //==============================================================================
 // Condition for simulation to end
 //------------------------------------------------------------------------------
     reg cpu_sim_fini = 0;
     always @(posedge clk) begin
-        // if (cc > 15000000) cpu_sim_fini <= 1; // timeout
+        if (cc > 15000000) cpu_sim_fini <= 1; // timeout
         if (m0.cpu.dbus_cmd_addr_o == 32'h1000_0000 && m0.cpu.dbus_cmd_we_o) begin
             if (m0.cpu.dbus_wdata_data_o == 32'h777) begin
                 $write("\033[32mCC %08d: TEST PASSED\033[0m\n", cc);

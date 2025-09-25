@@ -454,9 +454,11 @@ module mmu (
     output wire                      [15:0] litedram_wdata_we_o     // input  wire   [15:0]
 );
     wire   sdram_access    = (cpu_dbus_cmd_addr_i[31:28] == 4'h0);
-    wire   uart_access     = (cpu_dbus_cmd_addr_i[31:28] == 4'h1);
+    wire   uart_access     = (cpu_dbus_cmd_addr_i[31:28] == 4'h1 &&
+                              cpu_dbus_cmd_addr_i[13] != 1);
     wire   vmem_access     = (cpu_dbus_cmd_addr_i[31:28] == 4'h2);
     wire   imem_access     = (cpu_dbus_cmd_addr_i[31:28] == 4'h4);
+    wire   led_access      = (cpu_dbus_cmd_addr_i[31:12] == 20'h10002);
     wire   litedram_access = (cpu_dbus_cmd_addr_i[31:28] == 4'h8);
     wire   csr_access      = (cpu_dbus_cmd_addr_i[31:28] == 4'hF);
 //==============================================================================
@@ -478,14 +480,16 @@ module mmu (
     localparam PORT_SEL_IMEM     = 3'b011;
     localparam PORT_SEL_LITEDRAM = 3'b100;
     localparam PORT_SEL_CSR      = 3'b101;
+    localparam PORT_SEL_LED      = 3'b110;
     reg [2:0] port_sel = PORT_SEL_SDRAM;
     always @(posedge clk_i) if (cpu_dbus_cmd_valid_i) begin
-        port_sel <= (sdram_access)    ? PORT_SEL_SDRAM :
-                    (csr_access)      ? PORT_SEL_CSR :
-                    (litedram_access) ? PORT_SEL_LITEDRAM :
-                    (imem_access)     ? PORT_SEL_IMEM :
-                    (vmem_access)     ? PORT_SEL_VMEM :
-                                        PORT_SEL_UART ;
+        port_sel <= (sdram_access)    ? PORT_SEL_SDRAM
+                  : (csr_access)      ? PORT_SEL_CSR
+                  : (litedram_access) ? PORT_SEL_LITEDRAM
+                  : (imem_access)     ? PORT_SEL_IMEM
+                  : (vmem_access)     ? PORT_SEL_VMEM
+                  : (led_access)      ? PORT_SEL_LED
+                  : PORT_SEL_UART;
     end
     assign cpu_dbus_cmd_ack_o   = (port_sel == PORT_SEL_SDRAM)    ? sdram_cmd_ack_i
                                 : (port_sel == PORT_SEL_CSR)      ? litedram_ctrl_ack_i

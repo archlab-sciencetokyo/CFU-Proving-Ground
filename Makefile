@@ -94,6 +94,10 @@ vpp:
 	cp vitis/hls/impl/verilog/*.v cfu/.
 	cp vitis/hls/impl/verilog/*.tcl cfu/.
 
+hls-sim:
+	make prog
+	$(RTLSIM) --binary --trace --top-module top -DUSE_HLS -Icfu --Wno-TIMESCALEMOD --Wno-WIDTHTRUNC --Wno-WIDTHEXPAND -o top *.v
+
 init:
 	cp constr/$(TARGET).xdc main.xdc
 	cp constr/build_$(TARGET).tcl build.tcl

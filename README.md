@@ -95,12 +95,14 @@ The generated bitstream file is copied in `build/main.bit`.
 Configure and run FPGA with this `main.bit`.
 When the FPGA is configured, an application displays many random characters, similar to the simulation.
 
+:::info
 Note that a mini display (ST7789 TFT LCD) should be appropriately connected to the Pmod JC of Arty A7-35T FPGA board.
-
 ![arty](figures/arty.JPG)
-
 This [site](https://github.com/kisek/fpga_arty_a7_st7789) will explain the way to connect a mini display to Arty A7-35T FPGA board.
 
+For Nexys A7, connect to JXADC.
+![nexys](figures/nexys.JPEG)
+:::
 
 ## Memory Map
 The default memory map is shown below.
@@ -115,7 +117,7 @@ If you change the size of the data memory, please appropriately modify the LENGT
 | 0x40000000 | performance counter control (0: reset, 1: start, 2: stop)|
 | 0x40000004 | mcycle                  |
 | 0x40000008 | mcycleh                 |
-| 0x80000000 | tohost (for simulation) |
+| 0x80000000 | tohost (reserved) |
 
 ## Write a bitstream
 When using the Vivado Hardware Server, you can use `scripts/prog_dev.tcl`.

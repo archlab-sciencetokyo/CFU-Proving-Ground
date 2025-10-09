@@ -126,6 +126,9 @@ In `scripts/prog_dev.tcl`, please specify the IP ADDRESS and PORT number of the 
 Once the specification is complete, you can write the bitstream to the board with `make conf`.
 
 ## History
+2025-10-09 Ver 1.7.8:
+- Add bitstream configuration to `cmod_a7.xdc` and `nexys_a7,xdc`
+
 2025-10-08 Ver 1.7.7:
 - Update perf.c
 

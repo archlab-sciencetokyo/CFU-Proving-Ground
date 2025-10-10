@@ -46,7 +46,7 @@ module top;
     always @(posedge clk) begin
         if (m0.cpu.dbus_addr_o[31] && m0.cpu.dbus_wvalid_o) begin
             if (m0.cpu.dbus_wdata == 32'h00020000) cpu_sim_fini <= 1;
-            else begin $write("%c", m0.cpu.dbus_wdata[7:0]) $fflush(); end
+            else begin $write("%c", m0.cpu.dbus_wdata[7:0]); $fflush(); end
             if (m0.cpu.dbus_addr < 32'h10000000) cpu_sim_fini <= 1;
         end
         if (cpu_sim_fini) begin

@@ -605,78 +605,6 @@ endmodule
 `define DIV_CHECK 1
 `define DIV_EXEC 2
 `define DIV_RET 3
-/******************************************************************************************/
-/* module divider (
-    input  wire        clk_i,
-    input  wire        rst_i,
-    input  wire        stall_i,
-    input  wire        valid_i,
-    input  wire [ 2:0] div_ctrl_i,
-    input  wire [31:0] src1_i,
-    input  wire [31:0] src2_i,
-    output wire        stall_o,
-    output wire [31:0] rslt_o
-);
-
-    reg [1:0] state = `DIV_IDLE;
-    assign stall_o = (w_state != `DIV_IDLE);
-
-    reg         is_dividend_neg;
-    reg         is_divisor_neg;
-    reg  [31:0] divisor;
-    wire [63:0] remainder;
-    wire [63:0] quotient;
-    reg         is_div_rslt_neg;
-    reg         is_rem_rslt_neg;
-    reg         is_rem;
-    reg  [ 4:0] cntr;
-    reg  [63:0] r_rslt;
-
-    wire [31:0] uintx_remainder = (is_dividend_neg) ? ~(remainder[31:0] + 1) : remainder[31:0];
-    wire [31:0] uintx_divisor = (is_divisor_neg) ? ~(divisor + 1) : divisor;
-    wire [32:0] difference = {remainder[30:0], quotient[31]} - divisor;
-    wire        q = !difference[32];
-
-    assign remainder = r_rslt[63:32];
-    assign quotient = r_rslt[31:0];
-
-    assign rslt_o = (state!=`DIV_RET) ? 0 : 
-                    (is_rem) ? ((is_rem_rslt_neg) ? ~(remainder[31:0]+1) : remainder[31:0]) :
-                    ((is_div_rslt_neg) ? ~(quotient[31:0]+1)  : quotient[31:0] ) ;
-
-    wire w_div = div_ctrl_i[`DIV_CTRL_IS_DIV];
-    wire w_signed = div_ctrl_i[`DIV_CTRL_IS_SIGNED];
-    wire [1:0] w_state = (w_init) ? `DIV_CHECK :
-                         (state==`DIV_CHECK && divisor==0) ? `DIV_RET : // Note
-    (state==`DIV_CHECK && divisor!=0) ? `DIV_EXEC :
-                         (state==`DIV_EXEC  && cntr==0) ? `DIV_RET :
-                         (state==`DIV_EXEC  && cntr!=0) ? `DIV_EXEC : `DIV_IDLE;
-
-    wire w_init = (state == `DIV_IDLE && valid_i && w_div);
-    always @(posedge clk_i)
-        if (stall_i == 0) begin
-            is_rem <= (w_init) ? div_ctrl_i[`DIV_CTRL_IS_REM] : is_rem;
-            is_dividend_neg <= (w_init) ? w_signed && src1_i[31] : is_dividend_neg;
-            is_divisor_neg <= (w_init) ? w_signed && src2_i[31] : is_divisor_neg;
-            is_div_rslt_neg   <= (w_init) ? w_signed && (src1_i[31] ^ src2_i[31]) :
-                             (state==`DIV_CHECK && divisor==0) ? 0 : is_div_rslt_neg;
-            is_rem_rslt_neg   <= (w_init) ? w_signed &&  src1_i[31] : 
-                             (state==`DIV_CHECK && divisor==0) ? 0 : is_rem_rslt_neg;
-
-            divisor <= (w_init) ? src2_i :
-                   (state==`DIV_CHECK && divisor!=0) ? uintx_divisor : divisor;
-
-            r_rslt <= (w_init) ? {src1_i, 32'd0} :
-                   (state==`DIV_CHECK && divisor==0) ? {remainder[31:0], {32{1'b1}}} :
-                   (state==`DIV_CHECK && divisor!=0) ? {32'd0, uintx_remainder} :
-                   (state==`DIV_EXEC) ? ((q) ? {difference[31:0], quotient[30:0], 1'b1} :
-                                               {remainder[30:0], quotient[31:0], 1'b0}) :
-                  r_rslt;
-
-            cntr <= (state == `DIV_CHECK) ? 31 : (state == `DIV_EXEC) ? cntr - 1 : cntr;
-            state <= w_state;
-        end
-endmodule */
 module divider (
     input  wire        clk_i      ,
     input  wire        rst_i      ,
@@ -803,7 +731,7 @@ module store_unit (
     output wire [ 3:0] dbus_wstrb_o
 );
 
-    assign dbus_addr_o   = src1_i + imm_i;  // calculate address with adder
+    assign dbus_addr_o   = (valid_i && (lsu_ctrl_i[`LSU_CTRL_IS_STORE] || lsu_ctrl_i[`LSU_CTRL_IS_LOAD])) ? src1_i + imm_i : 0;  // calculate address with adder
     assign dbus_offset_o = dbus_addr_o[1:0];
 
     assign dbus_wvalid_o = valid_i && lsu_ctrl_i[`LSU_CTRL_IS_STORE];

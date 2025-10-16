@@ -126,6 +126,9 @@ In `scripts/prog_dev.tcl`, please specify the IP ADDRESS and PORT number of the 
 Once the specification is complete, you can write the bitstream to the board with `make conf`.
 
 ## History
+2025-10-16 Ver 1.7.10:
+- Refactor divider module and update store_unit address calculation
+
 2025-10-10 Ver 1.7.9:
 - Add `fflush()` to ensure output is flushed during simulation
 

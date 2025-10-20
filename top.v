@@ -58,6 +58,7 @@ module top;
 //==============================================================================
 // Trace Dump
 //------------------------------------------------------------------------------
+/*
     integer i, j, fp;
     initial begin
         fp=$fopen("trace.txt","w");
@@ -78,6 +79,7 @@ module top;
             end
         end
     end
+*/
 
     wire sda, scl, dc, res;
     main m0 (

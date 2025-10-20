@@ -43,12 +43,10 @@ module main (
     assign dbus_rdata = (rdata_sel) ? perf_rdata : dmem_rdata;
 
 
-    reg [31:0] r_stall_ptn = 32'b10101010_11001100_11100010_11110000;
-    always @(posedge clk_i) r_stall_ptn <= {r_stall_ptn[0], r_stall_ptn[31:1]};
     cpu cpu (
         .clk_i        (clk),         // input  wire
         .rst_i        (rst),         // input  wire
-        .stall_i      (r_stall_ptn[0]),       // input  wire
+        .stall_i      (0),           // input  wire
         .ibus_araddr_o(imem_raddr),  // output wire [`IBUS_ADDR_WIDTH-1:0]
         .ibus_rdata_i (imem_rdata),  // input  wire [`IBUS_DATA_WIDTH-1:0]
         .dbus_addr_o  (dbus_addr),   // output wire [`DBUS_ADDR_WIDTH-1:0]

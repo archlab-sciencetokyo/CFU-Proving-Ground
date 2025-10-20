@@ -13,7 +13,7 @@ module top;
     reg [63:0] mcycle = 0;
     always @(posedge clk) if (!m0.rst && !cpu_sim_fini) mcycle <= mcycle + 1;
 
-    reg [63:0] minstret = 0;
+    reg [63:0] minstret     = 0;
     reg [63:0] br_pred_cntr = 0;
     reg [63:0] br_misp_cntr = 0;
     always @(posedge clk) if (!m0.rst && !cpu_sim_fini && !m0.cpu.stall_i) begin

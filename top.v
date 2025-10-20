@@ -18,9 +18,9 @@ module top;
     reg [63:0] br_misp_cntr = 0;
     always @(posedge clk) begin
         if (!m0.rst && !cpu_sim_fini) mcycle <= mcycle + 1;
-        if (!m0.rst && !cpu_sim_fini && !m0.cpu.stall && m0.cpu.ExMa_v) minstret <= minstret + 1;
-        if (!m0.rst && !cpu_sim_fini && m0.cpu.ExMa_is_ctrl_tsfr)br_pred_cntr <= br_pred_cntr + 1;
-        if (!m0.rst && !cpu_sim_fini && m0.cpu.ExMa_is_ctrl_tsfr && m0.cpu.Ma_br_misp)
+        if (!m0.rst && !cpu_sim_fini && !m0.cpu.stall && !m0.cpu.stall_i && m0.cpu.ExMa_v) minstret <= minstret + 1;
+        if (!m0.rst && !cpu_sim_fini && m0.cpu.ExMa_is_ctrl_tsfr && !m0.cpu.stall_i) br_pred_cntr <= br_pred_cntr + 1;
+        if (!m0.rst && !cpu_sim_fini && m0.cpu.ExMa_is_ctrl_tsfr && m0.cpu.Ma_br_misp && !m0.cpu.stall_i)
             br_misp_cntr <= br_misp_cntr + 1;
     end
 

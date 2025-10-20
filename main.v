@@ -42,9 +42,13 @@ module main (
     always @(posedge clk) rdata_sel <= dbus_addr[30];
     assign dbus_rdata = (rdata_sel) ? perf_rdata : dmem_rdata;
 
+
+    reg [31:0] r_stall_ptn = 32'b10101010_11001100_11100010_11110000;
+    always @(posedge clk_i) r_stall_ptn <= {r_stall_ptn[0], r_stall_ptn[31:1]};
     cpu cpu (
         .clk_i        (clk),         // input  wire
         .rst_i        (rst),         // input  wire
+        .stall_i      (r_stall_ptn[0]),       // input  wire
         .ibus_araddr_o(imem_raddr),  // output wire [`IBUS_ADDR_WIDTH-1:0]
         .ibus_rdata_i (imem_rdata),  // input  wire [`IBUS_DATA_WIDTH-1:0]
         .dbus_addr_o  (dbus_addr),   // output wire [`DBUS_ADDR_WIDTH-1:0]
@@ -60,14 +64,16 @@ module main (
         .rdata_o(imem_rdata)   // output reg  [DATA_WIDTH-1:0]
     );
 
-    wire dmem_we = dbus_we & (dbus_addr[28]);
+    wire dmem_re = !dbus_we & (dbus_addr[28]);
+    wire dmem_we =  dbus_we & (dbus_addr[28]);
     wire [31:0] dmem_addr = dbus_addr;
     wire [31:0] dmem_wdata = dbus_wdata;
     wire [3:0] dmem_wstrb = dbus_wstrb;
     wire [31:0] dmem_rdata;
     m_dmem dmem (
         .clk_i  (clk),         // input  wire
-        .we_i   (dmem_we),     // input  wire                  
+        .we_i   (dmem_we),     // input  wire
+        .re_i   (dmem_re),     // input  wire                 
         .addr_i (dmem_addr),   // input  wire [ADDR_WIDTH-1:0] 
         .wdata_i(dmem_wdata),  // input  wire [DATA_WIDTH-1:0] 
         .wstrb_i(dmem_wstrb),  // input  wire [STRB_WIDTH-1:0] 
@@ -133,6 +139,7 @@ endmodule
 
 module m_dmem (
     input  wire        clk_i,
+    input  wire        re_i,               
     input  wire        we_i,
     input  wire [31:0] addr_i,
     input  wire [31:0] wdata_i,
@@ -153,7 +160,7 @@ module m_dmem (
             if (wstrb_i[2]) dmem[valid_addr][23:16] <= wdata_i[23:16];
             if (wstrb_i[3]) dmem[valid_addr][31:24] <= wdata_i[31:24];
         end
-        rdata <= dmem[valid_addr];
+        if (re_i) rdata <= dmem[valid_addr];
     end
     assign rdata_o = rdata;
 endmodule

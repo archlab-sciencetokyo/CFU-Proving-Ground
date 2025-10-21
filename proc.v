@@ -17,7 +17,8 @@ module cpu (
     output wire                        dbus_wvalid_o,
     output wire [`DBUS_DATA_WIDTH-1:0] dbus_wdata_o,
     output wire [`DBUS_STRB_WIDTH-1:0] dbus_wstrb_o,
-    input  wire [`DBUS_DATA_WIDTH-1:0] dbus_rdata_i
+    input  wire [`DBUS_DATA_WIDTH-1:0] dbus_rdata_i,
+    output wire                        dbus_ren_o
 );
     wire w_stall = stall_i;
 
@@ -331,7 +332,8 @@ module cpu (
         .dbus_offset_o(dbus_offset),    // output wire    [OFFSET_WIDTH-1:0]
         .dbus_wvalid_o(dbus_wvalid_o),  // output wire
         .dbus_wdata_o (dbus_wdata_o),   // output wire           [`XLEN-1:0]
-        .dbus_wstrb_o (dbus_wstrb_o)    // output wire         [`XBYTES-1:0]
+        .dbus_wstrb_o (dbus_wstrb_o),    // output wire         [`XBYTES-1:0]
+        .dbus_ren_o   (dbus_ren_o)       // output wire
     );
 
     ///// multiplier unit
@@ -733,13 +735,15 @@ module store_unit (
     output wire [ 1:0] dbus_offset_o,
     output wire        dbus_wvalid_o,
     output wire [31:0] dbus_wdata_o,
-    output wire [ 3:0] dbus_wstrb_o
+    output wire [ 3:0] dbus_wstrb_o,
+    output wire        dbus_ren_o
 );
 
     assign dbus_addr_o   = (valid_i && (lsu_ctrl_i[`LSU_CTRL_IS_STORE] || 
                                         lsu_ctrl_i[`LSU_CTRL_IS_LOAD])) ? src1_i + imm_i : 0;
     assign dbus_offset_o = dbus_addr_o[1:0];
     assign dbus_wvalid_o = valid_i && lsu_ctrl_i[`LSU_CTRL_IS_STORE];
+    assign dbus_ren_o    = valid_i && lsu_ctrl_i[`LSU_CTRL_IS_LOAD];
 
     wire w_sb = lsu_ctrl_i[`LSU_CTRL_IS_BYTE];
     wire w_sh = lsu_ctrl_i[`LSU_CTRL_IS_HALFWORD];

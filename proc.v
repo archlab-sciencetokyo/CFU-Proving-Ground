@@ -17,14 +17,13 @@ module cpu (
     output wire                        dbus_wvalid_o,
     output wire [`DBUS_DATA_WIDTH-1:0] dbus_wdata_o,
     output wire [`DBUS_STRB_WIDTH-1:0] dbus_wstrb_o,
-    input  wire [`DBUS_DATA_WIDTH-1:0] dbus_rdata_i,
-    output wire                        dbus_ren_o
+    input  wire [`DBUS_DATA_WIDTH-1:0] dbus_rdata_i
 );
     wire w_stall = stall_i;
 
-    //-----------------------------------------------------------------------------------------
-    // pipeline registers
-    //-----------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+// pipeline registers
+//------------------------------------------------------------------------------
     // IF: Instruction Fetch
     reg [          `XLEN-1:0] r_pc;  // program counter
 
@@ -91,9 +90,9 @@ module cpu (
     reg [                4:0] MaWb_rd;
     reg [          `XLEN-1:0] MaWb_rslt;
 
-    //-----------------------------------------------------------------------------------------
-    // pipeline control
-    //-----------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+// pipeline control
+//------------------------------------------------------------------------------
     reg                       rst;
     always @(posedge clk_i) if (!w_stall) rst <= rst_i;
 
@@ -110,9 +109,9 @@ module cpu (
     wire Ma_v = ExMa_v;
     wire stall = ExMa_stall;
 
-    //-----------------------------------------------------------------------------------------
-    // IF: Instruction Fetch
-    //-----------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+// IF: Instruction Fetch
+//------------------------------------------------------------------------------
     wire [`PC_W-1:0] If_pc;  // the program counter of the next clock cycle
     wire [`PC_W-1:0] If_pc_inc;  //
     wire If_pc_stall;
@@ -189,9 +188,9 @@ module cpu (
         end
     end
 
-    //-----------------------------------------------------------------------------------------
-    // ID: Instruction Decode
-    //-----------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+// ID: Instruction Decode
+//------------------------------------------------------------------------------
     // instruction decoder
     wire [`SRC2_CTRL_WIDTH-1:0] Id_src2_ctrl;
     wire [ `ALU_CTRL_WIDTH-1:0] Id_alu_ctrl;
@@ -278,9 +277,9 @@ module cpu (
         end
     end
 
-    //-----------------------------------------------------------------------------------------
-    // EX: Execution
-    //-----------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+// EX: Execution
+//------------------------------------------------------------------------------
     wire Ex_valid = IdEx_v && !Ma_br_misp && !ExMa_stall;
 
     ///// data forwarding
@@ -332,8 +331,7 @@ module cpu (
         .dbus_offset_o(dbus_offset),    // output wire    [OFFSET_WIDTH-1:0]
         .dbus_wvalid_o(dbus_wvalid_o),  // output wire
         .dbus_wdata_o (dbus_wdata_o),   // output wire           [`XLEN-1:0]
-        .dbus_wstrb_o (dbus_wstrb_o),    // output wire         [`XBYTES-1:0]
-        .dbus_ren_o   (dbus_ren_o)       // output wire
+        .dbus_wstrb_o (dbus_wstrb_o)    // output wire         [`XBYTES-1:0]
     );
 
     ///// multiplier unit
@@ -409,9 +407,9 @@ module cpu (
         end
     end
 
-    //-----------------------------------------------------------------------------------------
-    // MA: Memory Access
-    //-----------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+// MA: Memory Access
+//------------------------------------------------------------------------------
     // load unit
     wire [`XLEN-1:0] Ma_load_rslt;
     load_unit load_unit (
@@ -438,9 +436,9 @@ module cpu (
         end
     end
 
-    //-----------------------------------------------------------------------------------------
-    // WB: Write Back
-    //-----------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+// WB: Write Back
+//------------------------------------------------------------------------------
 endmodule
 
 `define BTB_IDXW $clog2(`BTB_ENTRY)  // BTB index width
@@ -735,15 +733,13 @@ module store_unit (
     output wire [ 1:0] dbus_offset_o,
     output wire        dbus_wvalid_o,
     output wire [31:0] dbus_wdata_o,
-    output wire [ 3:0] dbus_wstrb_o,
-    output wire        dbus_ren_o
+    output wire [ 3:0] dbus_wstrb_o
 );
 
     assign dbus_addr_o   = (valid_i && (lsu_ctrl_i[`LSU_CTRL_IS_STORE] || 
                                         lsu_ctrl_i[`LSU_CTRL_IS_LOAD])) ? src1_i + imm_i : 0;
     assign dbus_offset_o = dbus_addr_o[1:0];
     assign dbus_wvalid_o = valid_i && lsu_ctrl_i[`LSU_CTRL_IS_STORE];
-    assign dbus_ren_o    = valid_i && lsu_ctrl_i[`LSU_CTRL_IS_LOAD];
 
     wire w_sb = lsu_ctrl_i[`LSU_CTRL_IS_BYTE];
     wire w_sh = lsu_ctrl_i[`LSU_CTRL_IS_HALFWORD];

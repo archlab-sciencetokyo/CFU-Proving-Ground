@@ -50,8 +50,7 @@ module main (
         .dbus_wvalid_o (dbus_we),     // output wire
         .dbus_wdata_o  (dbus_wdata),  // output wire [`DBUS_DATA_WIDTH-1:0]
         .dbus_wstrb_o  (dbus_wstrb),  // output wire [`DBUS_STRB_WIDTH-1:0]
-        .dbus_rdata_i  (dbus_rdata),  // input  wire [`DBUS_DATA_WIDTH-1:0]
-        .dbus_ren_o    ()             // output wire
+        .dbus_rdata_i  (dbus_rdata)   // input  wire [`DBUS_DATA_WIDTH-1:0]
     );
 
     m_imem imem (

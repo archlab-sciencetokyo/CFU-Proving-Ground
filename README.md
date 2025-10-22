@@ -126,6 +126,10 @@ In `scripts/prog_dev.tcl`, please specify the IP ADDRESS and PORT number of the 
 Once the specification is complete, you can write the bitstream to the board with `make conf`.
 
 ## History
+2025-10-22 Ver 1.8.2:
+- Fix a performance counter bug
+- Add debug dumps
+
 2025-10-21 Ver 1.8.1:
 - Remove unused dbus_ren_o output from cpu module and clean up related assignments
 

@@ -18,17 +18,18 @@ module top;
     reg [63:0] br_misp_cntr = 0;
     always @(posedge clk) if (!m0.rst && !cpu_sim_fini && !m0.cpu.stall_i) begin
         if (!m0.cpu.stall && m0.cpu.ExMa_v) minstret <= minstret + 1;
-        if (m0.cpu.ExMa_is_ctrl_tsfr) br_pred_cntr <= br_pred_cntr + 1;
-        if (m0.cpu.ExMa_is_ctrl_tsfr && m0.cpu.Ma_br_misp) br_misp_cntr <= br_misp_cntr + 1;
+        if (m0.cpu.ExMa_v && m0.cpu.ExMa_is_ctrl_tsfr)
+          br_pred_cntr <= br_pred_cntr + 1;
+        if (m0.cpu.ExMa_v && m0.cpu.ExMa_is_ctrl_tsfr && m0.cpu.Ma_br_misp)
+          br_misp_cntr <= br_misp_cntr + 1;
     end
-
 //==============================================================================
 // Dump 
 //------------------------------------------------------------------------------
-    // initial begin
-    //     $dumpfile("dump.vcd");
-    //     $dumpvars(0, top);
-    // end
+    initial begin
+        $dumpfile("dump.vcd");
+        $dumpvars(0, top);
+    end
 
 //==============================================================================
 // Condition for simulation to end
@@ -78,6 +79,32 @@ module top;
                 end
             end
         end
+    end
+*/
+
+//==============================================================================
+// Debug Dump
+//------------------------------------------------------------------------------
+/*
+    reg r_rst = 0;
+    always @(posedge clk) r_rst <= !m0.rst;
+    always @(posedge clk) if (r_rst) begin
+        $write(" %06d: %x ", minstret, m0.cpu.r_pc);
+        if (m0.cpu.IfId_v) $write("%x ", m0.cpu.IfId_pc); else $write("-------- ");
+        if (m0.cpu.IdEx_v) $write("%x", m0.cpu.IdEx_pc); else $write("--------");
+        if (m0.cpu.IdEx_v && m0.cpu.IdEx_bru_ctrl[0]) begin
+          if(m0.cpu.IdEx_bru_ctrl[7:6]) $write("(J) "); else $write("(B) ");
+        end
+        else $write("( ) ");
+        if (m0.cpu.ExMa_v) $write("%x ", m0.cpu.ExMa_pc); else $write("-------- ");
+        if (m0.cpu.MaWb_v) $write("%x:", m0.cpu.MaWb_pc); else $write("--------:");
+        if (m0.cpu.ExMa_v && m0.cpu.ExMa_is_ctrl_tsfr) begin
+            $write(" JB_in_Ma:");
+            if (m0.cpu.ExMa_is_ctrl_tsfr && m0.cpu.Ma_br_misp)
+              $write(" miss"); else $write(" hit");
+        end
+
+        $write("\n");
     end
 */
 

@@ -17,7 +17,7 @@ void draw_rect(cairo_t *ca, int adr, int c) // cairo_t, adr, color
 {
     int x = (adr) & 0xff;
     int y = (adr) >> 8;
-    
+
     int width = size;
     int r1 = (c >> 11) & 0x3f;
     int g1 = (c >>  5) & 0x3f;
@@ -42,7 +42,7 @@ int main(int argc, char** argv)
 
     if(argc==2) size = atoi(argv[1]);
     if(size<=0) size = 2;
-        
+
     int width = 240*size, height = 240*size;
     display = XOpenDisplay( NULL );
     win = XCreateSimpleWindow( display,

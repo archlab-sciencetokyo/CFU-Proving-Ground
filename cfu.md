@@ -17,7 +17,7 @@ Using a CFU in C code involves:
 
 1. Create a wrapper function for the CFU operation:
     ```c
-    static inline unsigned int cfu_op(unsigned int funct7, unsigned int funct3, 
+    static inline unsigned int cfu_op(unsigned int funct7, unsigned int funct3,
                                     unsigned int rs1, unsigned int rs2) {
         unsigned int result;
         asm volatile(
@@ -51,11 +51,11 @@ Using a CFU in C code involves:
 > Let's look at a simple example:
 > ```c
 > #include <stdio.h>
-> 
+>
 > int main(){
 > int rs1 = 1;
 > int rs2 = 2;
-> 
+>
 > int result;
 > asm volatile (
 >              ".insn r 0x33, 0x0, 0x20, %0, %1, %2"

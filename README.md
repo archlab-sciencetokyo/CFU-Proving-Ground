@@ -14,7 +14,7 @@ If you are using [ACRi Room](https://gw.acri.c.titech.ac.jp/wp/), these software
 For RTL simulation, install Verilator version 5 if it is not installed.
 See the [Verilator website](https://www.veripool.org/verilator/) for more information.
 
-As an FPGA development tool, install Vivado 2024.2 if it is not installed. 
+As an FPGA development tool, install Vivado 2024.2 if it is not installed.
 See the  [Vivado site](https://www.amd.com/ja/products/software/adaptive-socs-and-fpgas/vivado.html) for more information.
 
 Our display simulator uses libcairo-deb package, please install it with the following command.
@@ -77,7 +77,7 @@ Memory initialization files `memi.txt` and `memd.txt` are compiled from `main.c`
 $ make prog
 ```
 
-The default FPGA board is Arty A7. 
+The default FPGA board is Arty A7.
 If you want to use Nexys A7, modify `Makefile` to use `TARGET=nexys_a7`.
 If you want to use Cmod A7, modify `Makefile` to use `TARGET=cmod_a7`.
 
@@ -99,7 +99,7 @@ When the FPGA is configured, an application displays many random characters, sim
 > Note that a mini display (ST7789 TFT LCD) should be appropriately connected to the Pmod JC of Arty A7-35T FPGA board.
 > ![arty](figures/arty.JPG)
 > This [site](https://github.com/kisek/fpga_arty_a7_st7789) will explain the way to connect a mini display to Arty A7-35T FPGA board.
-> 
+>
 > For Nexys A7, connect to JXADC.
 > ![nexys](figures/nexys.JPEG)
 >

@@ -97,10 +97,10 @@ module cpu (
     always @(posedge clk_i) if (!w_stall) rst <= rst_i;
 
     wire Ma_br_tkn = (ExMa_v && ExMa_br_tkn);
-    wire        Ma_br_misp     = (rst) ? 1 : 
-                                 (ExMa_v && ExMa_is_ctrl_tsfr && 
+    wire        Ma_br_misp     = (rst) ? 1 :
+                                 (ExMa_v && ExMa_is_ctrl_tsfr &&
                                  ((Ma_br_tkn) ? ExMa_br_misp_rslt1 : ExMa_br_misp_rslt2));
-    wire [31:0] Ma_br_true_pc  = (rst) ?`RESET_VECTOR : 
+    wire [31:0] Ma_br_true_pc  = (rst) ?`RESET_VECTOR :
                                  (ExMa_br_tkn) ? ExMa_br_tkn_pc : ExMa_pc+4;
 
     wire If_v = (Ma_br_misp) ? 0 : (IfId_load_muldiv_use) ? IfId_v : 1;
@@ -137,7 +137,7 @@ module cpu (
         .br_pred_tkn_o(If_br_pred_tkn),  // output wire
         .br_pred_pc_o (If_br_pred_pc),   // output reg  [`XLEN-1:0]
         .br_tkn_i     (Ma_br_tkn),       // input  wire
-        .br_tsfr_i    (ExMa_j_b_insn),   // input  wire                     
+        .br_tsfr_i    (ExMa_j_b_insn),   // input  wire
         .waddr_i      (ExMa_pc),         // input  wire [`XLEN-1:0]
         .pat_hist_i   (ExMa_pat_hist),   // input  wire       [1:0]
         .br_tkn_pc_i  (ExMa_br_tkn_pc)   // input  wire [`XLEN-1:0]
@@ -159,8 +159,8 @@ module cpu (
     );
 
     wire If_load_muldiv_use = IfId_v && !Ma_br_misp && !IfId_load_muldiv_use
-                              && (Id_lsu_ctrl[`LSU_CTRL_IS_LOAD] || 
-                                  Id_mul_ctrl[`MUL_CTRL_IS_MUL] || 
+                              && (Id_lsu_ctrl[`LSU_CTRL_IS_LOAD] ||
+                                  Id_mul_ctrl[`MUL_CTRL_IS_MUL] ||
                                   Id_div_ctrl[`DIV_CTRL_IS_DIV] ||
                                   Id_cfu_ctrl[`CFU_CTRL_IS_CFU]  )
                               && IfId_rf_we && ((IfId_rd==If_rs1) || (IfId_rd==If_rs2));
@@ -244,7 +244,7 @@ module cpu (
 
     // source select
     wire [`XLEN-1:0] Id_src1 = (Id_rs1_fwd_Wb_to_Ex) ? Ma_rslt : Id_xrs1;
-    wire [`XLEN-1:0] Id_src2 = (Id_rs2_fwd_Wb_to_Ex) ? Ma_rslt : 
+    wire [`XLEN-1:0] Id_src2 = (Id_rs2_fwd_Wb_to_Ex) ? Ma_rslt :
                                (Id_use_imm) ? Id_pc_in+Id_imm  : Id_xrs2 ;
 
     wire [31:0] Id_j_pc4 = (Id_bru_ctrl[`BRU_CTRL_IS_JAL_JALR]) ? IfId_pc + 4 : 0;
@@ -364,19 +364,19 @@ module cpu (
         .rslt_o    (Ex_div_rslt)     // output wire           [`XLEN-1:0]
     );
 
-    ///// custom function unit    
+    ///// custom function unit
     wire             Ex_cfu_en = IdEx_cfu_ctrl[0] & Ex_valid;
     wire             Ex_cfu_stall;
     wire [`XLEN-1:0] Ex_cfu_rslt;
     cfu cfu (
-        .clk_i   (clk_i),                // input  wire        
-        .en_i    (Ex_cfu_en),            // input  wire        
-        .funct3_i(IdEx_cfu_ctrl[3:1]),   // input  wire [ 2:0] 
-        .funct7_i(IdEx_cfu_ctrl[10:4]),  // input  wire [ 6:0] 
-        .src1_i  (Ex_src1),              // input  wire [31:0] 
-        .src2_i  (Ex_src2),              // input  wire [31:0] 
-        .stall_o (Ex_cfu_stall),         // output wire        
-        .rslt_o  (Ex_cfu_rslt)           // output wire [31:0] 
+        .clk_i   (clk_i),                // input  wire
+        .en_i    (Ex_cfu_en),            // input  wire
+        .funct3_i(IdEx_cfu_ctrl[3:1]),   // input  wire [ 2:0]
+        .funct7_i(IdEx_cfu_ctrl[10:4]),  // input  wire [ 6:0]
+        .src1_i  (Ex_src1),              // input  wire [31:0]
+        .src2_i  (Ex_src2),              // input  wire [31:0]
+        .stall_o (Ex_cfu_stall),         // output wire
+        .rslt_o  (Ex_cfu_rslt)           // output wire [31:0]
     );
 
     always @(posedge clk_i) if (!w_stall) begin
@@ -504,7 +504,7 @@ module pre_decoder (
 
     assign rd_o = ((instr_type_o == `S_TYPE) | (instr_type_o == `B_TYPE)) ? 0 : ir_i[11:7];
     assign rs1_o = ((instr_type_o == `U_TYPE) | (instr_type_o == `J_TYPE)) ? 0 : ir_i[19:15];
-    assign rs2_o = ((instr_type_o==`I_TYPE) | 
+    assign rs2_o = ((instr_type_o==`I_TYPE) |
                     (instr_type_o==`U_TYPE) | (instr_type_o==`J_TYPE)) ? 0 : ir_i[24:20];
     assign rf_we_o = (rd_o != 0);
 endmodule
@@ -537,7 +537,7 @@ module alu (
     input  wire [`ALU_CTRL_WIDTH-1:0] alu_ctrl_i,
     input  wire                [31:0] src1_i    ,
     input  wire                [31:0] src2_i    ,
-    input  wire                [31:0] j_pc4_i   ,            
+    input  wire                [31:0] j_pc4_i   ,
     output wire                [31:0] rslt_o
 );
 
@@ -553,18 +553,18 @@ module alu (
 
     wire signed  [32:0] right_shifter_src1 = {w_signed && src1_i[31], src1_i};
     wire  [4:0] shamt              = src2_i[4:0];
-    wire [31:0] left_shifter_rslt  = (alu_ctrl_i[`ALU_CTRL_IS_SHIFT_LEFT] ) ?  
+    wire [31:0] left_shifter_rslt  = (alu_ctrl_i[`ALU_CTRL_IS_SHIFT_LEFT] ) ?
                                      src1_i <<  shamt : 0;
-    wire [31:0] right_shifter_rslt = (alu_ctrl_i[`ALU_CTRL_IS_SHIFT_RIGHT]) ? 
+    wire [31:0] right_shifter_rslt = (alu_ctrl_i[`ALU_CTRL_IS_SHIFT_RIGHT]) ?
                                      right_shifter_src1 >>> shamt : 0;
 
-    wire [31:0] bitwise_rslt       = ((alu_ctrl_i[`ALU_CTRL_IS_XOR_OR]) ? 
-                                     (src1_i ^ src2_i) : 0) | 
+    wire [31:0] bitwise_rslt       = ((alu_ctrl_i[`ALU_CTRL_IS_XOR_OR]) ?
+                                     (src1_i ^ src2_i) : 0) |
                                      ((alu_ctrl_i[`ALU_CTRL_IS_OR_AND])
                                       ? (src1_i & src2_i) : 0);
     wire [31:0] lui_auipc_rslt     = (alu_ctrl_i[`ALU_CTRL_IS_SRC2]) ? src2_i : 0;
 
-    assign rslt_o = less_rslt | adder_rslt | left_shifter_rslt | right_shifter_rslt | 
+    assign rslt_o = less_rslt | adder_rslt | left_shifter_rslt | right_shifter_rslt |
                     bitwise_rslt | lui_auipc_rslt | j_pc4_i;
 endmodule
 
@@ -640,10 +640,10 @@ module divider (
     wire [32:0] difference      = {remainder[30:0], quotient[31]} - divisor;
     wire        q               = !difference[32];
 
-    assign rslt_o = (state!=`DIV_RET) ? 0 : 
+    assign rslt_o = (state!=`DIV_RET) ? 0 :
                     (is_rem) ? ((is_rem_rslt_neg) ? ~remainder+1 : remainder) :
                     ((is_div_rslt_neg) ? ~quotient+1  : quotient ) ;
-    
+
     wire w_div    = div_ctrl_i[`DIV_CTRL_IS_DIV];
     wire w_signed = div_ctrl_i[`DIV_CTRL_IS_SIGNED];
     wire [1:0] w_state = (w_init) ? `DIV_CHECK :
@@ -651,7 +651,7 @@ module divider (
                          (state==`DIV_CHECK && divisor!=0) ? `DIV_EXEC :
                          (state==`DIV_EXEC  && cntr==0) ? `DIV_RET :
                          (state==`DIV_EXEC  && cntr!=0) ? `DIV_EXEC : `DIV_IDLE;
-    
+
     wire w_init = (state==`DIV_IDLE && valid_i && w_div);
     always @(posedge clk_i) if (!stall_i) begin
         is_rem            <= (w_init) ? div_ctrl_i[`DIV_CTRL_IS_REM] : is_rem;
@@ -659,9 +659,9 @@ module divider (
         is_divisor_neg    <= (w_init) ? w_signed && src2_i[31] : is_divisor_neg;
         is_div_rslt_neg   <= (w_init) ? w_signed && (src1_i[31] ^ src2_i[31]) :
                              (state==`DIV_CHECK && divisor==0) ? 0 : is_div_rslt_neg;
-        is_rem_rslt_neg   <= (w_init) ? w_signed &&  src1_i[31] : 
+        is_rem_rslt_neg   <= (w_init) ? w_signed &&  src1_i[31] :
                              (state==`DIV_CHECK && divisor==0) ? 0 : is_rem_rslt_neg;
-        
+
         divisor <= (w_init) ? src2_i :
                    (state==`DIV_CHECK && divisor!=0) ? uintx_divisor : divisor;
 
@@ -697,7 +697,7 @@ module multiplier (
     reg signed [32:0] r_multiplicand;  // 33bit
     reg signed [32:0] r_multiplier;  // 33bit
     reg        [63:0] product;  // 64bit
-    reg               is_high;  // 
+    reg               is_high;  //
 
     assign rslt_o = (state != `MUL_RET) ? 0 : (is_high) ? product[63:32] : product[31:0];
 
@@ -736,7 +736,7 @@ module store_unit (
     output wire [ 3:0] dbus_wstrb_o
 );
 
-    assign dbus_addr_o   = (valid_i && (lsu_ctrl_i[`LSU_CTRL_IS_STORE] || 
+    assign dbus_addr_o   = (valid_i && (lsu_ctrl_i[`LSU_CTRL_IS_STORE] ||
                                         lsu_ctrl_i[`LSU_CTRL_IS_LOAD])) ? src1_i + imm_i : 0;
     assign dbus_offset_o = dbus_addr_o[1:0];
     assign dbus_wvalid_o = valid_i && lsu_ctrl_i[`LSU_CTRL_IS_STORE];
@@ -776,10 +776,10 @@ module load_unit (
     wire w_lh_sign = w_lh & ((ost[1] == 0) ? d[15] : d[31]) & w_signed;
 
     wire [7:0] w1, w2, w3, w4;
-    assign w1   = (w_load==0) ? 0 : (w_lw || (w_lh & ost[1]==0) || (w_lb & ost==0)) ? d[7:0] : 
-                           (w_lb && ost==1) ? d[15:8] : ((w_lb && ost==2) || 
+    assign w1   = (w_load==0) ? 0 : (w_lw || (w_lh & ost[1]==0) || (w_lb & ost==0)) ? d[7:0] :
+                           (w_lb && ost==1) ? d[15:8] : ((w_lb && ost==2) ||
                            (w_lh && ost[1]==1)) ? d[23:16] : d[31:24];
-    assign w2  = (w_load==0) ? 0 : (w_lw || (w_lh && ost[1]==0)) ? d[15:8] : 
+    assign w2  = (w_load==0) ? 0 : (w_lw || (w_lh && ost[1]==0)) ? d[15:8] :
                            (w_lh && ost[1]==1) ? d[31:24] : (w_lb_sign) ? 8'hff : 0;
     assign w3 = (w_load == 0) ? 0 : (w_lw) ? d[23:16] : ((w_lb_sign) || (w_lh_sign)) ? 8'hff : 0;
     assign w4 = (w_load == 0) ? 0 : (w_lw) ? d[31:24] : ((w_lb_sign) || (w_lh_sign)) ? 8'hff : 0;
@@ -834,12 +834,12 @@ module decoder (
 
     wire bru_c0 = (op == 5'b11011) || (op == 5'b11001) || (op == 5'b11000);  // IS_CTRL_TSFR
     wire bru_c1 = (op == 5'b11000) && (f3 == 4 || f3 == 5);  // IS_SIGNED
-    wire bru_c2 = (op == 5'b11000) && (f3 == 0);  // IS_BEQ      
-    wire bru_c3 = (op == 5'b11000) && (f3 == 1);  // IS_BNE      
-    wire bru_c4 = (op == 5'b11000) && (f3 == 4 || f3 == 6);  // IS_BLT      
-    wire bru_c5 = (op == 5'b11000) && (f3 == 5 || f3 == 7);  // IS_BGE      
-    wire bru_c6 = (op == 5'b11001);  // IS_JALR     
-    wire bru_c7 = (op == 5'b11011) || (op == 5'b11001);  // IS_JAL_JALR 
+    wire bru_c2 = (op == 5'b11000) && (f3 == 0);  // IS_BEQ
+    wire bru_c3 = (op == 5'b11000) && (f3 == 1);  // IS_BNE
+    wire bru_c4 = (op == 5'b11000) && (f3 == 4 || f3 == 6);  // IS_BLT
+    wire bru_c5 = (op == 5'b11000) && (f3 == 5 || f3 == 7);  // IS_BGE
+    wire bru_c6 = (op == 5'b11001);  // IS_JALR
+    wire bru_c7 = (op == 5'b11011) || (op == 5'b11001);  // IS_JAL_JALR
     assign bru_ctrl_o = {bru_c7, bru_c6, bru_c5, bru_c4, bru_c3, bru_c2, bru_c1, bru_c0};
 
     wire lsu_c0 = (op == 0);  // IS_LOAD
@@ -868,10 +868,10 @@ module decoder (
                   (f10==10'b100000000 || f10==10'b10 || f10==10'b11)); // IS_NEG
     wire alu_c2 = (op==4 && (f3==2 || f3==3)) ||
                   (op==5'b01100 && (f10==10'b10 || f10==10'b11)); // IS_LESS
-    wire alu_c3 = (op==4 && f3==0) || 
+    wire alu_c3 = (op==4 && f3==0) ||
                   (op==5'b01100 && (f10==10'b0 || f10==10'b100000000)); // IS_ADD
     wire alu_c4 = (op == 4 && f3 == 1 && f7 == 7'b0) || (op == 12 && f10 == 1);  // IS_SHIFT_LEFT
-    wire alu_c5 = (op==4 && f3==5 && (f7==7'b0 || f7==7'b100000)) || (op==12 && 
+    wire alu_c5 = (op==4 && f3==5 && (f7==7'b0 || f7==7'b100000)) || (op==12 &&
                   (f10==10'b101 || f10==10'b0100000101)); // IS_SHIFT_RIGHT
     wire alu_c6 = (op==4 && (f3==4 || f3==6)) || (op==12 && (f10==4 || f10==6));//IS_XOR_OR
     wire alu_c7 = (op==4 && (f3==6 || f3==7)) || (op==12 && (f10==6 || f10==7));//IS_OR_AND

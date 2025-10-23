@@ -22,7 +22,7 @@ SECTIONS
         *(.sdata*)
         *(.data)
     } > dmem
-    
+
     .rodata : {
         *(.rodata.*)
         *(.srodata.*)

@@ -68,11 +68,11 @@ module main (
     m_dmem dmem (
         .clk_i   (clk),         // input  wire
         .we_i    (dmem_we),     // input  wire
-        .re_i    (dmem_re),     // input  wire                 
-        .addr_i  (dmem_addr),   // input  wire [ADDR_WIDTH-1:0] 
-        .wdata_i (dmem_wdata),  // input  wire [DATA_WIDTH-1:0] 
-        .wstrb_i (dmem_wstrb),  // input  wire [STRB_WIDTH-1:0] 
-        .rdata_o (dmem_rdata)   // output reg  [DATA_WIDTH-1:0] 
+        .re_i    (dmem_re),     // input  wire
+        .addr_i  (dmem_addr),   // input  wire [ADDR_WIDTH-1:0]
+        .wdata_i (dmem_wdata),  // input  wire [DATA_WIDTH-1:0]
+        .wstrb_i (dmem_wstrb),  // input  wire [STRB_WIDTH-1:0]
+        .rdata_o (dmem_rdata)   // output reg  [DATA_WIDTH-1:0]
     );
 
     wire        vmem_we    = dbus_we & (dbus_addr[29]);
@@ -134,7 +134,7 @@ endmodule
 
 module m_dmem (
     input  wire        clk_i,
-    input  wire        re_i,               
+    input  wire        re_i,
     input  wire        we_i,
     input  wire [31:0] addr_i,
     input  wire [31:0] wdata_i,

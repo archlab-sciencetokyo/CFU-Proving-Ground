@@ -193,49 +193,35 @@ module vmem (
     output wire  [2:0] rdata_o
 );
 
-    reg [2:0] vmem_lo[0:32767];  // vmem
-    reg [2:0] vmem_hi[0:32767];  // vmem
+    reg [2:0] vmem[0:65535];
     integer i;
     initial begin
-        for (i = 0; i < 32768; i = i + 1) begin
-            vmem_lo[i] = 0;
-            vmem_hi[i] = 0;
+        for (i = 0; i < 65536; i = i + 1) begin
+            vmem[i] = 0;
         end
     end
 
     reg        we;
-    reg        top;
     reg  [2:0] wdata;
-    reg [14:0] waddr;
-
-    reg        rtop;
-    reg [14:0] raddr;
-    reg  [2:0] rdata_lo;
-    reg  [2:0] rdata_hi;
-    reg        sel;
-
-    localparam ADDR_MASK = 16'h7FFF;
+    reg [15:0] waddr;
+    reg [15:0] raddr;
+    reg  [2:0] rdata;
 
     always @(posedge clk_i) begin
         we    <= we_i;
-        top   <= waddr_i[15];
-        waddr <= waddr_i[14:0];
+        waddr <= waddr_i;
         wdata <= wdata_i;
-
-        rtop  <= raddr_i[15];
-        raddr <= raddr_i[14:0];
+        raddr <= raddr_i;
 
         if (we) begin
-            if (top) vmem_hi[waddr&ADDR_MASK] <= wdata;
-            else vmem_lo[waddr&ADDR_MASK] <= wdata;
+            vmem[waddr] <= wdata;
         end
 
-        sel      <= rtop;
-        rdata_lo <= vmem_lo[raddr&ADDR_MASK];
-        rdata_hi <= vmem_hi[raddr&ADDR_MASK];
+        rdata <= vmem[raddr];
     end
 
-    assign rdata_o = (sel) ? rdata_hi : rdata_lo;
+    assign rdata_o = rdata;
+
 `ifndef SYNTHESIS
     reg  [15:0] r_adr_p = 0;
     reg  [15:0] r_dat_p = 0;
@@ -243,22 +229,12 @@ module vmem (
     wire [15:0] data = {{5{wdata_i[2]}}, {6{wdata_i[1]}}, {5{wdata_i[0]}}};
     always @(posedge clk_i)
         if (we_i) begin
-            case (waddr_i[15])
-                0:
-                if (vmem_lo[waddr_i&ADDR_MASK] != wdata_i) begin
-                    r_adr_p <= waddr_i;
-                    r_dat_p <= data;
-                    $write("@D%0d_%0d\n", waddr_i ^ r_adr_p, data ^ r_dat_p);
-                    $fflush();
-                end
-                1:
-                if (vmem_hi[waddr_i&ADDR_MASK] != wdata_i) begin
-                    r_adr_p <= waddr_i;
-                    r_dat_p <= data;
-                    $write("@D%0d_%0d\n", waddr_i ^ r_adr_p, data ^ r_dat_p);
-                    $fflush();
-                end
-            endcase
+            if (vmem[waddr_i] != wdata_i) begin
+                r_adr_p <= waddr_i;
+                r_dat_p <= data;
+                $write("@D%0d_%0d\n", waddr_i ^ r_adr_p, data ^ r_dat_p);
+                $fflush();
+            end
         end
 `endif
 endmodule

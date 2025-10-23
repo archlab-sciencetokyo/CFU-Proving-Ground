@@ -126,6 +126,9 @@ In `scripts/prog_dev.tcl`, please specify the IP ADDRESS and PORT number of the 
 Once the specification is complete, you can write the bitstream to the board with `make conf`.
 
 ## History
+2025-10-23 Ver 1.8.3:
+- Refactor clock signal definitions in XDC files: remove redundant create_clock commands
+
 2025-10-22 Ver 1.8.2:
 - Fix a performance counter bug
 - Add debug dumps

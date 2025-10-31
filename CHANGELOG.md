@@ -1,4 +1,6 @@
 # Changelog
+2025-10-31 Ver 1.8.5:
+- Combine multiple vmems into one vmem
 
 2025-10-23 Ver 1.8.4:
 - Format files

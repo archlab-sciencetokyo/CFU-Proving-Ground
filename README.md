@@ -16,7 +16,7 @@ If you are using [ACRi Room](https://gw.acri.c.titech.ac.jp/wp/), these software
 For RTL simulation, install Verilator version 5 if it is not installed.
 See the [Verilator website](https://www.veripool.org/verilator/) for more information.
 
-As an FPGA development tool, install Vivado 2024.2 if it is not installed.
+As an FPGA development tool, install Vivado **2024.2** if it is not installed.
 See the  [Vivado site](https://www.amd.com/ja/products/software/adaptive-socs-and-fpgas/vivado.html) for more information.
 
 Our display simulator uses libcairo-deb package, please install it with the following command.

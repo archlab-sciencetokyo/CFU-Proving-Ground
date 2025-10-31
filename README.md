@@ -5,7 +5,7 @@ This enables agile development of ASIPs (Application-Specific Integrated Product
 For information on how to create and use Custom Function Units (CFUs), please see [CFU Implementation Guide](cfu.md).
 
 The recommended OS is Ubuntu Linux.
-This project has been verified using Vivado 2024.2.
+This project has been verified using Vivado **2024.2**.
 
 All changelogs are described in [CHANGELOG.md](CHANGELOG.md).
 

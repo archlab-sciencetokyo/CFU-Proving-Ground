@@ -127,10 +127,10 @@ When using the Vivado Hardware Server, you can use `scripts/prog_dev.tcl`.
 In `scripts/prog_dev.tcl`, please specify the IP ADDRESS and PORT number of the host where the Vivado Hardware Server is running.
 Once the specification is complete, you can write the bitstream to the board with `make conf`.
 
-# How to Modify Memory Size?
+## How to Modify Memory Size?
 To change the memory size, you must modify the configuration on both the hardware and software sides.
 
-## Hardware Side
+### Hardware Side
 On the hardware side, you can change the memory size by modifying the `config.vh file`.
 The unit is in bytes.
 For example, if you want to use 64KiB of DMEM (Data Memory), you would set: ``define DMEM_SIZE (64*1024)`
@@ -141,7 +141,7 @@ For example, if you want to use 64KiB of DMEM (Data Memory), you would set: ``de
 `define DMEM_SIZE (16*1024) // data memory size in byte
 ```
 
-## Software Side
+### Software Side
 The compiler is unaware of the amount of memory the hardware provides. The user must specify this configuration using the linker script (`app/link.ld`).
 
 Specifically, you need to change the `LENGTH` value in the `MEMORY` section of `app/link.ld`.

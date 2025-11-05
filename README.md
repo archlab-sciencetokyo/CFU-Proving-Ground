@@ -131,9 +131,9 @@ Once the specification is complete, you can write the bitstream to the board wit
 To change the memory size, you must modify the configuration on both the hardware and software sides.
 
 ### Hardware Side
-On the hardware side, you can change the memory size by modifying the `config.vh file`.
+On the hardware side, you can change the memory size by modifying the `config.vh` file.
 The unit is in bytes.
-For example, if you want to use 64KiB of DMEM (Data Memory), you would set: ``define DMEM_SIZE (64*1024)`
+For example, if you want to use 64KiB of DMEM (Data Memory), you would set: `` `define DMEM_SIZE (64*1024) ``
 
 ```verilog
 // ram

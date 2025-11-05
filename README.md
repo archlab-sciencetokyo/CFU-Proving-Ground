@@ -154,5 +154,5 @@ MEMORY {
 }
 ```
 > [!NOTE]
-> Even if FPGA board havs sufficient Block RAM, you might be unable to generate a bitstream in Vivado when you increase the size of the `dmem`.
+> Even if FPGA board has sufficient Block RAM, you might be unable to generate a bitstream in Vivado when you increase the size of the `dmem`.
 > This is likely because the `dmem` description does not adhere to the Vivado User Guide.

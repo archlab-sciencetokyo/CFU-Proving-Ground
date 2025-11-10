@@ -1,4 +1,7 @@
 # Changelog
+2025-11-10 Ver 1.8.6:
+- Update color definitions in st7789.h
+
 2025-10-31 Ver 1.8.5:
 - Combine multiple vmems into one vmem
 

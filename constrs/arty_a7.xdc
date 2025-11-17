@@ -307,7 +307,6 @@ set_property IOSTANDARD LVCMOS33 [get_ports user_led3]
 ################################################################################
 set_property INTERNAL_VREF 0.675 [get_iobanks 34]
 
-
 ################################################################################
 # False path constraints
 ################################################################################
@@ -316,9 +315,8 @@ set_false_path -to [get_pins -filter {REF_PIN_NAME == PRE} -of_objects [get_cell
 set_max_delay -from [get_pins -filter {REF_PIN_NAME == C} -of_objects [get_cells -hierarchical -filter {ars_ff1 == TRUE}]] -to [get_pins -filter {REF_PIN_NAME == D} -of_objects [get_cells -hierarchical -filter {ars_ff2 == TRUE}]] 2.000 -quiet
 
 ## Clock signal
-set_property -dict { PACKAGE_PIN E3    IOSTANDARD LVCMOS33 } [get_ports { clk_i }];
-create_clock -add -name sys_clk_pin -period 10.00 -waveform {0 5} [get_ports { clk_i }];
-
+create_clock -period 10.000 -name clk100 [get_ports clk100]
+set_clock_groups -asynchronous -group [get_clocks -include_generated_clocks -of [get_nets sys_clk]]
 
 ## Pmod Header JC
 set_property -dict { PACKAGE_PIN U12 IOSTANDARD LVCMOS33 } [get_ports { st7789_DC  }]; # Pin 1

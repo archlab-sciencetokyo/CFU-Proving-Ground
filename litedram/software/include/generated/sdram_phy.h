@@ -16,17 +16,21 @@
 #define DFII_COMMAND_WRDATA 0x10
 #define DFII_COMMAND_RDDATA 0x20
 
-#define SDRAM_PHY_SDRAMPHYMODEL
+#define SDRAM_PHY_A7DDRPHY
 #define SDRAM_PHY_XDR 2
 #define SDRAM_PHY_DATABITS 16
 #define SDRAM_PHY_DFI_DATABITS 32
 #define SDRAM_PHY_PHASES 4
-#define SDRAM_PHY_CL 6
+#define SDRAM_PHY_CL 7
 #define SDRAM_PHY_CWL 5
+#define SDRAM_PHY_CMD_LATENCY 0
 #define SDRAM_PHY_RDPHASE 2
 #define SDRAM_PHY_WRPHASE 3
+#define SDRAM_PHY_READ_LEVELING_CAPABLE
 #define SDRAM_PHY_DQ_DQS_RATIO 8
 #define SDRAM_PHY_MODULES 2
+#define SDRAM_PHY_DELAYS 32
+#define SDRAM_PHY_BITSLIPS 8
 #define SDRAM_PHY_DDR3
 #define SDRAM_PHY_SUPPORTED_MEMORY 0x0000000010000000ULL
 
@@ -109,8 +113,8 @@ static inline void init_sequence(void)
 	sdram_dfii_pi0_baddress_write(1);
 	command_p0(DFII_COMMAND_RAS|DFII_COMMAND_CAS|DFII_COMMAND_WE|DFII_COMMAND_CS);
 
-	/* Load Mode Register 0, CL=6, BL=8 */
-	sdram_dfii_pi0_address_write(0x920);
+	/* Load Mode Register 0, CL=7, BL=8 */
+	sdram_dfii_pi0_address_write(0x930);
 	sdram_dfii_pi0_baddress_write(0);
 	command_p0(DFII_COMMAND_RAS|DFII_COMMAND_CAS|DFII_COMMAND_WE|DFII_COMMAND_CS);
 	cdelay(200);

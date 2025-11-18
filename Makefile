@@ -1,13 +1,10 @@
 # CFU Proving Ground since 2025-02    Copyright(c) 2025 Archlab. Science Tokyo
 # Released under the MIT license https://opensource.org/licenses/mit 
 
-export GCC := /tools/cad/riscv/rv32ima/bin/riscv32-unknown-elf-gcc
-GPP     := /tools/cad/riscv/rv32ima/bin/riscv32-unknown-elf-g++
-OBJCOPY := /tools/cad/riscv/rv32ima/bin/riscv32-unknown-elf-objcopy
-OBJDUMP := /tools/cad/riscv/rv32ima/bin/riscv32-unknown-elf-objdump
 VIVADO  := /tools/Xilinx/Vivado/2024.1/bin/vivado
-VPP     := /tools/Xilinx/Vitis/2024.1/bin/v++
-RTLSIM  := /tools/cad/bin/verilator
+
+ROOT_DIR := $(shell pwd)
+BUILD_DIR := $(ROOT_DIR)/build
 
 TARGET := arty_a7
 #TARGET := cmod_a7
@@ -15,133 +12,24 @@ TARGET := arty_a7
 
 USE_HLS ?= 0
 
-.PHONY: sim prog imem_image dmem_image remove-junk bit load run drun clean regressive-test
-all: user_config boot_image prog imem_image dmem_image remove-junk sim
+.PHONY: all build-dir user_config bit remove-junk
+all: bit
 
-user_config:
-	mkdir -p build
+build-dir:
+	mkdir -p $(BUILD_DIR)
+
+user_config: build-dir
 	python3 scripts/user_config.py
 
-sim:
-	$(RTLSIM) --binary --trace --top-module top -Ibuild -Isrc \
-	--Wno-WIDTHTRUNC --Wno-WIDTHEXPAND --Wno-COMBDLY --Wno-CASEINCOMPLETE \
-	-o top src/*.v
-	gcc -O2 dispemu/dispemu.c -o build/dispemu -lcairo -lX11
+bit: user_config
+	$(MAKE) -C prog -f prog.mk BUILD_DIR=$(BUILD_DIR)
+	$(VIVADO) -mode batch -source scripts/build_$(TARGET).tcl
 
-prog:
-	$(MAKE) -C prog -f prog.mk
-
-boot_image:
-	$(MAKE) -C boot -f boot.mk
-	$(OBJDUMP) -d build/boot.elf > build/boot.dump
-	$(OBJCOPY) -O binary --only-section=.text build/boot.elf build/bootrom_init.bin
-	dd if=build/bootrom_init.bin of=build/bootrom_init.img conv=sync bs=1KiB
-	hexdump -v -e '1/4 "%08x\n"' build/bootrom_init.img > build/bootrom_init.32.hex
-	{ \
-		cnt=0; \
-		echo "initial begin"; \
-		while read line; do \
-			echo "    rom[$$cnt] = 32'h$$line;"; \
-			cnt=$$((cnt + 1)); \
-		done < build/bootrom_init.32.hex; \
-		echo "end"; \
-	} > build/bootrom_init.vh
-	$(OBJCOPY) -O binary build/boot.elf --only-section=.data   \
-								        --only-section=.rodata \
-									    --only-section=.bss    \
-									    build/sdram_init.bin
-	dd if=build/sdram_init.bin of=build/sdram_init.img conv=sync bs=1KiB
-	hexdump -v -e '1/4 "%08x\n"' build/sdram_init.img > build/sdram_init.32.hex
-	{ \
-		cnt=0; \
-		echo "initial begin"; \
-		while read line; do \
-			echo "    ram[$$cnt] = 32'h$$line;"; \
-			cnt=$$((cnt + 1)); \
-		done < build/sdram_init.32.hex; \
-		echo "end"; \
-	} > build/sdram_init.vh
-
-imem_image:
-	$(OBJDUMP) -d build/main.elf > build/main.dump
-	$(OBJCOPY) -O binary --only-section=.text build/main.elf build/imem_init.bin
-	dd if=build/imem_init.bin of=build/imem_init.img conv=sync bs=1KiB
-	hexdump -v -e '1/4 "%08x\n"' build/imem_init.img > build/imem_init.32.hex
-	{ \
-		cnt=0; \
-		echo "initial begin"; \
-		while read line; do \
-			echo "    imem[$$cnt] = 32'h$$line;"; \
-			cnt=$$((cnt + 1)); \
-		done < build/imem_init.32.hex; \
-		echo "end"; \
-	} > build/imem_init.vh
-
-dmem_image:
-	$(OBJCOPY) -O binary build/main.elf --only-section=.data   \
-								     --only-section=.rodata \
-									 --only-section=.bss    \
-									 build/dram_init.bin
-	dd if=build/dram_init.bin of=build/dram_init.img bs=1k conv=sync
-	hexdump -v -e '1/4 "%08x\n"' build/dram_init.img > build/dram_init.32.hex
-	{ \
-		cnt=0; \
-		echo "initial begin"; \
-		while read line; do \
-			echo "    dram[$$cnt] = 32'h$$line;"; \
-			cnt=$$((cnt + 1)); \
-		done < build/dram_init.32.hex; \
-		echo "end"; \
-	} > build/dram_init.vh
+conf:
+	vivado -mode batch -source scripts/program_device.tcl
 
 remove-junk:
 	rm -f build/bootrom_init.bin build/bootrom_init.img build/bootrom_init.32.hex
 	rm -f build/sdram_init.bin build/sdram_init.img build/sdram_init.32.hex
 	rm -f build/dram_init.bin build/dram_init.img build/dram_init.32.hex
 	rm -f build/imem_init.bin build/imem_init.img build/imem_init.32.hex
-
-bit:
-	mkdir -p vivado
-	cd vivado && \
-	$(VIVADO) -mode batch -source ../scripts/build_$(TARGET).tcl
-
-load:
-	$(VIVADO) -mode batch -source scripts/load.tcl
-
-run:
-	./obj_dir/top
-
-drun:
-	./obj_dir/top | build/dispemu 1
-
-clean:
-	rm -rf build/ obj_dir/ vivado/ 
-
-#===============================================================================
-# Remove when regression test is done
-#-------------------------------------------------------------------------------
-ELF_FILES := $(wildcard tests/*.elf)
-regression-test:
-	for f in $(ELF_FILES); do \
-		make user_config > /dev/null; \
-		make boot_image > /dev/null; \
-		cp $${f} build/main.elf; \
-		make imem_image dmem_image > /dev/null; \
-		make sim > /dev/null; \
-		echo "Running $$f ..."; \
-		./obj_dir/top; \
-	done
-
-TEST ?= rv32um-p-mulh
-single-test:
-	mkdir -p build
-	make user_config
-	make boot_image
-	cp tests/$(TEST).elf build/main.elf
-	make imem_image dmem_image remove-junk
-	make sim
-	./obj_dir/top
-
-vcd:
-	gtkwave -o build/sim.vcd -S scripts/vcd.tcl
-

@@ -3,7 +3,7 @@
 
 //#include <csr-defs.h>
 
-#include "soc.h"
+#include <generated/soc.h>
 
 #ifdef __cplusplus
 extern "C" {

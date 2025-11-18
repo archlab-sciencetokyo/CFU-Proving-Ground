@@ -1,7 +1,8 @@
 {
     "csr_bases": {
         "ddrctrl": 0,
-        "sdram": 2048
+        "ddrphy": 2048,
+        "sdram": 4096
     },
     "csr_registers": {
         "ddrctrl_init_done": {
@@ -14,135 +15,200 @@
             "size": 1,
             "type": "rw"
         },
-        "sdram_dfii_control": {
+        "ddrphy_rst": {
             "addr": 2048,
             "size": 1,
             "type": "rw"
         },
-        "sdram_dfii_pi0_command": {
+        "ddrphy_dly_sel": {
             "addr": 2052,
             "size": 1,
             "type": "rw"
         },
-        "sdram_dfii_pi0_command_issue": {
+        "ddrphy_half_sys8x_taps": {
             "addr": 2056,
             "size": 1,
             "type": "rw"
         },
-        "sdram_dfii_pi0_address": {
+        "ddrphy_wlevel_en": {
             "addr": 2060,
             "size": 1,
             "type": "rw"
         },
-        "sdram_dfii_pi0_baddress": {
+        "ddrphy_wlevel_strobe": {
             "addr": 2064,
             "size": 1,
             "type": "rw"
         },
-        "sdram_dfii_pi0_wrdata": {
+        "ddrphy_rdly_dq_rst": {
             "addr": 2068,
             "size": 1,
             "type": "rw"
         },
-        "sdram_dfii_pi0_rddata": {
+        "ddrphy_rdly_dq_inc": {
             "addr": 2072,
             "size": 1,
-            "type": "ro"
+            "type": "rw"
         },
-        "sdram_dfii_pi1_command": {
+        "ddrphy_rdly_dq_bitslip_rst": {
             "addr": 2076,
             "size": 1,
             "type": "rw"
         },
-        "sdram_dfii_pi1_command_issue": {
+        "ddrphy_rdly_dq_bitslip": {
             "addr": 2080,
             "size": 1,
             "type": "rw"
         },
-        "sdram_dfii_pi1_address": {
+        "ddrphy_wdly_dq_bitslip_rst": {
             "addr": 2084,
             "size": 1,
             "type": "rw"
         },
-        "sdram_dfii_pi1_baddress": {
+        "ddrphy_wdly_dq_bitslip": {
             "addr": 2088,
             "size": 1,
             "type": "rw"
         },
-        "sdram_dfii_pi1_wrdata": {
+        "ddrphy_rdphase": {
             "addr": 2092,
             "size": 1,
             "type": "rw"
         },
-        "sdram_dfii_pi1_rddata": {
+        "ddrphy_wrphase": {
             "addr": 2096,
+            "size": 1,
+            "type": "rw"
+        },
+        "sdram_dfii_control": {
+            "addr": 4096,
+            "size": 1,
+            "type": "rw"
+        },
+        "sdram_dfii_pi0_command": {
+            "addr": 4100,
+            "size": 1,
+            "type": "rw"
+        },
+        "sdram_dfii_pi0_command_issue": {
+            "addr": 4104,
+            "size": 1,
+            "type": "rw"
+        },
+        "sdram_dfii_pi0_address": {
+            "addr": 4108,
+            "size": 1,
+            "type": "rw"
+        },
+        "sdram_dfii_pi0_baddress": {
+            "addr": 4112,
+            "size": 1,
+            "type": "rw"
+        },
+        "sdram_dfii_pi0_wrdata": {
+            "addr": 4116,
+            "size": 1,
+            "type": "rw"
+        },
+        "sdram_dfii_pi0_rddata": {
+            "addr": 4120,
+            "size": 1,
+            "type": "ro"
+        },
+        "sdram_dfii_pi1_command": {
+            "addr": 4124,
+            "size": 1,
+            "type": "rw"
+        },
+        "sdram_dfii_pi1_command_issue": {
+            "addr": 4128,
+            "size": 1,
+            "type": "rw"
+        },
+        "sdram_dfii_pi1_address": {
+            "addr": 4132,
+            "size": 1,
+            "type": "rw"
+        },
+        "sdram_dfii_pi1_baddress": {
+            "addr": 4136,
+            "size": 1,
+            "type": "rw"
+        },
+        "sdram_dfii_pi1_wrdata": {
+            "addr": 4140,
+            "size": 1,
+            "type": "rw"
+        },
+        "sdram_dfii_pi1_rddata": {
+            "addr": 4144,
             "size": 1,
             "type": "ro"
         },
         "sdram_dfii_pi2_command": {
-            "addr": 2100,
+            "addr": 4148,
             "size": 1,
             "type": "rw"
         },
         "sdram_dfii_pi2_command_issue": {
-            "addr": 2104,
+            "addr": 4152,
             "size": 1,
             "type": "rw"
         },
         "sdram_dfii_pi2_address": {
-            "addr": 2108,
+            "addr": 4156,
             "size": 1,
             "type": "rw"
         },
         "sdram_dfii_pi2_baddress": {
-            "addr": 2112,
+            "addr": 4160,
             "size": 1,
             "type": "rw"
         },
         "sdram_dfii_pi2_wrdata": {
-            "addr": 2116,
+            "addr": 4164,
             "size": 1,
             "type": "rw"
         },
         "sdram_dfii_pi2_rddata": {
-            "addr": 2120,
+            "addr": 4168,
             "size": 1,
             "type": "ro"
         },
         "sdram_dfii_pi3_command": {
-            "addr": 2124,
+            "addr": 4172,
             "size": 1,
             "type": "rw"
         },
         "sdram_dfii_pi3_command_issue": {
-            "addr": 2128,
+            "addr": 4176,
             "size": 1,
             "type": "rw"
         },
         "sdram_dfii_pi3_address": {
-            "addr": 2132,
+            "addr": 4180,
             "size": 1,
             "type": "rw"
         },
         "sdram_dfii_pi3_baddress": {
-            "addr": 2136,
+            "addr": 4184,
             "size": 1,
             "type": "rw"
         },
         "sdram_dfii_pi3_wrdata": {
-            "addr": 2140,
+            "addr": 4188,
             "size": 1,
             "type": "rw"
         },
         "sdram_dfii_pi3_rddata": {
-            "addr": 2144,
+            "addr": 4192,
             "size": 1,
             "type": "ro"
         }
     },
     "constants": {
-        "config_platform_name": "sim",
-        "config_clock_frequency": 100000000,
+        "config_platform_name": "platform",
+        "config_clock_frequency": 50000000,
         "config_cpu_type_none": null,
         "config_cpu_variant_standard": null,
         "config_cpu_family": null,

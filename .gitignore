@@ -1,5 +1,5 @@
 build/
 obj_dir/
-vivado/
+vivado*
 tests/
 riscv-tests/

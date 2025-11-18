@@ -6,7 +6,10 @@ C_FILE         = 'build/user_config.h'
 VH_FILE        = 'build/user_config.vh'
 TCL_FILE       = 'build/user_config.tcl'
 LINKER_FILE    = 'build/region.ld'
-DRAM_BASE_ADDR = 0x80000000
+
+IMEM_BASE_ADDR = 0x00000000
+DMEM_BASE_ADDR = 0x10000000
+DRAM_BASE_ADDR = 0x20000000
 
 #===============================================================================
 # Load YAML and generate files
@@ -44,16 +47,17 @@ if 'btb_entries' in config_data:
 if 'imem_size_kbyte' in config_data:
     c_content.append(f'#define IMEM_ENTRIES {config_data["imem_size_kbyte"] * 1024 // 4}\n')
     verilog_content.append(f'`define IMEM_ENTRIES {config_data["imem_size_kbyte"] * 1024 // 4}\n')
-    linker_content.append(f"    imem : ORIGIN = 0x40000000, LENGTH = {config_data['imem_size_kbyte']}K\n")
+    linker_content.append(f"    imem : ORIGIN = 0x{IMEM_BASE_ADDR:08x}, LENGTH = {config_data['imem_size_kbyte']}K\n")
 
 if 'dmem_size_kbyte' in config_data:
     c_content.append(f'#define DMEM_ENTRIES {config_data["dmem_size_kbyte"] * 1024 // 4}\n')
     verilog_content.append(f'`define DMEM_ENTRIES {config_data["dmem_size_kbyte"] * 1024 // 4}\n')
-    linker_content.append(f'    dmem : ORIGIN = 0x80000000, LENGTH = {config_data["dmem_size_kbyte"]}K\n')
+    linker_content.append(f'    dmem : ORIGIN = 0x{DMEM_BASE_ADDR:08x}, LENGTH = {config_data["dmem_size_kbyte"]}K\n')
 
 if 'uart_baudrate' in config_data:
     verilog_content.append(f'`define UART_BAUDRATE {config_data["uart_baudrate"]}\n')
 
+linker_content.append(f"    dram : ORIGIN = 0x{DRAM_BASE_ADDR:08x}, LENGTH = 256M\n")
 linker_content.append('}\n')
 
 #===============================================================================

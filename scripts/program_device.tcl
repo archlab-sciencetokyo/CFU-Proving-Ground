@@ -1,4 +1,4 @@
-set ip_addr 192.168.x.x
+set ip_addr 192.168.220.50
 set port 3121
 
 open_hw_manager

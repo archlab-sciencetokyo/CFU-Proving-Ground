@@ -1,8 +1,3 @@
-## This file is a general .xdc for the Arty A7-35 Rev. D and Rev. E
-## To use it in a project:
-## - uncomment the lines corresponding to used pins
-## - rename the used ports (in each line, after get_ports) according to the top level signal names in the project
-
 ################################################################################
 # IO constraints
 ################################################################################
@@ -308,15 +303,43 @@ set_property IOSTANDARD LVCMOS33 [get_ports user_led3]
 set_property INTERNAL_VREF 0.675 [get_iobanks 34]
 
 ################################################################################
+# Pmod Header JC
+################################################################################
+
+# Pin 1
+set_property PACKAGE_PIN U12 [get_ports st7789_DC]
+set_property IOSTANDARD LVCMOS33 [get_ports st7789_DC]
+
+# Pin 2
+set_property PACKAGE_PIN V12 [get_ports st7789_RES]
+set_property IOSTANDARD LVCMOS33 [get_ports st7789_RES]
+
+# Pin 3
+set_property PACKAGE_PIN V10 [get_ports st7789_SDA]
+set_property IOSTANDARD LVCMOS33 [get_ports st7789_SDA]
+
+# Pin 4
+set_property PACKAGE_PIN V11 [get_ports st7789_SCL]
+set_property IOSTANDARD LVCMOS33 [get_ports st7789_SCL]
+
+################################################################################
+# UART (0xF0001000 - 0xF0001004)
+################################################################################
+set_property PACKAGE_PIN A9 [get_ports uart_rxd]
+set_property IOSTANDARD LVCMOS33 [get_ports uart_rxd]
+
+################################################################################
+# Clock constraints
+################################################################################
+create_clock -period 10.000 -name clk100 [get_ports clk100]
+set_clock_groups -asynchronous -group [get_clocks -include_generated_clocks -of [get_nets sys_clk]]
+
+################################################################################
 # False path constraints
 ################################################################################
 set_false_path -through [get_nets -hierarchical -filter {mr_ff == TRUE}] -quiet
 set_false_path -to [get_pins -filter {REF_PIN_NAME == PRE} -of_objects [get_cells -hierarchical -filter {ars_ff1 == TRUE || ars_ff2 == TRUE}]] -quiet
 set_max_delay -from [get_pins -filter {REF_PIN_NAME == C} -of_objects [get_cells -hierarchical -filter {ars_ff1 == TRUE}]] -to [get_pins -filter {REF_PIN_NAME == D} -of_objects [get_cells -hierarchical -filter {ars_ff2 == TRUE}]] 2.000 -quiet
-
-## Clock signal
-create_clock -period 10.000 -name clk100 [get_ports clk100]
-set_clock_groups -asynchronous -group [get_clocks -include_generated_clocks -of [get_nets sys_clk]]
 
 ## Pmod Header JC
 set_property -dict { PACKAGE_PIN U12 IOSTANDARD LVCMOS33 } [get_ports { st7789_DC  }]; # Pin 1

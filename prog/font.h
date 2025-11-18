@@ -1,8 +1,3 @@
-/* CFU Proving Ground since 2025-02    Copyright(c) 2025 Archlab. Science Tokyo /
-/ Released under the MIT license https://opensource.org/licenses/mit           */
-
-#include "st7789.h"
-
 /**
  * 8x8 monochrome bitmap fonts for rendering
  * Author: Daniel Hepper <daniel@hepper.net>
@@ -25,7 +20,7 @@
 
 // Constant: font8x8_basic
 // Contains an 8x8 font map for unicode points U+0000 - U+007F (basic latin)
-char font8x8_basic[128][8] = {
+static char font8x8_basic[128][8] = {
     { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},   // U+0000 (nul)
     { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},   // U+0001
     { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},   // U+0002
@@ -155,100 +150,3 @@ char font8x8_basic[128][8] = {
     { 0x6E, 0x3B, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},   // U+007E (~)
     { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00}    // U+007F
 };
-
-void pg_lcd_draw_point(int x, int y, char color) {
-    *(volatile char *)(0x20000000 + y * 256 + x) = color;
-}
-
-void pg_lcd_draw_char(int x, int y, char c, char color, int scale) {
-    for (int i = 0; i < (8 << scale); i++) {
-        if (y + i >= 240) break;
-        for (int j = 0; j < (8 << scale); j++) {
-            if (x + j >= 240) break;
-            if ((font8x8_basic[c][i >> scale] >> (j >> scale)) & 1) {
-                pg_lcd_draw_point(x + j, y + i, color);
-            } else {
-                pg_lcd_draw_point(x + j, y + i, 0);
-            }
-        }
-    }
-}
-
-void pg_lcd_fill(char color) {
-    for (int y = 0; y < 256; y++) {
-        for (int x = 0; x < 256; x++) {
-            pg_lcd_draw_point(x, y, color);
-        }
-    }
-}
-
-char st7789_col = 0;
-char st7789_row = 0;
-void _pg_lcd_update_pos () {
-    st7789_col = (st7789_col + 1) % 15;
-    if (st7789_col == 0)  st7789_row = (st7789_row + 1) % 15;
-}
-
-void pg_lcd_reset() {
-    st7789_col = 0;
-    st7789_row = 0;
-    pg_lcd_fill(0);
-}
-
-void pg_lcd_printd(long long x) {
-    if (x == 0) {
-        pg_lcd_draw_char(st7789_col << 4, st7789_row << 4, '0', PG_WHITE, 1);
-        _pg_lcd_update_pos();
-        return;
-    }
-    if (x < 0) {
-        pg_lcd_draw_char(st7789_col << 4, st7789_row << 4, '-', PG_WHITE, 1);
-        _pg_lcd_update_pos();
-        x = -x;
-    }
-    char buf[16];
-    int i = 0;
-    while (x) {
-        buf[i++] = x % 10 + '0';
-        x /= 10;
-    }
-    while (i--) {
-        pg_lcd_draw_char(st7789_col << 4, st7789_row << 4, buf[i], PG_WHITE, 1);
-        _pg_lcd_update_pos();
-    }
-}
-
-void pg_lcd_printh(unsigned int x) {
-    char buf[10];
-    int i = 0;
-    for (int j = 0; j < 8; j++) {
-        buf[i++] = "0123456789ABCDEF"[x & 0xF];
-        x >>= 4;
-    }
-    while (i--) {
-        pg_lcd_draw_char(st7789_col << 4, st7789_row << 4, buf[i], PG_WHITE, 1);
-        _pg_lcd_update_pos();
-    }
-}
-
-void pg_lcd_prints(const char *str) {
-    while (*str) {
-        if (*str == '\n') {
-            if (st7789_col != 0) st7789_row = (st7789_row + 1) % 15;
-            st7789_col = 0;
-        }
-        else if (*str == '\r') {
-            st7789_col = 0;
-        }
-        else {
-            pg_lcd_draw_char(st7789_col << 4, st7789_row << 4, *str, PG_WHITE, 1);
-            _pg_lcd_update_pos();
-        }
-        str++;
-    }
-}
-
-void pg_lcd_set_pos(int x, int y) {
-    st7789_col = x;
-    st7789_row = y;
-}

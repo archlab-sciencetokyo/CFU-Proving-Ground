@@ -1,10 +1,8 @@
-/* CFU Proving Ground since 2025-02    Copyright(c) 2025 Archlab. Science Tokyo /
-/ Released under the MIT license https://opensource.org/licenses/mit           */
-
     .align 4
     .section .text.init
     .globl _start
 _start:
+    nop
     li      x1, 0
     li      x2, 0
     li      x3, 0
@@ -36,9 +34,19 @@ _start:
     li      x29, 0
     li      x30, 0
     li      x31, 0
+#ifdef SYNTHESIS
     la      sp, _fstack
+    jal     sdram_init
+#else
+    li      t0, 0x40000000
+    li      t1, 1
+    sb      t1, 0(t0)
+#endif
+    li      sp, 0x30000000
     jal     main
     j       finish
 
 finish:
-1:  j       1b
+    la      t0, 0xF000000C
+    sb      zero, 0(t0)
+    j .

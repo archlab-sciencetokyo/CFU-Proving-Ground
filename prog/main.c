@@ -1,21 +1,55 @@
 #include <stdlib.h>
 
-int main () {
-    volatile char *dram = (volatile char *)0x20000000;
-    volatile char *sdram = (volatile char *)0x10000000;
-    volatile int *led = (volatile int *)0xF0000000;
-    volatile char *uart = (volatile char *)0xF0001004;
+#include "font.h"
 
-    for (int i = 0; i < 1000; i++) {
-        dram[i] = (char)i;
-    }
+void perf_reset() { *(volatile char *)(0xF0002000) = 1; }
+void perf_start() { *(volatile char *)(0xF0002004) = 1; }
+void perf_stop() { *(volatile char *)(0xF0002004) = 0; }
+unsigned long long perf_read() {
+    unsigned int low = *(volatile unsigned int *)(0xF0002008);
+    unsigned int high = *(volatile unsigned int *)(0xF000200C);
+    return ((unsigned long long)high << 32) | low;
+}
 
-    for (int i = 0; i < 1000; i++) {
-        if (dram[i] != (char)i) {
-            led[1] = 1; // Error
-            while (1);
+void pg_lcd_draw_point(int x, int y, char color) {
+    volatile char *vmem = (volatile char *)0x80000000;
+    vmem[y * 256 + x] = color;
+}
+
+void pg_lcd_draw_char(int x, int y, char c, char color, int scale) {
+    for (int i = 0; i < (8 << scale); i++) {
+        if (y + i >= 240) break;
+        for (int j = 0; j < (8 << scale); j++) {
+            if (x + j >= 240) break;
+            if ((font8x8_basic[c][i >> scale] >> (j >> scale)) & 1) {
+                pg_lcd_draw_point(x + j, y + i, color);
+            } else {
+                pg_lcd_draw_point(x + j, y + i, 0);
+            }
         }
     }
+}
 
+void RandomChar() {
+    while (1) {
+        char c = 'A' + rand() % 26;
+        pg_lcd_draw_char(rand() % 240, rand() % 240, c, rand() & 0x7, 1);
+    }
+}
+
+void dram_init() {
+    volatile char *dram = (volatile char *)0x20000000;
+    volatile char *uart = (volatile char *)0xF0001004;
+    for (int i = 0; i < 3072; i++) { dram[i] = *uart; }
+}
+
+int main () {
+    volatile int *led = (volatile int *)0xF0000000;
+
+    led[0] = 1;
+    dram_init();
+    led[1] = 1;
+
+    RandomChar();
     return 0;
 }

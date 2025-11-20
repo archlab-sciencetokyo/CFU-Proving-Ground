@@ -424,7 +424,7 @@ module dram(
     input  wire [31:0] write_data_i,
     input  wire  [3:0] write_en_i
 );
-    reg [31:0] mem [0:3071]; // 12 KiB DRAM (32-bit words)
+    reg [31:0] mem [0:`DMEM_ENTRIES-1]; // 12 KiB DRAM (32-bit words)
     // `include "dmem_init.vh"
     
     localparam IDLE = 0, READ = 1, WRITE = 2, ACK = 3;

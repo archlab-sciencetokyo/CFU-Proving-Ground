@@ -5,12 +5,14 @@ set top_dir [pwd]
 set proj_name main
 set part_name xc7a35tcsg324-1
 set src_files [list \
+    $top_dir/build/user_config.vh \
+    $top_dir/src/config.vh \
     $top_dir/litedram/gateware/litedram_core.v \
     $top_dir/src/main.v \
     $top_dir/src/lsu.v \
-    $top_dir/src/riscv.vh \
-    $top_dir/src/rv32i.v \
+    $top_dir/src/proc.v \
     $top_dir/src/perf.v \
+    $top_dir/src/cfu.v \
     $top_dir/build/imem_init.vh \
 ]
 set nproc [exec nproc]

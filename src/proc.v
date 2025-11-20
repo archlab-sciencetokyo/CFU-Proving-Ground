@@ -3,11 +3,11 @@
 `include "config.vh"
 /******************************************************************************************/
 `define DBUS_OFFSET_W $clog2(`XBYTES)
-`define PC_W $clog2(`IMEM_SIZE)  // PC width
+`define PC_W 31  // PC width
 `define ITYPE_W `INSTR_TYPE_WIDTH
 
 /******************************************************************************************/
-module cpu (
+module proc (
     input  wire                        clk_i,
     input  wire                        rst_i,
     input  wire                        stall_i,
@@ -775,9 +775,11 @@ module load_unit (
     wire w_lh_sign = w_lh & ((ost[1] == 0) ? d[15] : d[31]) & w_signed;
 
     wire [7:0] w1, w2, w3, w4;
-    assign w1   = (w_load==0) ? 0 : (w_lw || (w_lh & ost[1]==0) || (w_lb & ost==0)) ? d[7:0] :
-                           (w_lb && ost==1) ? d[15:8] : ((w_lb && ost==2) ||
-                           (w_lh && ost[1]==1)) ? d[23:16] : d[31:24];
+    assign w1   = (w_load==0)                                     ? 0
+                : (w_lw || (w_lh & ost[1]==0) || (w_lb & ost==0)) ? d[7:0]
+                : (w_lb && ost==1)                                ? d[15:8]
+                : ((w_lb && ost==2) || (w_lh && ost[1]==1))       ? d[23:16]
+                : d[31:24];
     assign w2  = (w_load==0) ? 0 : (w_lw || (w_lh && ost[1]==0)) ? d[15:8] :
                            (w_lh && ost[1]==1) ? d[31:24] : (w_lb_sign) ? 8'hff : 0;
     assign w3 = (w_load == 0) ? 0 : (w_lw) ? d[23:16] : ((w_lb_sign) || (w_lh_sign)) ? 8'hff : 0;

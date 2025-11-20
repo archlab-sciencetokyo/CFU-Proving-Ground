@@ -1,3 +1,4 @@
+`include "config.vh"
 module main(
     input  wire          clk100,
     output wire   [13:0] ddram_a,
@@ -32,22 +33,62 @@ module main(
 //------------------------------------------------------------------------------
     wire        sys_clk;
     wire        sys_rst;
-    wire        proc_cmd_we;
-    wire [31:0] proc_cmd_addr;
-    wire        proc_cmd_valid;
+    wire [31:0] proc_ibus_addr;
+    wire [31:0] proc_ibus_data;
     wire        proc_cmd_ack;
     wire [31:0] proc_read_data;
-    wire [31:0] proc_write_data;
-    wire  [3:0] proc_write_en;
-    rv32i proc (
-        .clk_i             (sys_clk),
-        .dbus_cmd_addr_o   (proc_cmd_addr),
-        .dbus_cmd_we_o     (proc_cmd_we),
-        .dbus_cmd_valid_o  (proc_cmd_valid),
-        .dbus_cmd_ack_i    (proc_cmd_ack),
-        .dbus_read_data_i  (proc_read_data),
-        .dbus_write_data_o (proc_write_data),
-        .dbus_write_en_o   (proc_write_en)
+    reg         proc_cmd_we   = 0;
+    reg  [31:0] proc_cmd_addr = 0;
+    reg         proc_cmd_valid = 0;
+    reg  [31:0] proc_write_data = 0;
+    reg   [3:0] proc_write_en = 0;
+    reg         proc_state = 0;
+    reg  [31:0] read_data  = 0;
+    always @(posedge sys_clk) begin
+        read_data <= proc_read_data;
+        case(proc_state)
+            0: if (dbus_addr != 0) begin
+                proc_state      <= 1;
+                proc_cmd_addr   <= dbus_addr;
+                proc_cmd_we     <= dbus_wvalid;
+                proc_cmd_valid  <= 1;
+                proc_write_data <= dbus_wdata;
+                proc_write_en   <= dbus_wstrb;
+            end
+            1: if (proc_cmd_ack) begin
+                proc_state     <= 0;
+                proc_cmd_valid <= 0;
+                read_data      <= proc_read_data;
+            end
+        endcase
+    end
+    wire [31:0] dbus_addr;
+    wire        dbus_wvalid;
+    wire [31:0] dbus_wdata;
+    wire  [3:0] dbus_wstrb;
+    wire [31:0] dbus_rdata;
+    wire proc_stall = proc_state;
+    proc proc (
+        .clk_i         (sys_clk),
+        .rst_i         (sys_rst),
+        .stall_i       (proc_stall),
+        .ibus_araddr_o (proc_ibus_addr),
+        .ibus_rdata_i  (proc_ibus_data),
+        .dbus_addr_o   (dbus_addr),
+        .dbus_wvalid_o (dbus_wvalid),
+        .dbus_wdata_o  (dbus_wdata),
+        .dbus_wstrb_o  (dbus_wstrb),
+        .dbus_rdata_i  (read_data)
+    );
+
+
+//==============================================================================
+// 0x00000000 - 0x0FFFFFFF: IMEM
+//------------------------------------------------------------------------------
+    imem imem (
+        .clk_i  (sys_clk),
+        .addr_i (proc_ibus_addr),
+        .data_o (proc_ibus_data)
     );
 
 //==============================================================================
@@ -83,7 +124,22 @@ module main(
     wire        lsu_rsp_valid;
     wire        lsu_rsp_ready;
     wire [31:0] lsu_rsp_data;
-
+`ifdef SYNTHESISPPP
+    ila_0 ila(
+        .clk       (sys_clk),
+        .probe0    (litedram_cmd_addr),
+        .probe1    (litedram_cmd_ready),
+        .probe2    (litedram_cmd_valid),
+        .probe3    (litedram_cmd_we),
+        .probe4    (litedram_rdata_data),
+        .probe5    (litedram_rdata_ready),
+        .probe6    (litedram_rdata_valid),
+        .probe7    (litedram_wdata_data),
+        .probe8    (litedram_wdata_ready),
+        .probe9    (litedram_wdata_valid),
+        .probe10   (litedram_wdata_we)
+    );
+`endif
     lsu lsu (
         .clk_i                  (sys_clk),
         .cmd_valid_i            (lsu_cmd_valid),
@@ -356,6 +412,24 @@ module main(
     );
 endmodule
 
+module imem (
+    input  wire        clk_i,
+    input  wire [31:0] addr_i,
+    output wire [31:0] data_o
+);
+    reg [31:0] mem [0:`IMEM_ENTRIES-1];
+    `include "imem_init.vh"
+
+    wire [31:2] addr = addr_i[31:2];
+    reg  [31:0] data;
+    always @(posedge clk_i) begin
+        data <= mem[addr];
+    end
+
+    assign data_o = data;
+endmodule
+
+
 module dram(
     input  wire        sys_clk, 
     input  wire [31:0] cmd_addr_i,
@@ -384,14 +458,6 @@ module dram(
             IDLE: begin
                 if (cmd_valid_i) begin
                     cmd_addr   <= cmd_addr_i[31:2];
-                    cmd_offset <= cmd_addr_i[1:0];
-                    shamt      <= (cmd_addr_i[1:0] == 1) ? 8
-                                : (cmd_addr_i[1:0] == 2) ? 16
-                                : (cmd_addr_i[1:0] == 3) ? 24
-                                : 0; // Shift amount for byte/halfword access
-                    store_type <= (write_en_i==4'b1111) ? SW
-                                : (write_en_i==4'b0011) ? SH
-                                : SB;
                     write_data <= write_data_i;
                     write_en   <= write_en_i;
                     state      <= cmd_we_i ? WRITE : READ;
@@ -402,23 +468,10 @@ module dram(
                 state     <= ACK;
             end
             WRITE: begin
-                case (store_type)
-                    SB: begin
-                        case (cmd_offset)
-                            2'b00: mem[cmd_addr][7:0]   <= write_data[7:0];
-                            2'b01: mem[cmd_addr][15:8]  <= write_data[7:0];
-                            2'b10: mem[cmd_addr][23:16] <= write_data[7:0];
-                            2'b11: mem[cmd_addr][31:24] <= write_data[7:0];
-                        endcase
-                    end
-                    SH: begin
-                        if (cmd_offset[1]) mem[cmd_addr][31:16] <= write_data[15:0];
-                        else               mem[cmd_addr][15:0]  <= write_data[15:0];
-                    end
-                    SW: begin
-                        mem[cmd_addr] <= write_data;
-                    end
-                endcase
+                if (write_en[0]) mem[cmd_addr][7:0]   <= write_data[7:0];
+                if (write_en[1]) mem[cmd_addr][15:8]  <= write_data[15:8];
+                if (write_en[2]) mem[cmd_addr][23:16] <= write_data[23:16];
+                if (write_en[3]) mem[cmd_addr][31:24] <= write_data[31:24];
                 state <= ACK;
             end
             ACK: begin
@@ -427,7 +480,7 @@ module dram(
         endcase
     end
     assign cmd_ack_o   = (state == ACK);
-    assign read_data_o = (read_data >> shamt);
+    assign read_data_o = (state == ACK) ? read_data : 0;
 endmodule
 
 module ic(

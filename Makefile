@@ -12,7 +12,7 @@ TARGET := arty_a7
 
 USE_HLS ?= 0
 
-.PHONY: all build-dir user_config bit remove-junk
+.PHONY: all run build-dir sim user_config bit remove-junk
 all: bit
 
 build-dir:
@@ -22,8 +22,18 @@ user_config: build-dir
 	python3 scripts/user_config.py
 
 bit: user_config
-	$(MAKE) -C prog -f prog.mk BUILD_DIR=$(BUILD_DIR)
+	$(MAKE) -C prog -f prog.mk BUILD_DIR=$(BUILD_DIR) bit
 	$(VIVADO) -mode batch -source scripts/build_$(TARGET).tcl
+
+sim:
+	mkdir -p $(BUILD_DIR)
+	$(MAKE) -C prog -f prog.mk sim
+	verilator --binary --trace --top-module top --timing -Isrc \
+	-Ilitedram_sim/gateware -Ibuild -Wno-WIDTHEXPAND -Wno-TIMESCALEMOD \
+	-Wno-COMBDLY -Wno-CASEINCOMPLETE -Wno-WIDTHTRUNC src/top.v
+
+run:
+	./obj_dir/Vtop
 
 conf:
 	vivado -mode batch -source scripts/program_device.tcl

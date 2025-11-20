@@ -44,15 +44,15 @@ module lsu (
                 litedram_wdata_we[3:0] <= cmd_wdata_we_i;
                 litedram_cmd_we        <= cmd_we_i;
                 litedram_wdata_data    <= cmd_data_i;
-                cmd_addr_offset[3:0]   <= cmd_addr_i[3:0];
+                cmd_addr_offset        <= cmd_addr_i[3:2];
                 lsu_state              <= LSU_STATE_CMD_SEND;
             end
             LSU_STATE_CMD_SEND: if (litedram_cmd_ready_i) begin
                 litedram_cmd_we     <= 1'b0;
                 litedram_cmd_addr   <= 24'b0;
-                litedram_wdata_we   <= litedram_wdata_we << cmd_addr_offset;
-                litedram_wdata_data <= litedram_wdata_data << (cmd_addr_offset << 3);
-                cmd_addr_offset     <= cmd_addr_offset << 3;
+                litedram_wdata_we   <= litedram_wdata_we << (cmd_addr_offset << 2);
+                litedram_wdata_data <= litedram_wdata_data << (cmd_addr_offset << 5);
+                cmd_addr_offset     <= cmd_addr_offset << 5;
                 lsu_state           <= (litedram_cmd_we) ? LSU_STATE_WRITE : LSU_STATE_READ;
             end
             LSU_STATE_WRITE: if (litedram_wdata_ready_i) begin

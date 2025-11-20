@@ -3,3 +3,4 @@ obj_dir/
 vivado*
 tests/
 riscv-tests/
+*.vcd

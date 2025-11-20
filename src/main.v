@@ -124,22 +124,6 @@ module main(
     wire        lsu_rsp_valid;
     wire        lsu_rsp_ready;
     wire [31:0] lsu_rsp_data;
-`ifdef SYNTHESISPPP
-    ila_0 ila(
-        .clk       (sys_clk),
-        .probe0    (litedram_cmd_addr),
-        .probe1    (litedram_cmd_ready),
-        .probe2    (litedram_cmd_valid),
-        .probe3    (litedram_cmd_we),
-        .probe4    (litedram_rdata_data),
-        .probe5    (litedram_rdata_ready),
-        .probe6    (litedram_rdata_valid),
-        .probe7    (litedram_wdata_data),
-        .probe8    (litedram_wdata_ready),
-        .probe9    (litedram_wdata_valid),
-        .probe10   (litedram_wdata_we)
-    );
-`endif
     lsu lsu (
         .clk_i                  (sys_clk),
         .cmd_valid_i            (lsu_cmd_valid),

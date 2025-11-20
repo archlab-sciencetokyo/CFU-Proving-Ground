@@ -1,9 +1,6 @@
-# GCC       := /tools/cad/riscv/rv32ima/bin/riscv32-unknown-elf-gcc
-# OBJD      := /tools/cad/riscv/rv32ima/bin/riscv32-unknown-elf-objdump
-# OBJC      := /tools/cad/riscv/rv32ima/bin/riscv32-unknown-elf-objcopy
-GCC       := /home/fujino/tools/rv32i/bin/riscv32-unknown-elf-gcc
-OBJD      := /home/fujino/tools/rv32i/bin/riscv32-unknown-elf-objdump
-OBJC      := /home/fujino/tools/rv32i/bin/riscv32-unknown-elf-objcopy
+GCC       := /tools/cad/riscv/rv32ima/bin/riscv32-unknown-elf-gcc
+OBJD      := /tools/cad/riscv/rv32ima/bin/riscv32-unknown-elf-objdump
+OBJC      := /tools/cad/riscv/rv32ima/bin/riscv32-unknown-elf-objcopy
 VERILATOR := /tools/cad/bin/verilator
 
 CFLAGS  := -march=rv32i -mabi=ilp32 -Os -fno-stack-protector -nostartfiles

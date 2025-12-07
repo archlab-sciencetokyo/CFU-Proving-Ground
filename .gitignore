@@ -10,3 +10,4 @@ main.xdc
 vitis/
 cfu/
 vitis-comp.json
+*.o

@@ -1,0 +1,3 @@
+[submodule "tests/coremark-pro/coremark-pro-src"]
+	path = tests/coremark-pro/coremark-pro-src
+	url = https://github.com/eembc/coremark-pro.git

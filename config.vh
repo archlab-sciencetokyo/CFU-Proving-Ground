@@ -18,8 +18,8 @@
 `define BTB_ENTRY (2*1024)  // the number of BTB entries for branch prediction
 
 // ram
-`define IMEM_SIZE (32*1024) // instruction memory size in byte
-`define DMEM_SIZE (16*1024) // data memory size in byte
+`define IMEM_SIZE (128*1024) // instruction memory size in byte
+`define DMEM_SIZE (128*1024) // data memory size in byte
 
 `define IMEM_ENTRIES (`IMEM_SIZE/4)
 `define DMEM_ENTRIES (`DMEM_SIZE/4)

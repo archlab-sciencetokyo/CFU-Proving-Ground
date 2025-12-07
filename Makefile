@@ -15,6 +15,8 @@ TARGET := arty_a7
 
 USE_HLS ?= 0
 
+include tests/coremark-pro/coremark-pro.mak
+
 .PHONY: build prog run clean
 all: prog build
 

@@ -252,3 +252,21 @@ void pg_lcd_set_pos(int x, int y) {
     st7789_col = x;
     st7789_row = y;
 }
+
+void pg_lcd_prints_8x8(const char *str) {
+    while (*str) {
+        if (*str == '\n') {
+            if (st7789_col != 0) st7789_row = (st7789_row + 8) % 240;
+            st7789_col = 0;
+        }
+        else if (*str == '\r') {
+            st7789_col = 0;
+        }
+        else {
+            pg_lcd_draw_char(st7789_col, st7789_row, *str, PG_WHITE, 0);
+            st7789_col = (st7789_col + 8) % 240;
+            if (st7789_col == 0)  st7789_row = (st7789_row + 8) % 240;
+        }
+        str++;
+    }
+}

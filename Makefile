@@ -1,6 +1,8 @@
 # CFU Proving Ground since 2025-02    Copyright(c) 2025 Archlab. Science Tokyo
 # Released under the MIT license https://opensource.org/licenses/mit
 
+.DEFAULT_GOAL := all
+
 GCC     := /tools/cad/riscv/rv32ima/bin/riscv32-unknown-elf-gcc
 GPP     := /tools/cad/riscv/rv32ima/bin/riscv32-unknown-elf-g++
 OBJCOPY := /tools/cad/riscv/rv32ima/bin/riscv32-unknown-elf-objcopy
@@ -9,9 +11,9 @@ VIVADO  := /tools/Xilinx/Vivado/2024.1/bin/vivado
 VPP     := /tools/Xilinx/Vitis/2024.1/bin/v++
 RTLSIM  := /tools/cad/bin/verilator
 
-TARGET := arty_a7
+#TARGET := arty_a7
 #TARGET := cmod_a7
-#TARGET := nexys_a7
+TARGET := nexys_a7
 
 USE_HLS ?= 0
 
@@ -26,7 +28,7 @@ build:
 
 prog:
 	mkdir -p build
-	$(GCC) -Os -march=rv32im -mabi=ilp32 -nostartfiles -Iapp -Tapp/link.ld -o build/main.elf app/crt0.s app/*.c *.c
+	$(GCC) -Os -march=rv32im -mabi=ilp32 -nostartfiles -ffunction-sections -fdata-sections -Wl,--gc-sections -Iapp -Tapp/link.ld -o build/main.elf app/crt0.s app/*.c *.c -lm
 	make initf
 
 imem_size =	$(shell grep -oP "\`define\s+IMEM_SIZE\s+\(\K[^)]*" config.vh | bc)

@@ -132,30 +132,6 @@ int al_thread_join(al_thread_t al_thread, void **thread_return) {
 }
 #endif
 
-#if USE_SINGLE_CONTEXT==1
-/* Stub implementations for single-context mode */
-int al_mutex_init(al_mutex_t *mutex) { (void)mutex; return 0; }
-int al_mutex_lock(al_mutex_t *mutex) { (void)mutex; return 0; }
-int al_mutex_trylock(al_mutex_t *mutex) { (void)mutex; return 0; }
-int al_mutex_unlock(al_mutex_t *mutex) { (void)mutex; return 0; }
-int al_mutex_destroy(al_mutex_t *mutex) { (void)mutex; return 0; }
-int al_cond_init(al_cond_t *cond) { (void)cond; return 0; }
-int al_cond_signal(al_cond_t *cond) { (void)cond; return 0; }
-int al_cond_broadcast(al_cond_t *cond) { (void)cond; return 0; }
-int al_cond_wait(al_cond_t *cond, al_mutex_t *mutex) { (void)cond; (void)mutex; return 0; }
-int al_cond_destroy(al_cond_t *cond) { (void)cond; return 0; }
-int al_thread_create(al_thread_t *thread, void *(*start_routine)(void *), void *arg) {
-	(void)thread;
-	start_routine(arg);
-	return 0;
-}
-int al_thread_join(al_thread_t thread, void **thread_return) {
-	(void)thread;
-	if (thread_return) *thread_return = NULL;
-	return 0;
-}
-#endif
-
 void al_set_hardware_info(char *pdescription) {
 	e_s32 tmp;
 	th_parse_buf_flag(pdescription,"cores=",&tmp);

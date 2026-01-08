@@ -1,37 +1,29 @@
 /* CFU Proving Ground since 2025-02    Copyright(c) 2025 Archlab. Science Tokyo /
 / Released under the MIT license https://opensource.org/licenses/mit           */
-/*******************************************************************************/
-/***** Life game Version 2025-11-11b                                       *****/
-/*******************************************************************************/
+
 #include <stdlib.h>
 #include <stdio.h>
 #include "st7789.h"
 #include "perf.h"
 #include "util.h"
 
-#ifndef NCORES
-#define NCORES 4
-#endif
-
-/*******************************************************************************/
 #define WIDTH 120
 #define HEIGHT 120
-/*******************************************************************************/
-#define TEST
-// #define DEMO
 
-#if defined(TEST)
 #define STEPS 5 // small data set for test and debug
-#define LOOPS 1 // small data set for test and debug
-#elif defined(DEMO)
-#define STEPS 80 // large data set for the contest
-#define LOOPS 0  // large data set for the contest, set 0 for demo
+
+#define USE_LCD 0
+
+#if USE_LCD
+#define prints pg_lcd_prints_8x8
+#define draw_point pg_lcd_draw_point
 #else
-#define STEPS 80 // large data set for the contest
-#define LOOPS 4  // large data set for the contest, set 0 for demo
+#define prints pg_prints
+#define draw_point
 #endif
+
 /*******************************************************************************/
-void initialize(volatile int grid[HEIGHT][WIDTH], int loop)
+void initialize(volatile int grid[HEIGHT][WIDTH])
 {
     srand(7);
     for (int y = 0; y < HEIGHT; y++)
@@ -84,11 +76,24 @@ void print_grid(volatile int grid[HEIGHT][WIDTH], int start_x, int end_x)
             int color = (grid[i][j] == 0) ? PG_BLUE : (c == PG_BLACK) ? PG_WHITE
                                                   : (c == PG_BLUE)    ? PG_YELLOW
                                                                       : c;
-            pg_lcd_draw_point(i * 2, j * 2, color);
-            pg_lcd_draw_point(i * 2 + 1, j * 2, color);
-            pg_lcd_draw_point(i * 2, j * 2 + 1, color);
-            pg_lcd_draw_point(i * 2 + 1, j * 2 + 1, color);
+            draw_point(i * 2, j * 2, color);
+            draw_point(i * 2 + 1, j * 2, color);
+            draw_point(i * 2, j * 2 + 1, color);
+            draw_point(i * 2 + 1, j * 2 + 1, color);
         }
+    }
+}
+
+void print_grid_to_console(volatile int grid[HEIGHT][WIDTH])
+{
+    for (int i = 0; i < HEIGHT; i++)
+    {
+        for (int j = 0; j < WIDTH; j++)
+        {
+            pg_printd(grid[i][j]);
+            prints(" ");
+        }
+        prints("\n");
     }
 }
 
@@ -161,54 +166,54 @@ int main_master(int start_x, int end_x) {
     pg_lcd_reset();
     char buf[64];
 
+    initialize(grid);
+
     pg_perf_disable();
     pg_perf_reset();
     pg_perf_enable();
     int cnt = 0;
 
-    for (int loop = 0; loop <= LOOPS; (LOOPS == 0) ? 0 : loop++)
+    for (int step = 0; step < STEPS; step++)
     {
-        initialize(grid, loop);
+        cnt++;
+        print_grid(grid, start_x, end_x);
 
-        for (int step = 0; step < STEPS; step++)
+        pg_lcd_set_pos(240 - 60, 240 - 11);
+        sprintf(buf, "%d\n", cnt);
+        prints(buf);
+
+        update_grid(grid, nGrid, start_x, end_x);
+
+        for (int i = 0; i < HEIGHT; i++)
         {
-            cnt++;
-            print_grid(grid, start_x, end_x);
-
-            pg_lcd_set_pos(240 - 60, 240 - 11);
-            sprintf(buf, "%d", cnt);
-            pg_lcd_prints_8x8(buf);
-
-            update_grid(grid, nGrid, start_x, end_x);
-
-            for (int i = 0; i < HEIGHT; i++)
+            for (int j = start_x; j < end_x; j++)
             {
-                for (int j = start_x; j < end_x; j++)
-                {
-                    grid[i][j] = nGrid[i][j];
-                }
+                grid[i][j] = nGrid[i][j];
             }
         }
     }
 
-    pg_lcd_set_pos(0, 0);
-    pg_lcd_prints_8x8("---------- finished ----------\n");
     unsigned long long cycle = pg_perf_cycle();
-    unsigned long long insns = pg_perf_insns();
-    int insnpk = insns * 1000 / cycle;
-    sprintf(buf, "cycle      : %15lld  \n", cycle);
-    pg_lcd_prints_8x8(buf);
-    sprintf(buf, "insn       : %15lld  \n", insns);
-    pg_lcd_prints_8x8(buf);
-    sprintf(buf, "insn/Kcycle: %15d  \n", insnpk);
-    pg_lcd_prints_8x8(buf);
-    pg_lcd_prints_8x8("------------------------------\n");
 
+    pg_lcd_set_pos(0, 0);
+    prints("---------- finished ----------\n");
+    sprintf(buf, "cycle      : %15lld  \n", cycle);
+    prints(buf);
+    prints("------------------------------\n");
+
+    if (USE_LCD == 0) {
+        // print final state for validation
+        print_grid_to_console(grid);
+    }
     return 0;
 }
 
 int main()
 {
-    return main_master(0, WIDTH);
+    int start_x = 0;
+    int end_x = WIDTH;
+
+    main_master(start_x, end_x);
+    return 0;
 }
 /*******************************************************************************/

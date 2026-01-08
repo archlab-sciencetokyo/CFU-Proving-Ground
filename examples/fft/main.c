@@ -121,6 +121,7 @@ unsigned long long end_measurement()
 
 int main ()
 {
+    pg_prints("FFT benchmark started\n");
     init_W_N();
     init_f(f);
 
@@ -135,6 +136,8 @@ int main ()
     pg_prints("FFT cycles:\n");
     pg_printd(cycles);
     pg_prints("\n");
+
+    while (1) {}
 
     return 0;
 }

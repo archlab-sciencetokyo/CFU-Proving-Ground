@@ -37,6 +37,13 @@ SECTIONS
         _end = .;
     } > dmem
 
+    .heap : {
+        . = ALIGN(16);
+        _heap_start = .;
+        . = ORIGIN(dmem) + LENGTH(dmem);
+        _heap_end = .;
+    } > dmem
+
     /DISCARD/ : {
         *(.debug*)
     }
@@ -44,3 +51,6 @@ SECTIONS
 
 PROVIDE(_tohost = 0x80000000);
 PROVIDE(_fstack = ORIGIN(dmem) + LENGTH(dmem));
+
+PROVIDE(__heap_start = _heap_start);
+PROVIDE(__heap_end = _heap_end);

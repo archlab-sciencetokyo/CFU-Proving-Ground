@@ -109,7 +109,6 @@ When the FPGA is configured, an application displays many random characters, sim
 ## Memory Map
 The default memory map is shown below.
 The sizes of instruction memory and data memory can be changed in `config.vh`.
-If you change the size of the data memory, please appropriately modify the LENGTH of dmem in `app/link.ld`.
 
 | addr   |  description                     |
 | -----------| -----------------------------|
@@ -128,10 +127,7 @@ In `scripts/prog_dev.tcl`, please specify the IP ADDRESS and PORT number of the 
 Once the specification is complete, you can write the bitstream to the board with `make conf`.
 
 ## How to Modify Memory Size?
-To change the memory size, you must modify the configuration on both the hardware and software sides.
-
-### Hardware Side
-On the hardware side, you can change the memory size by modifying the `config.vh` file.
+To change the memory size, modify the `config.vh` file.
 The unit is in bytes.
 For example, if you want to use 64KiB of DMEM (Data Memory), you would set: `` `define DMEM_SIZE (64*1024) ``
 
@@ -141,18 +137,7 @@ For example, if you want to use 64KiB of DMEM (Data Memory), you would set: `` `
 `define DMEM_SIZE (16*1024) // data memory size in byte
 ```
 
-### Software Side
-The compiler is unaware of the amount of memory the hardware provides. The user must specify this configuration using the linker script (`app/link.ld`).
-
-Specifically, you need to change the `LENGTH` value in the `MEMORY` section of `app/link.ld`.
-
-For example, if the hardware has 64KiB of DMEM, you would set the `LENGTH` to `0x00010000` (which is 65,536, or 64 * 1024): `dmem : ORIGIN = 0x10000000, LENGTH = 0x00010000`
-```
-MEMORY {
-    imem : ORIGIN = 0x00000000, LENGTH = 0x00008000
-    dmem : ORIGIN = 0x10000000, LENGTH = 0x00004000
-}
-```
+The memory sizes defined in `config.vh` are automatically passed to the linker script during compilation, so you only need to edit `config.vh`.
 > [!NOTE]
 > Even if FPGA board has sufficient Block RAM, you might be unable to generate a bitstream in Vivado when you increase the size of the `dmem`.
 > This is likely because the `dmem` description does not adhere to the Vivado User Guide.

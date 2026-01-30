@@ -22,13 +22,18 @@ build:
 	$(RTLSIM) --binary --trace --top-module top --Wno-WIDTHTRUNC --Wno-WIDTHEXPAND -o top *.v
 	gcc -O2 dispemu/dispemu.c -o build/dispemu -lcairo -lX11
 
+imem_size = $(shell grep -oP "\`define\s+IMEM_SIZE\s+\(\K[^)]*" config.vh | bc)
+dmem_size = $(shell grep -oP "\`define\s+DMEM_SIZE\s+\(\K[^)]*" config.vh | bc)
+imem_size_hex = $(shell printf "0x%X" $(imem_size))
+dmem_size_hex = $(shell printf "0x%X" $(dmem_size))
+
 prog:
 	mkdir -p build
-	$(GCC) -Os -march=rv32im -mabi=ilp32 -nostartfiles -Iapp -Tapp/link.ld -o build/main.elf app/crt0.s app/*.c *.c
+	$(GCC) -Os -march=rv32im -mabi=ilp32 -nostartfiles \
+		-Wl,--defsym,IMEM_SIZE=$(imem_size_hex) \
+		-Wl,--defsym,DMEM_SIZE=$(dmem_size_hex) \
+		-Iapp -Tapp/link.ld -o build/main.elf app/crt0.s app/*.c *.c
 	make initf
-
-imem_size =	$(shell grep -oP "\`define\s+IMEM_SIZE\s+\(\K[^)]*" config.vh | bc)
-dmem_size =	$(shell grep -oP "\`define\s+DMEM_SIZE\s+\(\K[^)]*" config.vh | bc)
 initf:
 	$(OBJDUMP) -D build/main.elf > build/main.dump
 	$(OBJCOPY) -O binary --only-section=.text build/main.elf build/memi.bin.tmp; \

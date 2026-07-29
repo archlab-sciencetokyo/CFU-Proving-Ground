@@ -6,7 +6,7 @@ void pg_exit() {
 }
 
 void pg_printc(char c) {
-    *(char *)0x80000000 = c;
+    *(volatile char *)0x80000000 = c;
 }
 
 void pg_printd(long long x) {
@@ -18,7 +18,7 @@ void pg_printd(long long x) {
         pg_printc('-');
         x = -x;
     }
-    char buf[16];
+    char buf[20];
     int i = 0;
     while (x) {
         buf[i++] = x % 10 + '0';
@@ -32,12 +32,17 @@ void pg_printd(long long x) {
 void pg_printh(int x) {
     char buf[16];
     int i = 0;
-    while (x) {
-        buf[i++] = "0123456789ABCDEF"[x & 0xF];
-        x >>= 4;
-    }
-    while (i--) {
-        pg_printc(buf[i]);
+    unsigned int ux = x;
+    if(ux == 0){
+        pg_printc('0');
+    } else {
+        while (ux) {
+            buf[i++] = "0123456789ABCDEF"[ux & 0xF];
+            ux >>= 4;
+        }
+        while (i--) {
+            pg_printc(buf[i]);
+        }
     }
 }
 

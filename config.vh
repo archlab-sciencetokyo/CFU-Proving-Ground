@@ -37,7 +37,7 @@
 `endif  // CONFIG_VH_
 
 // tohost
-`define TOHOST_ADDR 'h40008000 // do not modify, this is hard coded in the interconnect
+// `define TOHOST_ADDR 'h40008000 // this is not used(2026/07/29)
 
 // cpu
 `define XLEN 32

@@ -12,8 +12,26 @@ module main (
     output wire st7789_DC,
     output wire st7789_RES
 );
-    reg rst_ni = 0; initial #15 rst_ni = 1;
     wire clk, locked;
+
+`ifdef GOWIN
+    Gowin_rPLL gowin_rpll (
+        .clkout (clk),
+        .lock   (locked),
+        .clkin  (clk_i)
+    );
+
+    reg [3:0] rst_count = 0;
+    always @(posedge clk) begin
+        if (!locked)
+            rst_count <= 0;
+        else if (rst_count != 4'hf)
+            rst_count <= rst_count + 1'b1;
+    end
+
+    wire rst = !locked || (rst_count != 4'hf);
+`else
+    reg rst_ni = 0; initial #15 rst_ni = 1;
 
 `ifdef SYNTHESIS
     clk_wiz_0 clk_wiz_0 (
@@ -28,6 +46,8 @@ module main (
 `endif
 
     wire                        rst = !rst_ni || !locked;
+`endif
+
     wire [`IBUS_ADDR_WIDTH-1:0] imem_raddr;
     wire [`IBUS_DATA_WIDTH-1:0] imem_rdata;
     wire                        dbus_we;

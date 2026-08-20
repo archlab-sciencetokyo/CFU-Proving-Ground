@@ -2,10 +2,13 @@ build/
 obj_dir/
 .Xil/
 vivado*
+gowin/
 memd.txt
 memi.txt
 build.tcl
 main.xdc
+main.cst
+main.sdc
 *.vcd
 vitis/
 cfu/

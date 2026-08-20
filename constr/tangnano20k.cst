@@ -1,0 +1,23 @@
+// Tang Nano 20K project / GW2A-LV18QN88C8/I7
+// Top module: main
+//
+// clk_i is the fixed onboard 27 MHz oscillator pin.
+// The four ST7789 pins below are provisional assignments. Replace them with
+// the pins selected for the actual wiring before programming the FPGA.
+
+// Onboard 27 MHz oscillator
+IO_LOC  "clk_i" 4;
+IO_PORT "clk_i" IO_TYPE=LVCMOS33 PULL_MODE=NONE;
+
+// ST7789 provisional pin assignments (TODO: confirm/replace)
+IO_LOC  "st7789_DC" 17;
+IO_PORT "st7789_DC" IO_TYPE=LVCMOS33 DRIVE=8 PULL_MODE=NONE;
+
+IO_LOC  "st7789_RES" 20;
+IO_PORT "st7789_RES" IO_TYPE=LVCMOS33 DRIVE=8 PULL_MODE=NONE;
+
+IO_LOC  "st7789_SDA" 19;
+IO_PORT "st7789_SDA" IO_TYPE=LVCMOS33 DRIVE=8 PULL_MODE=NONE;
+
+IO_LOC  "st7789_SCL" 18;
+IO_PORT "st7789_SCL" IO_TYPE=LVCMOS33 DRIVE=8 PULL_MODE=NONE;

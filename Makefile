@@ -9,6 +9,7 @@ OBJDUMP := /home/dkumagai/.local/riscv-cfu/bin/riscv32-unknown-elf-objdump
 RTLSIM  := /usr/bin/verilator
 VIVADO  := /usr/bin/vivado
 VPP     := /usr/bin/v++
+
 GOWIN_IDE       ?= /home/dkumagai/gowin/IDE
 GOWIN_SH        ?= $(GOWIN_IDE)/bin/gw_sh
 GOWIN_PRELOAD   ?= /usr/lib/x86_64-linux-gnu/libfreetype.so.6
@@ -17,10 +18,10 @@ GOWIN_PROGRAMMER_DIR ?= /home/dkumagai/gowin/Programmer/bin
 GOWIN_PROGRAMMER     ?= $(GOWIN_PROGRAMMER_DIR)/programmer_cli
 GOWIN_DEVICE         ?= GW2AR-18C
 
-# TARGET := arty_a7
+TARGET := arty_a7
 # TARGET := cmod_a7
 # TARGET := nexys_a7
-TARGET := tangnano20k
+# TARGET := tangnano20k
 
 USE_HLS ?= 0
 
@@ -87,14 +88,18 @@ bit:
 		exit 1; \
 	fi
 	@if [ ! -f build.tcl ]; then \
-		echo "Plese run 'make init' first."; \
+		echo "Please run 'make init' first."; \
 		exit 1; \
 	fi
+ifeq ($(TARGET), tangnano20k) 
+	$(MAKE) bit-gowin
+else
 	$(VIVADO) -mode batch -source build.tcl -tclargs $(TCL_ARG)
 	cp vivado/main.runs/impl_1/main.bit build/.
-	@if [ -f vivado/main.runs/impl_i/main.ltx ]; then \
-		cp -f vivado/main.runs/impl_i/main.ltx build/.; \
+	@if [ -f vivado/main.runs/impl_1/main.ltx ]; then \
+		cp -f vivado/main.runs/impl_1/main.ltx build/.; \
 	fi
+endif
 
 bit-gowin:
 	@if [ ! -f memi.txt ] || [ ! -f memd.txt ]; then \
@@ -110,6 +115,7 @@ bit-gowin:
 		exit 1; \
 	fi
 	env LD_PRELOAD="$(GOWIN_PRELOAD)" \
+		GOWIN_IDE="$(GOWIN_IDE)" \
 		LD_LIBRARY_PATH="$(GOWIN_LIB_PATH)" \
 		"$(GOWIN_SH)" build.tcl
 	@test -f gowin/main/impl/pnr/main.fs || { \
@@ -121,11 +127,15 @@ bit-gowin:
 	chmod u+w build/main.fs
 
 conf:
+ifeq ($(TARGET), tangnano20k)
+	$(MAKE) conf-gowin
+else
 	@if [ ! -f build/main.bit ]; then \
 		echo "Please run 'make bit' first."; \
 		exit 1; \
 	fi
 	$(VIVADO) -mode batch -source scripts/prog_dev.tcl
+endif
 
 conf-gowin:
 	@if [ ! -f build/main.fs ]; then \

@@ -5,7 +5,7 @@ This enables agile development of ASIPs (Application-Specific Integrated Product
 For information on how to create and use Custom Function Units (CFUs), please see [CFU Implementation Guide](cfu.md).
 
 The recommended OS is Ubuntu Linux.
-This project has been verified using Vivado **2024.2**.
+This project has been verified using Vivado **2025.2** and Gowin EDA **v 1.9.12**.
 
 All changelogs are described in [CHANGELOG.md](CHANGELOG.md).
 
@@ -16,8 +16,8 @@ If you are using [ACRi Room](https://gw.acri.c.titech.ac.jp/wp/), these software
 For RTL simulation, install Verilator version 5 if it is not installed.
 See the [Verilator website](https://www.veripool.org/verilator/) for more information.
 
-As an FPGA development tool, install Vivado **2024.2** if it is not installed.
-See the  [Vivado site](https://www.amd.com/ja/products/software/adaptive-socs-and-fpgas/vivado.html) for more information.
+As an FPGA development tool, install Vivado **2025.2** or Gowin EDA **v 1.9.12** if it is not installed.
+See the  [Vivado site](https://www.amd.com/ja/products/software/adaptive-socs-and-fpgas/vivado.html) or [Gowin site](https://www.gowinsemi.com/en/support/home/) for more information.
 
 Our display simulator uses libcairo-deb package, please install it with the following command.
 ```
@@ -82,9 +82,11 @@ $ make prog
 The default FPGA board is Arty A7.
 If you want to use Nexys A7, modify `Makefile` to use `TARGET=nexys_a7`.
 If you want to use Cmod A7, modify `Makefile` to use `TARGET=cmod_a7`.
+If you want to use Tang Nano 20K, modify `Makefile` to use `TARGET=tangnano20k`.
 
-Copy the proper `main.xdc` and `build.tcl` using the following command.
-This initialization is necessary once.
+Copy build.tcl and the appropriate constraint files using the following command.
+Vivado targets use `main.xdc`, while Tang Nano 20K uses both `main.cst` and `main.sdc`.
+Run this initialization after selecting a target and whenever the target changes.
 ```
 $ make init
 ```
@@ -93,8 +95,9 @@ Generate a bitstream file with the following command:
 ```
 $ make bit
 ```
-The generated bitstream file is copied in `build/main.bit`.
-Configure and run FPGA with this `main.bit`.
+For Vivado targets, the generated bitstream is copied to `build/main.bit`.
+For Tang Nano 20K, it is copied to `build/main.fs`.
+Configure and run FPGA with this `main.bit` or `mian.fs`.
 When the FPGA is configured, an application displays many random characters, similar to the simulation.
 
 > [!NOTE]
@@ -126,6 +129,10 @@ When using the Vivado Hardware Server, you can use `scripts/prog_dev.tcl`.
 
 In `scripts/prog_dev.tcl`, please specify the IP ADDRESS and PORT number of the host where the Vivado Hardware Server is running.
 Once the specification is complete, you can write the bitstream to the board with `make conf`.
+
+For Tang Nano 20K, `make conf` uses Gowin Programmer CLI to write
+`build/main.fs` to the FPGA SRAM. The configuration is lost when the
+board is powered off.
 
 ## How to Modify Memory Size?
 To change the memory size, you must modify the configuration on both the hardware and software sides.

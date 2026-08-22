@@ -1,13 +1,13 @@
 # CFU Proving Ground since 2025-02    Copyright(c) 2025 Archlab. Science Tokyo
 # Released under the MIT license https://opensource.org/licenses/mit
 
-GCC     := /var/archlab-modules/riscv-gnu-toolchain/2026.03.13/bin/riscv64-unknown-elf-gcc
-GPP     := /var/archlab-modules/riscv-gnu-toolchain/2026.03.13/bin/riscv64-unknown-elf-g++
-OBJCOPY := /var/archlab-modules/riscv-gnu-toolchain/2026.03.13/bin/riscv64-unknown-elf-objcopy
-OBJDUMP := /var/archlab-modules/riscv-gnu-toolchain/2026.03.13/bin/riscv64-unknown-elf-objdump
-VIVADO  := /var/archlab-modules/amd/2025.2/Vivado/bin/vivado
-VPP     := /var/archlab-modules/amd/2025.2/Vitis/bin/v++
-RTLSIM  := /var/archlab-modules/verilator/5.046/bin/verilator
+GCC     := /tools/cad/riscv/rv32ima/bin/riscv32-unknown-elf-gcc
+GPP     := /tools/cad/riscv/rv32ima/bin/riscv32-unknown-elf-g++
+OBJCOPY := /tools/cad/riscv/rv32ima/bin/riscv32-unknown-elf-objcopy
+OBJDUMP := /tools/cad/riscv/rv32ima/bin/riscv32-unknown-elf-objdump
+VIVADO  := /tools/Xilinx/Vivado/2024.1/bin/vivado
+VPP     := /tools/Xilinx/Vitis/2024.1/bin/v++
+RTLSIM  := /tools/cad/bin/verilator
 
 TARGET := arty_a7
 # TARGET := cmod_a7

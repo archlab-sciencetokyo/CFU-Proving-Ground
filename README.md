@@ -55,6 +55,39 @@ If you are using [ACRi Room](https://gw.acri.c.titech.ac.jp/wp/), these paths ar
 | VIVADO     | vivado                       |
 | RTLSIM     | verilator                    |
 
+### Gowin EDA environment variables
+
+To build and program the Tang Nano 20K, specify the installation
+directories of Gowin EDA and Gowin Programmer.
+
+For example, if they are installed under `$HOME/gowin`, set the
+following environment variables:
+
+```bash
+export GOWIN_IDE="$HOME/gowin/IDE"
+export GOWIN_PROGRAMMER_DIR="$HOME/gowin/Programmer/bin"
+```
+
+The Makefile derives the following paths from these variables:
+| variable | description |
+|---|---|
+| `GOWIN_SH` | Gowin command-line shell (`$GOWIN_IDE/bin/gw_sh`) |
+| `GOWIN_LIB_PATH` | Gowin EDA library directory (`$GOWIN_IDE/lib`) |
+| `GOWIN_PROGRAMMER` | Gowin Programmer CLI (`$GOWIN_PROGRAMMER_DIR/programmer_cli`) |
+| `GOWIN_DEVICE` | Programmer device name; the default is `GW2AR-18C` |
+
+On the verified Ubuntu x86-64 environment, Gowin EDA requires the
+system FreeType library to be preloaded:
+
+```bash
+export GOWIN_PRELOAD=/usr/lib/x86_64-linux-gnu/libfreetype.so.6
+```
+
+The path may differ depending on the Linux distribution and CPU
+architecture. Use ldconfig -p | grep libfreetype.so.6 to locate the
+library. If Gowin EDA runs without the preload workaround, this
+variable can be left empty.
+
 ## Step (3) : RTL simulation of main.c on a RISC-V processor with display emulator
 This project uses Verilator and a custom display emulator.
 The following command is used to compile the project.

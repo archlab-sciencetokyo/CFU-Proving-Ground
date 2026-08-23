@@ -7,11 +7,7 @@
 # Pblock
 create_pblock pb0;
 resize_pblock       [get_pblocks pb0] -add {CLOCKREGION_X0Y0};
-add_cells_to_pblock [get_pblocks pb0] [get_cells -quiet [list {sync_rst}]];
 add_cells_to_pblock [get_pblocks pb0] [get_cells -quiet [list {cpu}]];
-add_cells_to_pblock [get_pblocks pb0] [get_cells -quiet [list {rvcpu_interconnect}]];
-add_cells_to_pblock [get_pblocks pb0] [get_cells -quiet [list {ram}]];
-add_cells_to_pblock [get_pblocks pb0] [get_cells -quiet [list {uart}]];
 
 set_property BITSTREAM.GENERAL.COMPRESS TRUE [current_design]
 set_property BITSTREAM.CONFIG.CONFIGRATE 50  [current_design]

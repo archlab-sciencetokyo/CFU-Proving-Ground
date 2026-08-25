@@ -38,7 +38,7 @@ module main (
 
     reg rdata_sel = 0;
     always @(posedge clk) rdata_sel <= dbus_addr[30];
-    assign dbus_rdata = (rdata_sel) ? perf_rdata : dmem_rdata;
+    assign dbus_rdata = rdata_sel ? {(`XLEN / 32){perf_rdata}} : dmem_rdata;
 
     cpu cpu (
         .clk_i         (clk),         // input  wire
@@ -59,12 +59,12 @@ module main (
         .rdata_o (imem_rdata)   // output reg  [DATA_WIDTH-1:0]
     );
 
-    wire [31:0] dmem_addr  = dbus_addr;
-    wire [31:0] dmem_wdata = dbus_wdata;
-    wire  [3:0] dmem_wstrb = dbus_wstrb;
-    wire        dmem_re    = !dbus_we & (dbus_addr[28]);
-    wire        dmem_we    =  dbus_we & (dbus_addr[28]);
-    wire [31:0] dmem_rdata;
+    wire [  `XLEN-1:0] dmem_addr = dbus_addr;
+    wire [  `XLEN-1:0] dmem_wdata = dbus_wdata;
+    wire [`XBYTES-1:0] dmem_wstrb = dbus_wstrb;
+    wire               dmem_re = !dbus_we & dbus_addr[28];
+    wire               dmem_we = dbus_we & dbus_addr[28];
+    wire [  `XLEN-1:0] dmem_rdata;
     m_dmem dmem (
         .clk_i   (clk),         // input  wire
         .we_i    (dmem_we),     // input  wire
@@ -115,9 +115,9 @@ module main (
 endmodule
 
 module m_imem (
-    input  wire        clk_i,
-    input  wire [31:0] raddr_i,
-    output wire [31:0] rdata_o
+    input  wire             clk_i,
+    input  wire [`XLEN-1:0] raddr_i,
+    output wire [     31:0] rdata_o
 );
 
     (* ram_style = "block" *) reg [31:0] imem[0:`IMEM_ENTRIES-1];
@@ -133,27 +133,30 @@ module m_imem (
 endmodule
 
 module m_dmem (
-    input  wire        clk_i,
-    input  wire        re_i,
-    input  wire        we_i,
-    input  wire [31:0] addr_i,
-    input  wire [31:0] wdata_i,
-    input  wire  [3:0] wstrb_i,
-    output wire [31:0] rdata_o
+    input  wire               clk_i,
+    input  wire               re_i,
+    input  wire               we_i,
+    input  wire [  `XLEN-1:0] addr_i,
+    input  wire [  `XLEN-1:0] wdata_i,
+    input  wire [`XBYTES-1:0] wstrb_i,
+    output wire [  `XLEN-1:0] rdata_o
 );
 
-    (* ram_style = "block" *) reg [31:0] dmem[0:`DMEM_ENTRIES-1];
+    (* ram_style = "block" *) reg [`XLEN-1:0] dmem[0:`DMEM_ENTRIES-1];
     `include "memd.txt"
 
-    wire [`DMEM_ADDRW-1:0] valid_addr = addr_i[`DMEM_ADDRW+1:2];
+    localparam BYTE_OFFSET = $clog2(`XBYTES);
+    wire [`DMEM_ADDRW-1:0] valid_addr = addr_i[`DMEM_ADDRW+(BYTE_OFFSET-1):BYTE_OFFSET];
 
-    reg [31:0] rdata = 0;
+    reg [`XLEN-1:0] rdata = 0;
+    integer byte_index;
     always @(posedge clk_i) begin
         if (we_i) begin
-            if (wstrb_i[0]) dmem[valid_addr][7:0]   <= wdata_i[7:0];
-            if (wstrb_i[1]) dmem[valid_addr][15:8]  <= wdata_i[15:8];
-            if (wstrb_i[2]) dmem[valid_addr][23:16] <= wdata_i[23:16];
-            if (wstrb_i[3]) dmem[valid_addr][31:24] <= wdata_i[31:24];
+            for (byte_index = 0; byte_index < `XBYTES; byte_index = byte_index + 1) begin
+                if (wstrb_i[byte_index]) begin
+                    dmem[valid_addr][byte_index * 8 +: 8] <= wdata_i[byte_index * 8 +: 8];
+                end
+            end
         end
         if (re_i) rdata <= dmem[valid_addr];
     end

@@ -157,7 +157,7 @@ char font8x8_basic[128][8] = {
 };
 
 void pg_lcd_draw_point(int x, int y, char color) {
-    *(volatile char *)(0x20000000 + y * 256 + x) = color;
+    *(volatile char *)(0x20000000UL + y * 256 + x) = color;
 }
 
 void pg_lcd_draw_char(int x, int y, char c, char color, int scale) {
@@ -206,7 +206,7 @@ void pg_lcd_printd(long long x) {
         _pg_lcd_update_pos();
         x = -x;
     }
-    char buf[16];
+    char buf[19];
     int i = 0;
     while (x) {
         buf[i++] = x % 10 + '0';

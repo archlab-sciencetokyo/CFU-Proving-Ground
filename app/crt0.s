@@ -46,7 +46,7 @@ _start:
     .text
     .globl finish
 finish:
-    la      t0, _tohost
+    li      t0, 0x80000000
     li      t1, CMD_FINISH
     sw      t1, 0(t0)
 1:  j       1b

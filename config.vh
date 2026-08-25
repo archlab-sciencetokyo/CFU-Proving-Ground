@@ -12,7 +12,6 @@
 
 // cpu
 `define CLK_FREQ_MHZ 160  // operating clock frequency in MHz
-
 `define RESET_VECTOR 'h00000000
 
 `define BTB_ENTRY (2*1024)  // the number of BTB entries for branch prediction
@@ -22,7 +21,7 @@
 `define DMEM_SIZE (16*1024) // data memory size in byte
 
 `define IMEM_ENTRIES (`IMEM_SIZE/4)
-`define DMEM_ENTRIES (`DMEM_SIZE/4)
+`define DMEM_ENTRIES (`DMEM_SIZE/`XBYTES)
 
 `define IMEM_ADDRW ($clog2(`IMEM_ENTRIES))
 `define DMEM_ADDRW ($clog2(`DMEM_ENTRIES))
@@ -40,8 +39,17 @@
 // `define TOHOST_ADDR 'h40008000 // this is not used(2026/07/29)
 
 // cpu
+`define RV32
+
+`ifdef RV64
+`define XLEN 64
+`define XBYTES (`XLEN/8)
+`define XLEN_LOG2 6
+`else
 `define XLEN 32
 `define XBYTES (`XLEN/8)
+`define XLEN_LOG2 5
+`endif
 
 `define NOP 32'h00000013 // addi  x0, x0, 0
 `define UNIMP 32'hC0001073 // csrrw x0, cycle, x0
@@ -79,7 +87,8 @@
 `define ALU_CTRL_IS_XOR_OR 6
 `define ALU_CTRL_IS_OR_AND 7
 `define ALU_CTRL_IS_SRC2 8
-`define ALU_CTRL_WIDTH 9
+`define ALU_CTRL_IS_W 9
+`define ALU_CTRL_WIDTH 10
 
 // bru control
 `define BRU_CTRL_IS_CTRL_TSFR 0
@@ -99,7 +108,8 @@
 `define LSU_CTRL_IS_BYTE 3
 `define LSU_CTRL_IS_HALFWORD 4
 `define LSU_CTRL_IS_WORD 5
-`define LSU_CTRL_WIDTH 6
+`define LSU_CTRL_IS_DOUBLEWORD 6
+`define LSU_CTRL_WIDTH 7
 
 // perf control
 `define PERF_CTRL_IS_CYCLE 0
@@ -113,13 +123,15 @@
 `define MUL_CTRL_IS_SRC1_SIGNED 1
 `define MUL_CTRL_IS_SRC2_SIGNED 2
 `define MUL_CTRL_IS_HIGH 3
-`define MUL_CTRL_WIDTH 4
+`define MUL_CTRL_IS_W 4
+`define MUL_CTRL_WIDTH 5
 
 // div control
 `define DIV_CTRL_IS_DIV 0
 `define DIV_CTRL_IS_SIGNED 1
 `define DIV_CTRL_IS_REM 2
-`define DIV_CTRL_WIDTH 3
+`define DIV_CTRL_IS_W 3
+`define DIV_CTRL_WIDTH 4
 
 // cfu control
 `define CFU_CTRL_IS_CFU 0

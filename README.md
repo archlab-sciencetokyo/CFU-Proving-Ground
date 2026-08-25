@@ -1,6 +1,6 @@
 # CFU Proving Ground
 CFU Proving Ground is a hardware-software co-design environment for FPGAs based on the RISC-V architecture.
-This enables agile development of ASIPs (Application-Specific Integrated Products) through a soft processor supporting the RV32IM instruction set, an RTL-based design flow, and a CFU (Custom Function Unit), which is a resource-efficient ALU-based accelerator.
+This enables agile development of ASIPs (Application-Specific Integrated Products) through a soft processor supporting the RV32IM and RV64IM instruction sets, an RTL-based design flow, and a CFU (Custom Function Unit), which is a resource-efficient ALU-based accelerator.
 
 For information on how to create and use Custom Function Units (CFUs), please see [CFU Implementation Guide](cfu.md).
 
@@ -156,3 +156,18 @@ MEMORY {
 > [!NOTE]
 > Even if FPGA board has sufficient Block RAM, you might be unable to generate a bitstream in Vivado when you increase the size of the `dmem`.
 > This is likely because the `dmem` description does not adhere to the Vivado User Guide.
+
+## How to Switch between RV32 and RV64?
+The default configuration uses RV32IM. To switch to RV64IM, replace the following line in `config.vh`:
+
+```verilog
+`define RV32
+```
+
+with:
+
+```verilog
+`define RV64
+```
+
+No other source-code configuration changes are required. Run `make` again after changing the definition to rebuild the software and RTL simulation for the selected architecture. To switch back to RV32IM, replace `RV64` with `RV32`.

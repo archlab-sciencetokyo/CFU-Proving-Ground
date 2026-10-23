@@ -7,7 +7,7 @@ OBJCOPY := /home/dkumagai/.local/riscv-cfu/bin/riscv32-unknown-elf-objcopy
 OBJDUMP := /home/dkumagai/.local/riscv-cfu/bin/riscv32-unknown-elf-objdump
 
 RTLSIM  := /usr/bin/verilator
-VIVADO  := /usr/bin/vivado
+VIVADO  ?= /home/dkumagai/amd/2026.1/Vivado/bin/vivado
 VPP     := /usr/bin/v++
 
 GOWIN_IDE       ?= /home/dkumagai/gowin/IDE
@@ -18,12 +18,18 @@ GOWIN_PROGRAMMER_DIR ?= /home/dkumagai/gowin/Programmer/bin
 GOWIN_PROGRAMMER     ?= $(GOWIN_PROGRAMMER_DIR)/programmer_cli
 GOWIN_DEVICE         ?= GW2AR-18C
 
-TARGET := arty_a7
+# TARGET := arty_a7
 # TARGET := cmod_a7
 # TARGET := nexys_a7
-# TARGET := tangnano20k
+TARGET := tangnano20k
 
 USE_HLS ?= 0
+
+ifeq ($(TARGET),tangnano20k)
+FPGA_APP := gowin
+else
+FPGA_APP := vivado
+endif
 
 PART_arty_a7  := xc7a35tcsg324-1
 PART_nexys_a7 := xc7a100tcsg324-1
@@ -32,7 +38,7 @@ PART_cmod_a7  := xc7a35ticpg236-1L
 HLS_PART = $(or $(PART_$(TARGET)),$(error HLS is not supported for TARGET=$(TARGET)))
 HLS_CFG  := constr/cfu_hls.cfg
 
-.PHONY: build prog run bit bit-gowin conf conf-gowin init clean
+.PHONY: build prog run bit conf init clean
 all: prog build
 
 build:
@@ -91,26 +97,12 @@ bit:
 		echo "Please run 'make init' first."; \
 		exit 1; \
 	fi
-ifeq ($(TARGET), tangnano20k) 
-	$(MAKE) bit-gowin
-else
-	$(VIVADO) -mode batch -source build.tcl -tclargs $(TCL_ARG)
-	cp vivado/main.runs/impl_1/main.bit build/.
-	@if [ -f vivado/main.runs/impl_1/main.ltx ]; then \
-		cp -f vivado/main.runs/impl_1/main.ltx build/.; \
-	fi
-endif
-
-bit-gowin:
-	@if [ ! -f memi.txt ] || [ ! -f memd.txt ]; then \
-		echo "Please run 'make prog' first."; \
-		exit 1; \
-	fi
+ifeq ($(FPGA_APP),gowin)
 	@test -x "$(GOWIN_SH)" || { \
 		echo "Gowin shell not found: $(GOWIN_SH)"; \
 		exit 1; \
 	}
-	@if [ ! -f build.tcl ] || [ ! -f main.cst ] || [ ! -f main.sdc ]; then \
+	@if [ ! -f main.cst ] || [ ! -f main.sdc ]; then \
 		echo "Please run 'make init TARGET=tangnano20k' first."; \
 		exit 1; \
 	fi
@@ -125,21 +117,22 @@ bit-gowin:
 	mkdir -p build
 	cp --remove-destination gowin/main/impl/pnr/main.fs build/main.fs
 	chmod u+w build/main.fs
-
-conf:
-ifeq ($(TARGET), tangnano20k)
-	$(MAKE) conf-gowin
 else
-	@if [ ! -f build/main.bit ]; then \
-		echo "Please run 'make bit' first."; \
+	@test -x "$(VIVADO)" || { \
+		echo "Vivado not found: $(VIVADO)"; \
 		exit 1; \
+	}
+	$(VIVADO) -mode batch -source build.tcl -tclargs $(TCL_ARG)
+	cp vivado/main.runs/impl_1/main.bit build/.
+	@if [ -f vivado/main.runs/impl_1/main.ltx ]; then \
+		cp -f vivado/main.runs/impl_1/main.ltx build/.; \
 	fi
-	$(VIVADO) -mode batch -source scripts/prog_dev.tcl
 endif
 
-conf-gowin:
+conf:
+ifeq ($(FPGA_APP),gowin)
 	@if [ ! -f build/main.fs ]; then \
-		echo "Please run 'make bit-gowin' first."; \
+		echo "Please run 'make bit' first."; \
 		exit 1; \
 	fi
 	@test -x "$(GOWIN_PROGRAMMER)" || { \
@@ -152,6 +145,17 @@ conf-gowin:
 		--operation_index 2 \
 		--fsFile "$(abspath build/main.fs)" \
 		--output "$(abspath build/programmer.log)"
+else
+	@if [ ! -f build/main.bit ]; then \
+		echo "Please run 'make bit' first."; \
+		exit 1; \
+	fi
+	@test -x "$(VIVADO)" || { \
+		echo "Vivado not found: $(VIVADO)"; \
+		exit 1; \
+	}
+	$(VIVADO) -mode batch -source scripts/prog_dev.tcl
+endif
 
 vpp:
 	sed -i -E 's/^[[:space:]]*#?[[:space:]]*(part=)/# \1/' $(HLS_CFG)

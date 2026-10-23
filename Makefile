@@ -1,14 +1,13 @@
 # CFU Proving Ground since 2025-02    Copyright(c) 2025 Archlab. Science Tokyo
 # Released under the MIT license https://opensource.org/licenses/mit
 
-GCC     := /home/dkumagai/.local/riscv-cfu/bin/riscv32-unknown-elf-gcc
-GPP     := /home/dkumagai/.local/riscv-cfu/bin/riscv32-unknown-elf-g++
-OBJCOPY := /home/dkumagai/.local/riscv-cfu/bin/riscv32-unknown-elf-objcopy
-OBJDUMP := /home/dkumagai/.local/riscv-cfu/bin/riscv32-unknown-elf-objdump
-
-RTLSIM  := /usr/bin/verilator
-VIVADO  ?= /home/dkumagai/amd/2026.1/Vivado/bin/vivado
-VPP     := /usr/bin/v++
+GCC     := /tools/cad/riscv/rv32ima/bin/riscv32-unknown-elf-gcc
+GPP     := /tools/cad/riscv/rv32ima/bin/riscv32-unknown-elf-g++
+OBJCOPY := /tools/cad/riscv/rv32ima/bin/riscv32-unknown-elf-objcopy
+OBJDUMP := /tools/cad/riscv/rv32ima/bin/riscv32-unknown-elf-objdump
+VIVADO  := /tools/Xilinx/Vivado/2024.1/bin/vivado
+VPP     := /tools/Xilinx/Vitis/2024.1/bin/v++
+RTLSIM  := /tools/cad/bin/verilator
 
 GOWIN_IDE       ?= /home/dkumagai/gowin/IDE
 GOWIN_SH        ?= $(GOWIN_IDE)/bin/gw_sh
